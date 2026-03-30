@@ -7,7 +7,7 @@ services:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - muse_pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -25,11 +25,12 @@ services:
       - ./.env
     environment:
       DB_HOST: db
+      DB_PORT: 5432
     depends_on:
       db:
         condition: service_healthy
     ports:
-      - "8000:8000"
+      - "8001:8000"
     volumes:
       - ./backend:/app
     command: >
