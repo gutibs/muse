@@ -20,7 +20,10 @@ services:
     restart: unless-stopped
     networks:
       - muse_net
+      - coolify
 
 networks:
   muse_net:
     driver: bridge
+  coolify:
+    external: true
