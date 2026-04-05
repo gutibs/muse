@@ -1,0 +1,14 @@
+[
+	{"model": "restaurants.tag", "pk": 1, "fields": {"name": "Quiet", "slug": "quiet"}},
+	{"model": "restaurants.tag", "pk": 2, "fields": {"name": "Romantic", "slug": "romantic"}},
+	{"model": "restaurants.tag", "pk": 3, "fields": {"name": "Good Vibes", "slug": "good-vibes"}},
+	{"model": "restaurants.tag", "pk": 4, "fields": {"name": "Family Friendly", "slug": "family-friendly"}},
+	{"model": "restaurants.tag", "pk": 5, "fields": {"name": "Trendy", "slug": "trendy"}},
+	{"model": "restaurants.tag", "pk": 6, "fields": {"name": "Classic", "slug": "classic"}},
+	{"model": "restaurants.tag", "pk": 7, "fields": {"name": "Casual", "slug": "casual"}},
+	{"model": "restaurants.tag", "pk": 8, "fields": {"name": "Fine Dining", "slug": "fine-dining"}},
+	{"model": "restaurants.tag", "pk": 9, "fields": {"name": "Outdoor / Terrace", "slug": "outdoor-terrace"}},
+	{"model": "restaurants.tag", "pk": 10, "fields": {"name": "Live Music", "slug": "live-music"}},
+	{"model": "restaurants.tag", "pk": 11, "fields": {"name": "Pet Friendly", "slug": "pet-friendly"}},
+	{"model": "restaurants.tag", "pk": 12, "fields": {"name": "Instagrammable", "slug": "instagrammable"}}
+]

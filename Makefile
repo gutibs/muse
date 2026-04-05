@@ -50,3 +50,11 @@ build:
 # Sincroniza build con Capacitor (Android/iOS)
 sync:
 	cd app && npx cap sync
+
+# Carga datos iniciales (cuisines + personas)
+seed:
+	docker compose -f docker-compose.dev.yml exec backend python manage.py loaddata /app/fixtures/cuisines.json /app/fixtures/personas.json /app/fixtures/tags.json
+
+# Tests Django
+test:
+	docker compose -f docker-compose.dev.yml exec backend python manage.py test

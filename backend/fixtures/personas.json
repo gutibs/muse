@@ -1,0 +1,14 @@
+[
+	{"model": "pins.persona", "pk": 1, "fields": {"name": "Date Night", "slug": "date-night", "icon": "\ud83d\udc95", "color": "#B5464A"}},
+	{"model": "pins.persona", "pk": 2, "fields": {"name": "Family Dinner", "slug": "family-dinner", "icon": "\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66", "color": "#2D6A4F"}},
+	{"model": "pins.persona", "pk": 3, "fields": {"name": "Girls Night", "slug": "girls-night", "icon": "\ud83d\udc83", "color": "#D4777A"}},
+	{"model": "pins.persona", "pk": 4, "fields": {"name": "Business Lunch", "slug": "business-lunch", "icon": "\ud83d\udcbc", "color": "#4A4A4A"}},
+	{"model": "pins.persona", "pk": 5, "fields": {"name": "Mums & Babies", "slug": "mums-and-babies", "icon": "\ud83d\udc76", "color": "#40916C"}},
+	{"model": "pins.persona", "pk": 6, "fields": {"name": "Special Occasion", "slug": "special-occasion", "icon": "\ud83c\udf89", "color": "#B5464A"}},
+	{"model": "pins.persona", "pk": 7, "fields": {"name": "Quick Bite", "slug": "quick-bite", "icon": "\u26a1", "color": "#8A8A8A"}},
+	{"model": "pins.persona", "pk": 8, "fields": {"name": "Brunch", "slug": "brunch", "icon": "\ud83e\udd5e", "color": "#EDECE8"}},
+	{"model": "pins.persona", "pk": 9, "fields": {"name": "Drinks & Bar", "slug": "drinks-and-bar", "icon": "\ud83c\udf78", "color": "#1B4332"}},
+	{"model": "pins.persona", "pk": 10, "fields": {"name": "Foodie Experience", "slug": "foodie-experience", "icon": "\ud83c\udf1f", "color": "#2D6A4F"}},
+	{"model": "pins.persona", "pk": 11, "fields": {"name": "Group Gathering", "slug": "group-gathering", "icon": "\ud83c\udf8a", "color": "#40916C"}},
+	{"model": "pins.persona", "pk": 12, "fields": {"name": "Solo Dining", "slug": "solo-dining", "icon": "\ud83d\ude0c", "color": "#4A4A4A"}}
+]

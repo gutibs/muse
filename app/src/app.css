@@ -1,5 +1,40 @@
 @import 'tailwindcss';
 
+@theme {
+	/* Neutrals */
+	--color-cream: #F7F6F4;
+	--color-cream-dark: #EDECE8;
+
+	/* Primary */
+	--color-jade: #2D6A4F;
+	--color-jade-light: #40916C;
+	--color-jade-dark: #1B4332;
+
+	/* Accent */
+	--color-blush: #B5464A;
+	--color-blush-light: #D4777A;
+
+	/* Ink */
+	--color-ink: #1A1A1A;
+	--color-ink-light: #4A4A4A;
+	--color-ink-muted: #8A8A8A;
+
+	/* Typography */
+	--font-sans: 'Inter', system-ui, sans-serif;
+	--font-serif: 'Lora', Georgia, serif;
+
+	/* Radii */
+	--radius-card: 12px;
+	--radius-button: 10px;
+	--radius-input: 10px;
+	--radius-chip: 20px;
+
+	/* Shadows */
+	--shadow-card: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+	--shadow-elevated: 0 4px 12px rgba(0, 0, 0, 0.08);
+	--shadow-sheet: 0 -4px 24px rgba(0, 0, 0, 0.12);
+}
+
 :root {
 	--sat: env(safe-area-inset-top, 0px);
 	--sab: env(safe-area-inset-bottom, 0px);
@@ -16,6 +51,9 @@ body {
 	-webkit-tap-highlight-color: transparent;
 	-webkit-touch-callout: none;
 	overscroll-behavior: none;
+	font-family: var(--font-sans);
+	background: var(--color-cream);
+	color: var(--color-ink);
 }
 
 /* Phone frame for web preview on desktop */
@@ -41,6 +79,13 @@ body {
 		box-shadow:
 			0 0 0 12px #111,
 			0 0 40px rgba(0, 0, 0, 0.5);
-		background: white;
+		background: var(--color-cream);
 	}
+}
+
+/* Forms */
+input,
+textarea,
+select {
+	font-size: 16px; /* prevents iOS auto-zoom */
 }
