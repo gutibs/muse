@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import MuseLogo from '$lib/components/MuseLogo.svelte';
 	import { authStore } from '$lib/stores/auth.store.svelte';
 
 	$effect(() => {
@@ -9,6 +10,7 @@
 	});
 </script>
 
-<div class="flex h-full items-center justify-center bg-cream">
-	<h1 class="font-serif text-3xl font-bold text-jade-dark">Muse</h1>
+<div class="flex h-full flex-col items-center justify-center gap-3 bg-cream">
+	<MuseLogo width={140} />
+	<span class="font-serif text-2xl font-bold text-jade-dark">Muse</span>
 </div>

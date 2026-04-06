@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import MuseLogo from '$lib/components/MuseLogo.svelte';
 	import { authStore } from '$lib/stores/auth.store.svelte';
 	import { ApiError } from '$lib/types';
 
@@ -32,8 +33,11 @@
 
 <div class="flex h-full flex-col items-center justify-center bg-cream px-6">
 	<div class="w-full max-w-sm">
-		<h1 class="mb-2 text-center font-serif text-4xl font-bold text-jade-dark">Muse</h1>
-		<p class="mb-10 text-center text-sm text-ink-muted">Where friends eat well</p>
+		<div class="mb-2 flex justify-center">
+			<MuseLogo width={120} />
+		</div>
+		<h1 class="mb-1 text-center font-serif text-3xl font-bold text-jade-dark">Muse</h1>
+		<p class="mb-8 text-center text-sm text-ink-muted">Where friends eat well</p>
 
 		<form onsubmit={handleSubmit} class="space-y-4">
 			{#if error}

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Avatar from '$lib/components/Avatar.svelte';
+	import MuseLogo from '$lib/components/MuseLogo.svelte';
 	import { authStore } from '$lib/stores/auth.store.svelte';
 
 	const greeting = $derived(() => {
@@ -47,18 +48,21 @@
 <div class="flex h-full flex-col">
 	<!-- Header -->
 	<header class="shrink-0 px-5 pb-4 pt-6">
-		<div class="flex items-center gap-3">
-			<Avatar
-				name={authStore.user?.displayName || ''}
-				src={authStore.user?.avatar}
-				size={48}
-			/>
-			<div>
-				<p class="text-sm text-ink-muted">{greeting()}</p>
-				<h1 class="text-xl font-semibold text-ink">
-					{authStore.user?.displayName || 'Welcome'}
-				</h1>
+		<div class="flex items-center justify-between">
+			<div class="flex items-center gap-3">
+				<Avatar
+					name={authStore.user?.displayName || ''}
+					src={authStore.user?.avatar}
+					size={48}
+				/>
+				<div>
+					<p class="text-sm text-ink-muted">{greeting()}</p>
+					<h1 class="text-xl font-semibold text-ink">
+						{authStore.user?.displayName || 'Welcome'}
+					</h1>
+				</div>
 			</div>
+			<MuseLogo width={48} />
 		</div>
 	</header>
 
