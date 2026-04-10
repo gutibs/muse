@@ -57,7 +57,7 @@
 				/>
 				<div>
 					<p class="text-sm text-ink-muted">{greeting()}</p>
-					<h1 class="text-xl font-semibold text-ink">
+					<h1 class="text-xl font-semibold text-ink"> acaaaaaa
 						{authStore.user?.displayName || 'Welcome'}
 					</h1>
 				</div>
