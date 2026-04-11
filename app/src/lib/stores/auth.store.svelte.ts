@@ -6,6 +6,15 @@ import type { Profile } from '$lib/types';
 const TOKEN_KEY = 'muse_access_token';
 const REFRESH_KEY = 'muse_refresh_token';
 
+function isJwtExpired(token: string): boolean {
+	try {
+		const payload = JSON.parse(atob(token.split('.')[1]));
+		return typeof payload.exp !== 'number' || payload.exp * 1000 <= Date.now();
+	} catch {
+		return true;
+	}
+}
+
 class AuthStore {
 	user = $state<Profile | null>(null);
 	accessToken = $state<string | null>(null);
@@ -32,7 +41,15 @@ class AuthStore {
 		const access = localStorage.getItem(TOKEN_KEY);
 		const refresh = localStorage.getItem(REFRESH_KEY);
 
+		// No tokens at all → not logged in, no need to call backend
 		if (!access || !refresh) {
+			this.loading = false;
+			return;
+		}
+
+		// Refresh token expired → can't recover, clear silently
+		if (isJwtExpired(refresh)) {
+			this.clearTokens();
 			this.loading = false;
 			return;
 		}

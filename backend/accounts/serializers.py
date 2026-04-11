@@ -131,13 +131,16 @@ class EmailInvitationSerializer(serializers.ModelSerializer):
 
 	def validate_email(self, value):
 		request = self.context["request"]
-		if User.objects.filter(email=value).exists():
+		value = value.lower()
+		if User.objects.filter(email__iexact=value).exists():
 			raise serializers.ValidationError(
 				"This user is already on Muse. Search for them by email instead."
 			)
-		if EmailInvitation.objects.filter(from_user=request.user, email=value).exists():
+		if EmailInvitation.objects.filter(
+			from_user=request.user, email__iexact=value
+		).exists():
 			raise serializers.ValidationError("You already invited this email.")
-		return value.lower()
+		return value
 
 	def create(self, validated_data):
 		validated_data["from_user"] = self.context["request"].user

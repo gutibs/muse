@@ -1,5 +1,5 @@
 import { api } from './api.service';
-import type { Friendship, PublicUser } from '$lib/types';
+import type { Friendship, PaginatedResponse, PublicUser } from '$lib/types';
 
 export const friendsService = {
 	list(): Promise<Friendship[]> {
@@ -26,7 +26,10 @@ export const friendsService = {
 		return api.post('/auth/invite/', { email });
 	},
 
-	search(query: string): Promise<PublicUser[]> {
-		return api.get(`/auth/search/?q=${encodeURIComponent(query)}`);
+	async search(query: string): Promise<PublicUser[]> {
+		const res = await api.get<PaginatedResponse<PublicUser> | PublicUser[]>(
+			`/auth/search/?q=${encodeURIComponent(query)}`
+		);
+		return Array.isArray(res) ? res : res.results;
 	},
 };

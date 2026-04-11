@@ -85,14 +85,25 @@
 		}
 	}
 
+	let isSearchingSelf = $derived(
+		searchQuery.trim().toLowerCase() === (authStore.user?.email ?? '').toLowerCase()
+	);
+
 	async function sendInvite() {
-		if (!inviteEmail.trim()) return;
+		const email = inviteEmail.trim().toLowerCase();
+		if (!email) return;
+
+		if (email === (authStore.user?.email ?? '').toLowerCase()) {
+			inviteError = "That's your own email.";
+			return;
+		}
+
 		inviting = true;
 		inviteMessage = '';
 		inviteError = '';
 		try {
-			await friendsService.inviteByEmail(inviteEmail.trim());
-			inviteMessage = `Invitation sent to ${inviteEmail}`;
+			await friendsService.inviteByEmail(email);
+			inviteMessage = `Invitation sent to ${email}`;
 			inviteEmail = '';
 		} catch (err: unknown) {
 			const e = err as { data?: { email?: string[] } };
@@ -171,14 +182,22 @@
 				<ul class="space-y-2 pt-2">
 					{#each friends as friendship (friendship.id)}
 						{@const other = getOtherUser(friendship, myId)}
-						<li class="flex items-center gap-3 rounded-card bg-white p-4 shadow-card">
-							<Avatar name={other.displayName} src={other.avatar} size={44} />
-							<div class="min-w-0 flex-1">
-								<p class="truncate text-sm font-semibold text-ink">{other.displayName || other.email}</p>
-								{#if other.city}
-									<p class="text-xs text-ink-muted">{other.city}</p>
-								{/if}
-							</div>
+						<li>
+							<a
+								href={`/users/${other.id}`}
+								class="flex items-center gap-3 rounded-card bg-white p-4 shadow-card active:scale-[0.98]"
+							>
+								<Avatar name={other.displayName} src={other.avatar} size={44} />
+								<div class="min-w-0 flex-1">
+									<p class="truncate text-sm font-semibold text-ink">{other.displayName || other.email}</p>
+									{#if other.city}
+										<p class="text-xs text-ink-muted">{other.city}</p>
+									{/if}
+								</div>
+								<svg class="h-4 w-4 text-ink-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+									<polyline points="9 18 15 12 9 6" />
+								</svg>
+							</a>
 						</li>
 					{/each}
 				</ul>
@@ -284,6 +303,8 @@
 								</li>
 							{/each}
 						</ul>
+					{:else if isSearchingSelf}
+						<p class="mt-3 text-sm text-ink-muted">That's your own email 😄</p>
 					{:else if searchQuery.length >= 2 && !searching}
 						<p class="mt-3 text-sm text-ink-muted">No users found. Try inviting by email.</p>
 					{/if}

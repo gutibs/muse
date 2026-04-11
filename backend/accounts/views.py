@@ -1,7 +1,9 @@
 from django.contrib.auth import get_user_model
 from django.db.models import Q
+from django.shortcuts import get_object_or_404
 from rest_framework import generics, permissions, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
 from accounts.models import Friendship
@@ -13,8 +15,19 @@ from accounts.serializers import (
 	RegisterSerializer,
 	UserPublicSerializer,
 )
+from pins.models import Pin
+from pins.serializers import PinSerializer
 
 User = get_user_model()
+
+
+def _are_friends(user_a, user_b) -> bool:
+	if user_a == user_b:
+		return True
+	return Friendship.objects.filter(
+		(Q(from_user=user_a, to_user=user_b) | Q(from_user=user_b, to_user=user_a)),
+		status=Friendship.Status.ACCEPTED,
+	).exists()
 
 
 class RegisterView(generics.CreateAPIView):
@@ -53,13 +66,18 @@ class UserSearchView(generics.ListAPIView):
 		query = self.request.query_params.get("q", "").strip()
 		if not query or len(query) < 2:
 			return User.objects.none()
-		return (
-			User.objects.filter(
-				Q(email__icontains=query) | Q(profile__display_name__icontains=query)
-			)
-			.exclude(id=self.request.user.id)
-			.select_related("profile")[:20]
-		)
+
+		# Match by email OR display name. We query the two conditions
+		# separately and union the ids to avoid JOIN quirks that can hide
+		# users who don't have a Profile row yet.
+		email_ids = User.objects.filter(email__icontains=query).values_list("id", flat=True)
+		name_ids = User.objects.filter(
+			profile__display_name__icontains=query
+		).values_list("id", flat=True)
+		matching_ids = set(email_ids) | set(name_ids)
+		matching_ids.discard(self.request.user.id)
+
+		return User.objects.filter(id__in=matching_ids).select_related("profile")[:20]
 
 
 class FriendshipViewSet(viewsets.ModelViewSet):
@@ -112,3 +130,36 @@ class FriendshipViewSet(viewsets.ModelViewSet):
 
 class EmailInvitationView(generics.CreateAPIView):
 	serializer_class = EmailInvitationSerializer
+
+
+class PublicProfileView(generics.RetrieveAPIView):
+	serializer_class = ProfileSerializer
+
+	def get_object(self):
+		user = get_object_or_404(
+			User.objects.select_related("profile"),
+			pk=self.kwargs["user_id"],
+		)
+		if not _are_friends(self.request.user, user):
+			raise PermissionDenied("You are not friends with this user.")
+		return user.profile
+
+
+class UserPinsView(generics.ListAPIView):
+	serializer_class = PinSerializer
+	pagination_class = None
+
+	def get_queryset(self):
+		user = get_object_or_404(User, pk=self.kwargs["user_id"])
+		if not _are_friends(self.request.user, user):
+			raise PermissionDenied("You are not friends with this user.")
+
+		qs = (
+			Pin.objects.filter(user=user)
+			.select_related("restaurant", "restaurant__cuisine")
+			.prefetch_related("personas")
+		)
+		status_param = self.request.query_params.get("status")
+		if status_param:
+			qs = qs.filter(status=status_param)
+		return qs

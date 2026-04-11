@@ -5,10 +5,12 @@
 	let {
 		center = [51.505, -0.09] as [number, number],
 		zoom = 13,
+		autoLocate = true,
 		onMapReady,
 	}: {
 		center?: [number, number];
 		zoom?: number;
+		autoLocate?: boolean;
 		onMapReady?: (map: L.Map) => void;
 	} = $props();
 
@@ -18,10 +20,15 @@
 	$effect(() => {
 		if (!browser || !mapContainer || map) return;
 
-		let instance: L.Map;
+		let instance: L.Map | null = null;
+		let cancelled = false;
 
-		import('leaflet').then((leaflet) => {
-			import('leaflet/dist/leaflet.css');
+		(async () => {
+			const leaflet = await import('leaflet');
+			await import('leaflet/dist/leaflet.css');
+
+			// Effect was torn down before Leaflet finished loading
+			if (cancelled || !mapContainer) return;
 
 			const Leaflet = leaflet.default;
 
@@ -44,15 +51,18 @@
 
 			Leaflet.control.zoom({ position: 'bottomright' }).addTo(instance);
 
-			// Try to geolocate user
-			instance.locate({ setView: true, maxZoom: 14 });
+			if (autoLocate) {
+				instance.locate({ setView: true, maxZoom: 14 });
+			}
 
 			map = instance;
 			onMapReady?.(instance);
-		});
+		})();
 
 		return () => {
+			cancelled = true;
 			instance?.remove();
+			instance = null;
 			map = null;
 		};
 	});

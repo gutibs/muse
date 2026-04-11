@@ -7,7 +7,9 @@ from accounts.views import (
 	EmailInvitationView,
 	FriendshipViewSet,
 	ProfileView,
+	PublicProfileView,
 	RegisterView,
+	UserPinsView,
 	UserSearchView,
 )
 
@@ -22,5 +24,7 @@ urlpatterns = [
 	path("change-password/", ChangePasswordView.as_view(), name="change_password"),
 	path("search/", UserSearchView.as_view(), name="user_search"),
 	path("invite/", EmailInvitationView.as_view(), name="email_invite"),
+	path("users/<int:user_id>/", PublicProfileView.as_view(), name="public_profile"),
+	path("users/<int:user_id>/pins/", UserPinsView.as_view(), name="user_pins"),
 	path("", include(router.urls)),
 ]
