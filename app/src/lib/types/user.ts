@@ -16,6 +16,24 @@ export interface Profile {
 	createdAt: string;
 }
 
+export interface PublicUser {
+	id: number;
+	email: string;
+	displayName: string;
+	avatar: string | null;
+	city: string;
+}
+
+export type FriendshipStatus = 'pending' | 'accepted' | 'declined';
+
+export interface Friendship {
+	id: number;
+	fromUser: PublicUser;
+	toUser: PublicUser;
+	status: FriendshipStatus;
+	createdAt: string;
+}
+
 export interface AuthTokens {
 	access: string;
 	refresh: string;
