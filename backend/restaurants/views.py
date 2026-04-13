@@ -1,12 +1,17 @@
 from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.geos import Point
 from django.db.models import Avg, Count
-from rest_framework import viewsets
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from restaurants.models import Cuisine, Restaurant, Tag
-from restaurants.serializers import CuisineSerializer, RestaurantDetailSerializer, RestaurantSerializer, TagSerializer
+from restaurants.serializers import (
+	CuisineSerializer,
+	RestaurantDetailSerializer,
+	RestaurantSerializer,
+	TagSerializer,
+)
 
 
 class RestaurantViewSet(viewsets.ModelViewSet):
@@ -18,11 +23,18 @@ class RestaurantViewSet(viewsets.ModelViewSet):
 			return RestaurantDetailSerializer
 		return RestaurantSerializer
 
-	def get_queryset(self):
+	def _base_queryset(self):
 		return Restaurant.objects.annotate(
 			average_rating=Avg("pins__rating"),
 			pin_count=Count("pins"),
 		).select_related("cuisine").prefetch_related("tags")
+
+	def get_queryset(self):
+		qs = self._base_queryset()
+		# Admins see everything, regular users only see approved
+		if not (self.request.user.is_staff or self.request.user.is_superuser):
+			qs = qs.filter(approval_status=Restaurant.ApprovalStatus.APPROVED)
+		return qs
 
 	def get_queryset_filtered(self):
 		qs = self.get_queryset()
@@ -48,6 +60,34 @@ class RestaurantViewSet(viewsets.ModelViewSet):
 		serializer = self.get_serializer(queryset, many=True)
 		return Response(serializer.data)
 
+	def create(self, request, *args, **kwargs):
+		"""Users suggest a restaurant; it starts as 'pending' until admin approves."""
+		serializer = self.get_serializer(data=request.data)
+		serializer.is_valid(raise_exception=True)
+		serializer.save()
+		return Response(
+			{
+				"detail": "Restaurant submitted for review. It will appear once approved.",
+				"restaurant": serializer.data,
+			},
+			status=status.HTTP_201_CREATED,
+		)
+
+	def retrieve(self, request, *args, **kwargs):
+		"""Allow retrieving a specific restaurant even if pending (for the user who created it)."""
+		instance = self._base_queryset().filter(pk=self.kwargs["pk"]).first()
+		if not instance:
+			return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+		# Non-staff can only see approved OR their own pending
+		if (
+			instance.approval_status != Restaurant.ApprovalStatus.APPROVED
+			and not (request.user.is_staff or request.user.is_superuser)
+			and instance.created_by != request.user
+		):
+			return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+		serializer = self.get_serializer(instance)
+		return Response(serializer.data)
+
 	@action(detail=False, methods=["get"])
 	def nearby(self, request):
 		lat = request.query_params.get("lat")
@@ -57,7 +97,7 @@ class RestaurantViewSet(viewsets.ModelViewSet):
 		if not lat or not lng:
 			return Response(
 				{"detail": "lat and lng are required."},
-				status=400,
+				status=status.HTTP_400_BAD_REQUEST,
 			)
 
 		point = Point(float(lng), float(lat), srid=4326)
@@ -68,6 +108,17 @@ class RestaurantViewSet(viewsets.ModelViewSet):
 			.order_by("distance")
 		)
 		serializer = self.get_serializer(qs[:50], many=True)
+		return Response(serializer.data)
+
+	@action(detail=False, methods=["get"])
+	def my_suggestions(self, request):
+		"""List restaurants the current user has suggested (pending/rejected)."""
+		qs = (
+			self._base_queryset()
+			.filter(created_by=request.user)
+			.exclude(approval_status=Restaurant.ApprovalStatus.APPROVED)
+		)
+		serializer = self.get_serializer(qs, many=True)
 		return Response(serializer.data)
 
 

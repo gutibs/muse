@@ -5,11 +5,22 @@ from restaurants.models import Cuisine, MenuItem, Restaurant, Tag
 
 @gis_admin.register(Restaurant)
 class RestaurantAdmin(gis_admin.GISModelAdmin):
-	list_display = ("name", "city", "country", "cuisine", "price_level", "quality_level", "created_at")
+	list_display = ("name", "city", "country", "cuisine", "approval_status", "created_by", "created_at")
 	search_fields = ("name", "city", "country", "address")
-	list_filter = ("cuisine", "price_level", "quality_level", "tags", "city")
+	list_filter = ("approval_status", "cuisine", "price_level", "quality_level", "tags", "city")
 	readonly_fields = ("created_at", "updated_at")
 	filter_horizontal = ("tags",)
+	actions = ["approve_restaurants", "reject_restaurants"]
+
+	@gis_admin.action(description="Approve selected restaurants")
+	def approve_restaurants(self, request, queryset):
+		count = queryset.update(approval_status=Restaurant.ApprovalStatus.APPROVED)
+		self.message_user(request, f"{count} restaurant(s) approved.")
+
+	@gis_admin.action(description="Reject selected restaurants")
+	def reject_restaurants(self, request, queryset):
+		count = queryset.update(approval_status=Restaurant.ApprovalStatus.REJECTED)
+		self.message_user(request, f"{count} restaurant(s) rejected.")
 
 
 @gis_admin.register(Cuisine)

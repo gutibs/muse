@@ -66,9 +66,10 @@ class RestaurantSerializer(serializers.ModelSerializer):
 			"phone",
 			"average_rating",
 			"pin_count",
+			"approval_status",
 			"created_at",
 		)
-		read_only_fields = ("id", "created_at")
+		read_only_fields = ("id", "approval_status", "created_at")
 
 	def get_lat(self, obj):
 		return obj.location.y if obj.location else None
@@ -88,6 +89,12 @@ class RestaurantSerializer(serializers.ModelSerializer):
 	def create(self, validated_data):
 		tags = validated_data.pop("tags", [])
 		validated_data["created_by"] = self.context["request"].user
+		# Force pending unless admin
+		user = self.context["request"].user
+		if not (user.is_staff or user.is_superuser):
+			validated_data["approval_status"] = Restaurant.ApprovalStatus.PENDING
+		else:
+			validated_data.setdefault("approval_status", Restaurant.ApprovalStatus.APPROVED)
 		restaurant = Restaurant.objects.create(**validated_data)
 		if tags:
 			restaurant.tags.set(tags)

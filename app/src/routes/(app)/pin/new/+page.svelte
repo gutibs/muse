@@ -124,6 +124,11 @@
 					qualityLevel: newQualityLevel || undefined,
 				});
 				restaurantId = restaurant.id;
+				// New restaurant needs approval — can't pin it yet
+				if (restaurant.approvalStatus === 'pending') {
+					goto('/home');
+					return;
+				}
 			} else {
 				restaurantId = selectedRestaurant!.id;
 			}

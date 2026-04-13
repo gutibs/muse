@@ -28,6 +28,7 @@ export interface Restaurant {
 	phone: string;
 	averageRating: number | null;
 	pinCount: number;
+	approvalStatus: 'pending' | 'approved' | 'rejected';
 	createdAt: string;
 }
 

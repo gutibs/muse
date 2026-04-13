@@ -1,0 +1,2234 @@
+[
+{
+  "model": "restaurants.cuisine",
+  "pk": 1,
+  "fields": {
+    "name": "Italian",
+    "slug": "italian"
+  }
+},
+{
+  "model": "restaurants.cuisine",
+  "pk": 2,
+  "fields": {
+    "name": "Japanese",
+    "slug": "japanese"
+  }
+},
+{
+  "model": "restaurants.cuisine",
+  "pk": 3,
+  "fields": {
+    "name": "Chinese",
+    "slug": "chinese"
+  }
+},
+{
+  "model": "restaurants.cuisine",
+  "pk": 4,
+  "fields": {
+    "name": "Thai",
+    "slug": "thai"
+  }
+},
+{
+  "model": "restaurants.cuisine",
+  "pk": 5,
+  "fields": {
+    "name": "Indian",
+    "slug": "indian"
+  }
+},
+{
+  "model": "restaurants.cuisine",
+  "pk": 6,
+  "fields": {
+    "name": "Mexican",
+    "slug": "mexican"
+  }
+},
+{
+  "model": "restaurants.cuisine",
+  "pk": 7,
+  "fields": {
+    "name": "French",
+    "slug": "french"
+  }
+},
+{
+  "model": "restaurants.cuisine",
+  "pk": 8,
+  "fields": {
+    "name": "Spanish",
+    "slug": "spanish"
+  }
+},
+{
+  "model": "restaurants.cuisine",
+  "pk": 9,
+  "fields": {
+    "name": "Korean",
+    "slug": "korean"
+  }
+},
+{
+  "model": "restaurants.cuisine",
+  "pk": 10,
+  "fields": {
+    "name": "Vietnamese",
+    "slug": "vietnamese"
+  }
+},
+{
+  "model": "restaurants.cuisine",
+  "pk": 11,
+  "fields": {
+    "name": "Mediterranean",
+    "slug": "mediterranean"
+  }
+},
+{
+  "model": "restaurants.cuisine",
+  "pk": 12,
+  "fields": {
+    "name": "American",
+    "slug": "american"
+  }
+},
+{
+  "model": "restaurants.cuisine",
+  "pk": 13,
+  "fields": {
+    "name": "British",
+    "slug": "british"
+  }
+},
+{
+  "model": "restaurants.cuisine",
+  "pk": 14,
+  "fields": {
+    "name": "Middle Eastern",
+    "slug": "middle-eastern"
+  }
+},
+{
+  "model": "restaurants.cuisine",
+  "pk": 15,
+  "fields": {
+    "name": "Greek",
+    "slug": "greek"
+  }
+},
+{
+  "model": "restaurants.cuisine",
+  "pk": 16,
+  "fields": {
+    "name": "Brazilian",
+    "slug": "brazilian"
+  }
+},
+{
+  "model": "restaurants.cuisine",
+  "pk": 17,
+  "fields": {
+    "name": "Peruvian",
+    "slug": "peruvian"
+  }
+},
+{
+  "model": "restaurants.cuisine",
+  "pk": 18,
+  "fields": {
+    "name": "Argentine",
+    "slug": "argentine"
+  }
+},
+{
+  "model": "restaurants.cuisine",
+  "pk": 19,
+  "fields": {
+    "name": "Seafood",
+    "slug": "seafood"
+  }
+},
+{
+  "model": "restaurants.cuisine",
+  "pk": 20,
+  "fields": {
+    "name": "Steakhouse",
+    "slug": "steakhouse"
+  }
+},
+{
+  "model": "restaurants.cuisine",
+  "pk": 21,
+  "fields": {
+    "name": "Vegan",
+    "slug": "vegan"
+  }
+},
+{
+  "model": "restaurants.cuisine",
+  "pk": 22,
+  "fields": {
+    "name": "Fusion",
+    "slug": "fusion"
+  }
+},
+{
+  "model": "restaurants.cuisine",
+  "pk": 23,
+  "fields": {
+    "name": "Cafe",
+    "slug": "cafe"
+  }
+},
+{
+  "model": "restaurants.cuisine",
+  "pk": 24,
+  "fields": {
+    "name": "Bakery",
+    "slug": "bakery"
+  }
+},
+{
+  "model": "restaurants.cuisine",
+  "pk": 25,
+  "fields": {
+    "name": "Turkish",
+    "slug": "turkish"
+  }
+},
+{
+  "model": "restaurants.cuisine",
+  "pk": 26,
+  "fields": {
+    "name": "Israeli",
+    "slug": "israeli"
+  }
+},
+{
+  "model": "restaurants.tag",
+  "pk": 1,
+  "fields": {
+    "name": "Quiet",
+    "slug": "quiet"
+  }
+},
+{
+  "model": "restaurants.tag",
+  "pk": 2,
+  "fields": {
+    "name": "Romantic",
+    "slug": "romantic"
+  }
+},
+{
+  "model": "restaurants.tag",
+  "pk": 3,
+  "fields": {
+    "name": "Good Vibes",
+    "slug": "good-vibes"
+  }
+},
+{
+  "model": "restaurants.tag",
+  "pk": 4,
+  "fields": {
+    "name": "Family Friendly",
+    "slug": "family-friendly"
+  }
+},
+{
+  "model": "restaurants.tag",
+  "pk": 5,
+  "fields": {
+    "name": "Trendy",
+    "slug": "trendy"
+  }
+},
+{
+  "model": "restaurants.tag",
+  "pk": 6,
+  "fields": {
+    "name": "Classic",
+    "slug": "classic"
+  }
+},
+{
+  "model": "restaurants.tag",
+  "pk": 7,
+  "fields": {
+    "name": "Casual",
+    "slug": "casual"
+  }
+},
+{
+  "model": "restaurants.tag",
+  "pk": 8,
+  "fields": {
+    "name": "Fine Dining",
+    "slug": "fine-dining"
+  }
+},
+{
+  "model": "restaurants.tag",
+  "pk": 9,
+  "fields": {
+    "name": "Outdoor / Terrace",
+    "slug": "outdoor-terrace"
+  }
+},
+{
+  "model": "restaurants.tag",
+  "pk": 10,
+  "fields": {
+    "name": "Live Music",
+    "slug": "live-music"
+  }
+},
+{
+  "model": "restaurants.tag",
+  "pk": 11,
+  "fields": {
+    "name": "Pet Friendly",
+    "slug": "pet-friendly"
+  }
+},
+{
+  "model": "restaurants.tag",
+  "pk": 12,
+  "fields": {
+    "name": "Instagrammable",
+    "slug": "instagrammable"
+  }
+},
+{
+  "model": "restaurants.tag",
+  "pk": 13,
+  "fields": {
+    "name": "Kosher",
+    "slug": "kosher"
+  }
+},
+{
+  "model": "restaurants.tag",
+  "pk": 14,
+  "fields": {
+    "name": "Sin TACC",
+    "slug": "sin-tacc"
+  }
+},
+{
+  "model": "restaurants.restaurant",
+  "pk": 1,
+  "fields": {
+    "name": "Cut",
+    "location": "SRID=4326;POINT (-58.475804328918464 -34.52222178970639)",
+    "approval_status": "approved",
+    "address": "General Justo José de Urquiza 849",
+    "city": "Vicente López",
+    "country": "Argentina",
+    "cuisine": 18,
+    "price_level": 4,
+    "quality_level": 3,
+    "image_url": "",
+    "website": "",
+    "phone": "",
+    "created_by": 1,
+    "created_at": "2026-04-11T20:11:30.155Z",
+    "updated_at": "2026-04-11T20:11:30.155Z",
+    "tags": [
+      7,
+      6,
+      1
+    ]
+  }
+},
+{
+  "model": "restaurants.restaurant",
+  "pk": 2,
+  "fields": {
+    "name": "Don Julio",
+    "location": "SRID=4326;POINT (-58.4361 -34.5867)",
+    "approval_status": "approved",
+    "address": "Guatemala 4699",
+    "city": "Buenos Aires",
+    "country": "Argentina",
+    "cuisine": 18,
+    "price_level": 4,
+    "quality_level": null,
+    "image_url": "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&h=400&fit=crop",
+    "website": "",
+    "phone": "",
+    "created_by": null,
+    "created_at": "2026-04-11T23:13:11.375Z",
+    "updated_at": "2026-04-11T23:13:11.375Z",
+    "tags": []
+  }
+},
+{
+  "model": "restaurants.restaurant",
+  "pk": 3,
+  "fields": {
+    "name": "El Preferido de Palermo",
+    "location": "SRID=4326;POINT (-58.4337 -34.5871)",
+    "approval_status": "approved",
+    "address": "Borges 2108",
+    "city": "Buenos Aires",
+    "country": "Argentina",
+    "cuisine": 18,
+    "price_level": 3,
+    "quality_level": null,
+    "image_url": "https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=600&h=400&fit=crop",
+    "website": "",
+    "phone": "",
+    "created_by": null,
+    "created_at": "2026-04-11T23:13:11.430Z",
+    "updated_at": "2026-04-11T23:13:11.430Z",
+    "tags": []
+  }
+},
+{
+  "model": "restaurants.restaurant",
+  "pk": 4,
+  "fields": {
+    "name": "Anchoita",
+    "location": "SRID=4326;POINT (-58.4391 -34.5995)",
+    "approval_status": "approved",
+    "address": "Aguirre 1376",
+    "city": "Buenos Aires",
+    "country": "Argentina",
+    "cuisine": 18,
+    "price_level": 4,
+    "quality_level": null,
+    "image_url": "https://images.unsplash.com/photo-1552566626-52f8b828add9?w=600&h=400&fit=crop",
+    "website": "",
+    "phone": "",
+    "created_by": null,
+    "created_at": "2026-04-11T23:13:11.435Z",
+    "updated_at": "2026-04-11T23:13:11.435Z",
+    "tags": []
+  }
+},
+{
+  "model": "restaurants.restaurant",
+  "pk": 5,
+  "fields": {
+    "name": "Niño Gordo",
+    "location": "SRID=4326;POINT (-58.4347 -34.5851)",
+    "approval_status": "approved",
+    "address": "Thames 1810",
+    "city": "Buenos Aires",
+    "country": "Argentina",
+    "cuisine": 22,
+    "price_level": 3,
+    "quality_level": null,
+    "image_url": "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&h=400&fit=crop",
+    "website": "",
+    "phone": "",
+    "created_by": null,
+    "created_at": "2026-04-11T23:13:11.439Z",
+    "updated_at": "2026-04-11T23:13:11.439Z",
+    "tags": []
+  }
+},
+{
+  "model": "restaurants.restaurant",
+  "pk": 6,
+  "fields": {
+    "name": "Sacro",
+    "location": "SRID=4326;POINT (-58.4389 -34.5797)",
+    "approval_status": "approved",
+    "address": "Costa Rica 6038",
+    "city": "Buenos Aires",
+    "country": "Argentina",
+    "cuisine": 21,
+    "price_level": 3,
+    "quality_level": null,
+    "image_url": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=600&h=400&fit=crop",
+    "website": "",
+    "phone": "",
+    "created_by": null,
+    "created_at": "2026-04-11T23:13:11.444Z",
+    "updated_at": "2026-04-11T23:13:11.444Z",
+    "tags": []
+  }
+},
+{
+  "model": "restaurants.restaurant",
+  "pk": 7,
+  "fields": {
+    "name": "Dishoom",
+    "location": "SRID=4326;POINT (-0.1281 51.5119)",
+    "approval_status": "approved",
+    "address": "12 Upper St Martin's Ln",
+    "city": "London",
+    "country": "United Kingdom",
+    "cuisine": 5,
+    "price_level": 3,
+    "quality_level": null,
+    "image_url": "https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=600&h=400&fit=crop",
+    "website": "",
+    "phone": "",
+    "created_by": null,
+    "created_at": "2026-04-11T23:13:11.448Z",
+    "updated_at": "2026-04-11T23:13:11.448Z",
+    "tags": []
+  }
+},
+{
+  "model": "restaurants.restaurant",
+  "pk": 8,
+  "fields": {
+    "name": "Padella",
+    "location": "SRID=4326;POINT (-0.0905 51.5054)",
+    "approval_status": "approved",
+    "address": "6 Southwark St",
+    "city": "London",
+    "country": "United Kingdom",
+    "cuisine": 1,
+    "price_level": 2,
+    "quality_level": null,
+    "image_url": "https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=600&h=400&fit=crop",
+    "website": "",
+    "phone": "",
+    "created_by": null,
+    "created_at": "2026-04-11T23:13:11.453Z",
+    "updated_at": "2026-04-11T23:13:11.453Z",
+    "tags": []
+  }
+},
+{
+  "model": "restaurants.restaurant",
+  "pk": 9,
+  "fields": {
+    "name": "Gymkhana",
+    "location": "SRID=4326;POINT (-0.1419 51.5095)",
+    "approval_status": "approved",
+    "address": "42 Albemarle St",
+    "city": "London",
+    "country": "United Kingdom",
+    "cuisine": 5,
+    "price_level": 4,
+    "quality_level": null,
+    "image_url": "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=600&h=400&fit=crop",
+    "website": "",
+    "phone": "",
+    "created_by": null,
+    "created_at": "2026-04-11T23:13:11.457Z",
+    "updated_at": "2026-04-11T23:13:11.457Z",
+    "tags": []
+  }
+},
+{
+  "model": "restaurants.restaurant",
+  "pk": 10,
+  "fields": {
+    "name": "St. JOHN",
+    "location": "SRID=4326;POINT (-0.1019 51.5217)",
+    "approval_status": "approved",
+    "address": "26 St John St",
+    "city": "London",
+    "country": "United Kingdom",
+    "cuisine": 13,
+    "price_level": 4,
+    "quality_level": null,
+    "image_url": "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600&h=400&fit=crop",
+    "website": "",
+    "phone": "",
+    "created_by": null,
+    "created_at": "2026-04-11T23:13:11.460Z",
+    "updated_at": "2026-04-11T23:13:11.460Z",
+    "tags": []
+  }
+},
+{
+  "model": "restaurants.restaurant",
+  "pk": 11,
+  "fields": {
+    "name": "Sketch",
+    "location": "SRID=4326;POINT (-0.1416 51.5128)",
+    "approval_status": "approved",
+    "address": "9 Conduit St",
+    "city": "London",
+    "country": "United Kingdom",
+    "cuisine": 7,
+    "price_level": 5,
+    "quality_level": null,
+    "image_url": "https://images.unsplash.com/photo-1559339352-11d035aa65de?w=600&h=400&fit=crop",
+    "website": "",
+    "phone": "",
+    "created_by": null,
+    "created_at": "2026-04-11T23:13:11.465Z",
+    "updated_at": "2026-04-11T23:13:11.465Z",
+    "tags": []
+  }
+},
+{
+  "model": "restaurants.restaurant",
+  "pk": 12,
+  "fields": {
+    "name": "La Colombe",
+    "location": "SRID=4326;POINT (18.3849 -34.0431)",
+    "approval_status": "approved",
+    "address": "Silvermist Estate",
+    "city": "Cape Town",
+    "country": "South Africa",
+    "cuisine": 22,
+    "price_level": 5,
+    "quality_level": null,
+    "image_url": "https://images.unsplash.com/photo-1550966871-3ed3cdb51f3a?w=600&h=400&fit=crop",
+    "website": "",
+    "phone": "",
+    "created_by": null,
+    "created_at": "2026-04-11T23:13:11.469Z",
+    "updated_at": "2026-04-11T23:13:11.469Z",
+    "tags": []
+  }
+},
+{
+  "model": "restaurants.restaurant",
+  "pk": 13,
+  "fields": {
+    "name": "The Test Kitchen",
+    "location": "SRID=4326;POINT (18.4571 -33.9279)",
+    "approval_status": "approved",
+    "address": "The Old Biscuit Mill",
+    "city": "Cape Town",
+    "country": "South Africa",
+    "cuisine": 22,
+    "price_level": 5,
+    "quality_level": null,
+    "image_url": "https://images.unsplash.com/photo-1424847651672-bf20a4b0982b?w=600&h=400&fit=crop",
+    "website": "",
+    "phone": "",
+    "created_by": null,
+    "created_at": "2026-04-11T23:13:11.473Z",
+    "updated_at": "2026-04-11T23:13:11.473Z",
+    "tags": []
+  }
+},
+{
+  "model": "restaurants.restaurant",
+  "pk": 14,
+  "fields": {
+    "name": "Kloof Street House",
+    "location": "SRID=4326;POINT (18.4099 -33.9305)",
+    "approval_status": "approved",
+    "address": "30 Kloof St",
+    "city": "Cape Town",
+    "country": "South Africa",
+    "cuisine": 11,
+    "price_level": 3,
+    "quality_level": null,
+    "image_url": "https://images.unsplash.com/photo-1466978913421-dad2ebd01d17?w=600&h=400&fit=crop",
+    "website": "",
+    "phone": "",
+    "created_by": null,
+    "created_at": "2026-04-11T23:13:11.476Z",
+    "updated_at": "2026-04-11T23:13:11.476Z",
+    "tags": []
+  }
+},
+{
+  "model": "restaurants.restaurant",
+  "pk": 15,
+  "fields": {
+    "name": "Chefs Warehouse",
+    "location": "SRID=4326;POINT (18.4181 -33.9189)",
+    "approval_status": "approved",
+    "address": "92 Bree St",
+    "city": "Cape Town",
+    "country": "South Africa",
+    "cuisine": 22,
+    "price_level": 4,
+    "quality_level": null,
+    "image_url": "https://images.unsplash.com/photo-1559925393-8be0ec4767c8?w=600&h=400&fit=crop",
+    "website": "",
+    "phone": "",
+    "created_by": null,
+    "created_at": "2026-04-11T23:13:11.481Z",
+    "updated_at": "2026-04-11T23:13:11.481Z",
+    "tags": []
+  }
+},
+{
+  "model": "restaurants.restaurant",
+  "pk": 16,
+  "fields": {
+    "name": "Mott 32",
+    "location": "SRID=4326;POINT (114.1581 22.2842)",
+    "approval_status": "approved",
+    "address": "4-4A Des Voeux Rd",
+    "city": "Hong Kong",
+    "country": "Hong Kong",
+    "cuisine": 3,
+    "price_level": 4,
+    "quality_level": null,
+    "image_url": "https://images.unsplash.com/photo-1526234362653-3b75a0c07438?w=600&h=400&fit=crop",
+    "website": "",
+    "phone": "",
+    "created_by": null,
+    "created_at": "2026-04-11T23:13:11.485Z",
+    "updated_at": "2026-04-11T23:13:11.485Z",
+    "tags": []
+  }
+},
+{
+  "model": "restaurants.restaurant",
+  "pk": 17,
+  "fields": {
+    "name": "Yardbird",
+    "location": "SRID=4326;POINT (114.1494 22.2865)",
+    "approval_status": "approved",
+    "address": "154-158 Wing Lok St",
+    "city": "Hong Kong",
+    "country": "Hong Kong",
+    "cuisine": 2,
+    "price_level": 3,
+    "quality_level": null,
+    "image_url": "https://images.unsplash.com/photo-1553621042-f6e147245754?w=600&h=400&fit=crop",
+    "website": "",
+    "phone": "",
+    "created_by": null,
+    "created_at": "2026-04-11T23:13:11.489Z",
+    "updated_at": "2026-04-11T23:13:11.489Z",
+    "tags": []
+  }
+},
+{
+  "model": "restaurants.restaurant",
+  "pk": 18,
+  "fields": {
+    "name": "Lung King Heen",
+    "location": "SRID=4326;POINT (114.1572 22.2858)",
+    "approval_status": "approved",
+    "address": "Four Seasons",
+    "city": "Hong Kong",
+    "country": "Hong Kong",
+    "cuisine": 3,
+    "price_level": 5,
+    "quality_level": null,
+    "image_url": "https://images.unsplash.com/photo-1544148103-0773bf10d330?w=600&h=400&fit=crop",
+    "website": "",
+    "phone": "",
+    "created_by": null,
+    "created_at": "2026-04-11T23:13:11.493Z",
+    "updated_at": "2026-04-11T23:13:11.493Z",
+    "tags": []
+  }
+},
+{
+  "model": "restaurants.restaurant",
+  "pk": 19,
+  "fields": {
+    "name": "Sushi Saito",
+    "location": "SRID=4326;POINT (139.735 35.6628)",
+    "approval_status": "approved",
+    "address": "1-4-5 Roppongi",
+    "city": "Tokyo",
+    "country": "Japan",
+    "cuisine": 2,
+    "price_level": 5,
+    "quality_level": null,
+    "image_url": "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=600&h=400&fit=crop",
+    "website": "",
+    "phone": "",
+    "created_by": null,
+    "created_at": "2026-04-11T23:13:11.496Z",
+    "updated_at": "2026-04-11T23:13:11.496Z",
+    "tags": []
+  }
+},
+{
+  "model": "restaurants.restaurant",
+  "pk": 20,
+  "fields": {
+    "name": "Tonki",
+    "location": "SRID=4326;POINT (139.7156 35.6336)",
+    "approval_status": "approved",
+    "address": "1-1-2 Shimomeguro",
+    "city": "Tokyo",
+    "country": "Japan",
+    "cuisine": 2,
+    "price_level": 2,
+    "quality_level": null,
+    "image_url": "https://images.unsplash.com/photo-1569050467447-ce54b3bbc37d?w=600&h=400&fit=crop",
+    "website": "",
+    "phone": "",
+    "created_by": null,
+    "created_at": "2026-04-11T23:13:11.500Z",
+    "updated_at": "2026-04-11T23:13:11.500Z",
+    "tags": []
+  }
+},
+{
+  "model": "restaurants.restaurant",
+  "pk": 21,
+  "fields": {
+    "name": "Narisawa",
+    "location": "SRID=4326;POINT (139.7191 35.67)",
+    "approval_status": "approved",
+    "address": "2-6-15 Minami-Aoyama",
+    "city": "Tokyo",
+    "country": "Japan",
+    "cuisine": 22,
+    "price_level": 5,
+    "quality_level": null,
+    "image_url": "https://images.unsplash.com/photo-1580442151529-343f2f6e0e27?w=600&h=400&fit=crop",
+    "website": "",
+    "phone": "",
+    "created_by": null,
+    "created_at": "2026-04-11T23:13:11.505Z",
+    "updated_at": "2026-04-11T23:13:11.505Z",
+    "tags": []
+  }
+},
+{
+  "model": "restaurants.restaurant",
+  "pk": 22,
+  "fields": {
+    "name": "Carbone",
+    "location": "SRID=4326;POINT (-74.0007 40.7282)",
+    "approval_status": "approved",
+    "address": "181 Thompson St",
+    "city": "New York",
+    "country": "USA",
+    "cuisine": 1,
+    "price_level": 4,
+    "quality_level": null,
+    "image_url": "https://images.unsplash.com/photo-1498579150354-977475b7ea0b?w=600&h=400&fit=crop",
+    "website": "",
+    "phone": "",
+    "created_by": null,
+    "created_at": "2026-04-11T23:13:11.510Z",
+    "updated_at": "2026-04-11T23:13:11.510Z",
+    "tags": []
+  }
+},
+{
+  "model": "restaurants.restaurant",
+  "pk": 23,
+  "fields": {
+    "name": "Katz's Delicatessen",
+    "location": "SRID=4326;POINT (-73.9873 40.7223)",
+    "approval_status": "approved",
+    "address": "205 E Houston St",
+    "city": "New York",
+    "country": "USA",
+    "cuisine": 12,
+    "price_level": 2,
+    "quality_level": null,
+    "image_url": "https://images.unsplash.com/photo-1619221882266-c3506e627095?w=600&h=400&fit=crop",
+    "website": "",
+    "phone": "",
+    "created_by": null,
+    "created_at": "2026-04-11T23:13:11.515Z",
+    "updated_at": "2026-04-11T23:13:11.515Z",
+    "tags": []
+  }
+},
+{
+  "model": "restaurants.restaurant",
+  "pk": 24,
+  "fields": {
+    "name": "Le Bernardin",
+    "location": "SRID=4326;POINT (-73.9819 40.7616)",
+    "approval_status": "approved",
+    "address": "155 W 51st St",
+    "city": "New York",
+    "country": "USA",
+    "cuisine": 19,
+    "price_level": 5,
+    "quality_level": null,
+    "image_url": "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&h=400&fit=crop",
+    "website": "",
+    "phone": "",
+    "created_by": null,
+    "created_at": "2026-04-11T23:13:11.519Z",
+    "updated_at": "2026-04-11T23:13:11.519Z",
+    "tags": []
+  }
+},
+{
+  "model": "restaurants.restaurant",
+  "pk": 25,
+  "fields": {
+    "name": "Joe's Pizza",
+    "location": "SRID=4326;POINT (-74.0027 40.7305)",
+    "approval_status": "approved",
+    "address": "7 Carmine St",
+    "city": "New York",
+    "country": "USA",
+    "cuisine": 1,
+    "price_level": 1,
+    "quality_level": null,
+    "image_url": "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=600&h=400&fit=crop",
+    "website": "",
+    "phone": "",
+    "created_by": null,
+    "created_at": "2026-04-11T23:13:11.523Z",
+    "updated_at": "2026-04-11T23:13:11.523Z",
+    "tags": []
+  }
+},
+{
+  "model": "restaurants.restaurant",
+  "pk": 26,
+  "fields": {
+    "name": "Septime",
+    "location": "SRID=4326;POINT (2.3793 48.8534)",
+    "approval_status": "approved",
+    "address": "80 Rue de Charonne",
+    "city": "Paris",
+    "country": "France",
+    "cuisine": 7,
+    "price_level": 4,
+    "quality_level": null,
+    "image_url": "https://images.unsplash.com/photo-1470337458703-46ad1756a187?w=600&h=400&fit=crop",
+    "website": "",
+    "phone": "",
+    "created_by": null,
+    "created_at": "2026-04-11T23:13:11.528Z",
+    "updated_at": "2026-04-11T23:13:11.528Z",
+    "tags": []
+  }
+},
+{
+  "model": "restaurants.restaurant",
+  "pk": 27,
+  "fields": {
+    "name": "Le Comptoir du Relais",
+    "location": "SRID=4326;POINT (2.3387 48.8519)",
+    "approval_status": "approved",
+    "address": "9 Carrefour de l'Odéon",
+    "city": "Paris",
+    "country": "France",
+    "cuisine": 7,
+    "price_level": 3,
+    "quality_level": null,
+    "image_url": "https://images.unsplash.com/photo-1550507992-eb63ffee0847?w=600&h=400&fit=crop",
+    "website": "",
+    "phone": "",
+    "created_by": null,
+    "created_at": "2026-04-11T23:13:11.532Z",
+    "updated_at": "2026-04-11T23:13:11.532Z",
+    "tags": []
+  }
+},
+{
+  "model": "restaurants.restaurant",
+  "pk": 28,
+  "fields": {
+    "name": "L'Arpège",
+    "location": "SRID=4326;POINT (2.3175 48.8567)",
+    "approval_status": "approved",
+    "address": "84 Rue de Varenne",
+    "city": "Paris",
+    "country": "France",
+    "cuisine": 7,
+    "price_level": 5,
+    "quality_level": null,
+    "image_url": "https://images.unsplash.com/photo-1551218808-94e220e084d2?w=600&h=400&fit=crop",
+    "website": "",
+    "phone": "",
+    "created_by": null,
+    "created_at": "2026-04-11T23:13:11.536Z",
+    "updated_at": "2026-04-11T23:13:11.536Z",
+    "tags": []
+  }
+},
+{
+  "model": "restaurants.restaurant",
+  "pk": 29,
+  "fields": {
+    "name": "Nana Shel",
+    "location": "SRID=4326;POINT (34.7741 32.0753)",
+    "approval_status": "approved",
+    "address": "Dizengoff 11",
+    "city": "Tel Aviv",
+    "country": "Israel",
+    "cuisine": 11,
+    "price_level": 3,
+    "quality_level": null,
+    "image_url": "https://images.unsplash.com/photo-1590846406792-0adc7f938f1d?w=600&h=400&fit=crop",
+    "website": "",
+    "phone": "",
+    "created_by": null,
+    "created_at": "2026-04-13T04:20:39.272Z",
+    "updated_at": "2026-04-13T04:20:39.272Z",
+    "tags": [
+      13
+    ]
+  }
+},
+{
+  "model": "restaurants.restaurant",
+  "pk": 30,
+  "fields": {
+    "name": "Adom",
+    "location": "SRID=4326;POINT (34.7788 32.0741)",
+    "approval_status": "approved",
+    "address": "Shlomo HaMelech 8",
+    "city": "Tel Aviv",
+    "country": "Israel",
+    "cuisine": 26,
+    "price_level": 4,
+    "quality_level": null,
+    "image_url": "https://images.unsplash.com/photo-1578474846511-04ba529f0b88?w=600&h=400&fit=crop",
+    "website": "",
+    "phone": "",
+    "created_by": null,
+    "created_at": "2026-04-13T04:20:39.295Z",
+    "updated_at": "2026-04-13T04:20:39.295Z",
+    "tags": [
+      8,
+      13
+    ]
+  }
+},
+{
+  "model": "restaurants.restaurant",
+  "pk": 31,
+  "fields": {
+    "name": "Pomegranate",
+    "location": "SRID=4326;POINT (-73.9621 40.6378)",
+    "approval_status": "approved",
+    "address": "1507 Cortelyou Rd",
+    "city": "New York",
+    "country": "USA",
+    "cuisine": 14,
+    "price_level": 3,
+    "quality_level": null,
+    "image_url": "https://images.unsplash.com/photo-1547496502-affa22d38842?w=600&h=400&fit=crop",
+    "website": "",
+    "phone": "",
+    "created_by": null,
+    "created_at": "2026-04-13T04:20:39.302Z",
+    "updated_at": "2026-04-13T04:20:39.302Z",
+    "tags": [
+      13
+    ]
+  }
+},
+{
+  "model": "restaurants.restaurant",
+  "pk": 32,
+  "fields": {
+    "name": "Jezreel Valley",
+    "location": "SRID=4326;POINT (-73.9048 40.7757)",
+    "approval_status": "approved",
+    "address": "36-22 Ditmars Blvd",
+    "city": "New York",
+    "country": "USA",
+    "cuisine": 11,
+    "price_level": 3,
+    "quality_level": null,
+    "image_url": "https://images.unsplash.com/photo-1529543544280-04f0d18e1d98?w=600&h=400&fit=crop",
+    "website": "",
+    "phone": "",
+    "created_by": null,
+    "created_at": "2026-04-13T04:20:39.308Z",
+    "updated_at": "2026-04-13T04:20:39.308Z",
+    "tags": [
+      13
+    ]
+  }
+},
+{
+  "model": "restaurants.restaurant",
+  "pk": 33,
+  "fields": {
+    "name": "Macheyuda",
+    "location": "SRID=4326;POINT (35.2168 31.7835)",
+    "approval_status": "approved",
+    "address": "Beit Ya'akov 10",
+    "city": "Jerusalem",
+    "country": "Israel",
+    "cuisine": 22,
+    "price_level": 4,
+    "quality_level": null,
+    "image_url": "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=600&h=400&fit=crop",
+    "website": "",
+    "phone": "",
+    "created_by": null,
+    "created_at": "2026-04-13T04:20:39.314Z",
+    "updated_at": "2026-04-13T04:20:39.314Z",
+    "tags": [
+      13,
+      5
+    ]
+  }
+},
+{
+  "model": "restaurants.restaurant",
+  "pk": 34,
+  "fields": {
+    "name": "The Eucalyptus",
+    "location": "SRID=4326;POINT (35.2301 31.7726)",
+    "approval_status": "approved",
+    "address": "Hativat Yerushalayim 14",
+    "city": "Jerusalem",
+    "country": "Israel",
+    "cuisine": 14,
+    "price_level": 4,
+    "quality_level": null,
+    "image_url": "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&h=400&fit=crop",
+    "website": "",
+    "phone": "",
+    "created_by": null,
+    "created_at": "2026-04-13T04:20:39.320Z",
+    "updated_at": "2026-04-13T04:20:39.320Z",
+    "tags": [
+      13
+    ]
+  }
+},
+{
+  "model": "restaurants.restaurant",
+  "pk": 35,
+  "fields": {
+    "name": "Senza Glutine",
+    "location": "SRID=4326;POINT (9.2092 45.4737)",
+    "approval_status": "approved",
+    "address": "Via Broggi 11",
+    "city": "Milan",
+    "country": "Italy",
+    "cuisine": 1,
+    "price_level": 3,
+    "quality_level": null,
+    "image_url": "https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=600&h=400&fit=crop",
+    "website": "",
+    "phone": "",
+    "created_by": null,
+    "created_at": "2026-04-13T04:20:39.326Z",
+    "updated_at": "2026-04-13T04:20:39.326Z",
+    "tags": [
+      14
+    ]
+  }
+},
+{
+  "model": "restaurants.restaurant",
+  "pk": 36,
+  "fields": {
+    "name": "Helmut Newcake",
+    "location": "SRID=4326;POINT (2.3638 48.8713)",
+    "approval_status": "approved",
+    "address": "36 Rue Bichat",
+    "city": "Paris",
+    "country": "France",
+    "cuisine": 23,
+    "price_level": 3,
+    "quality_level": null,
+    "image_url": "https://images.unsplash.com/photo-1517433670267-08bbd4be890f?w=600&h=400&fit=crop",
+    "website": "",
+    "phone": "",
+    "created_by": null,
+    "created_at": "2026-04-13T04:20:39.331Z",
+    "updated_at": "2026-04-13T04:20:39.331Z",
+    "tags": [
+      14
+    ]
+  }
+},
+{
+  "model": "restaurants.restaurant",
+  "pk": 37,
+  "fields": {
+    "name": "Noglu",
+    "location": "SRID=4326;POINT (2.3191 48.8555)",
+    "approval_status": "approved",
+    "address": "69 Rue de Grenelle",
+    "city": "Paris",
+    "country": "France",
+    "cuisine": 7,
+    "price_level": 4,
+    "quality_level": null,
+    "image_url": "https://images.unsplash.com/photo-1586985289688-ca3cf47d3e6e?w=600&h=400&fit=crop",
+    "website": "",
+    "phone": "",
+    "created_by": null,
+    "created_at": "2026-04-13T04:20:39.337Z",
+    "updated_at": "2026-04-13T04:20:39.337Z",
+    "tags": [
+      8,
+      14
+    ]
+  }
+},
+{
+  "model": "restaurants.restaurant",
+  "pk": 38,
+  "fields": {
+    "name": "Cien Gramos",
+    "location": "SRID=4326;POINT (-58.4262 -34.5903)",
+    "approval_status": "approved",
+    "address": "Gorriti 4838",
+    "city": "Buenos Aires",
+    "country": "Argentina",
+    "cuisine": 23,
+    "price_level": 2,
+    "quality_level": null,
+    "image_url": "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=600&h=400&fit=crop",
+    "website": "",
+    "phone": "",
+    "created_by": null,
+    "created_at": "2026-04-13T04:20:39.342Z",
+    "updated_at": "2026-04-13T04:20:39.342Z",
+    "tags": [
+      14
+    ]
+  }
+},
+{
+  "model": "restaurants.restaurant",
+  "pk": 39,
+  "fields": {
+    "name": "Liliyot",
+    "location": "SRID=4326;POINT (35.2253 31.7812)",
+    "approval_status": "approved",
+    "address": "Shlomtzion HaMalka 4",
+    "city": "Jerusalem",
+    "country": "Israel",
+    "cuisine": 11,
+    "price_level": 4,
+    "quality_level": null,
+    "image_url": "https://images.unsplash.com/photo-1555244162-803834f70033?w=600&h=400&fit=crop",
+    "website": "",
+    "phone": "",
+    "created_by": null,
+    "created_at": "2026-04-13T04:20:39.347Z",
+    "updated_at": "2026-04-13T04:20:39.347Z",
+    "tags": [
+      13,
+      14
+    ]
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 1,
+  "fields": {
+    "restaurant": 2,
+    "name": "Provoleta",
+    "description": "Grilled provolone with oregano and chilli flakes",
+    "price": "8500.00",
+    "currency": "ARS",
+    "category": "starter",
+    "is_recommended": false,
+    "is_vegetarian": false,
+    "is_gluten_free": false,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 2,
+  "fields": {
+    "restaurant": 2,
+    "name": "Humita",
+    "description": "Creamy sweetcorn tamale wrapped in corn husks",
+    "price": "6200.00",
+    "currency": "ARS",
+    "category": "starter",
+    "is_recommended": false,
+    "is_vegetarian": true,
+    "is_gluten_free": true,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 3,
+  "fields": {
+    "restaurant": 2,
+    "name": "Entraña",
+    "description": "Prime skirt steak grilled over wood fire, 400g",
+    "price": "18500.00",
+    "currency": "ARS",
+    "category": "main",
+    "is_recommended": true,
+    "is_vegetarian": false,
+    "is_gluten_free": false,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 4,
+  "fields": {
+    "restaurant": 2,
+    "name": "Bife de Chorizo",
+    "description": "Sirloin steak, 500g, cooked to your liking",
+    "price": "19800.00",
+    "currency": "ARS",
+    "category": "main",
+    "is_recommended": true,
+    "is_vegetarian": false,
+    "is_gluten_free": false,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 5,
+  "fields": {
+    "restaurant": 2,
+    "name": "Ojo de Bife",
+    "description": "Ribeye steak, 450g, with chimichurri",
+    "price": "21000.00",
+    "currency": "ARS",
+    "category": "main",
+    "is_recommended": false,
+    "is_vegetarian": false,
+    "is_gluten_free": false,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 6,
+  "fields": {
+    "restaurant": 2,
+    "name": "Ensalada Mixta",
+    "description": "Tomato, lettuce, onion with olive oil",
+    "price": "4200.00",
+    "currency": "ARS",
+    "category": "side",
+    "is_recommended": false,
+    "is_vegetarian": true,
+    "is_gluten_free": true,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 7,
+  "fields": {
+    "restaurant": 2,
+    "name": "Papas Fritas",
+    "description": "Hand-cut chips with provençal seasoning",
+    "price": "5100.00",
+    "currency": "ARS",
+    "category": "side",
+    "is_recommended": false,
+    "is_vegetarian": true,
+    "is_gluten_free": false,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 8,
+  "fields": {
+    "restaurant": 2,
+    "name": "Flan Casero",
+    "description": "Homemade caramel flan with dulce de leche",
+    "price": "6800.00",
+    "currency": "ARS",
+    "category": "dessert",
+    "is_recommended": false,
+    "is_vegetarian": true,
+    "is_gluten_free": true,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 9,
+  "fields": {
+    "restaurant": 2,
+    "name": "Panqueques con Dulce de Leche",
+    "description": "Crepes filled with dulce de leche",
+    "price": "7200.00",
+    "currency": "ARS",
+    "category": "dessert",
+    "is_recommended": true,
+    "is_vegetarian": true,
+    "is_gluten_free": false,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 10,
+  "fields": {
+    "restaurant": 2,
+    "name": "Malbec Luigi Bosca",
+    "description": "Glass of Malbec from Mendoza",
+    "price": "5500.00",
+    "currency": "ARS",
+    "category": "drink",
+    "is_recommended": false,
+    "is_vegetarian": false,
+    "is_gluten_free": false,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 11,
+  "fields": {
+    "restaurant": 7,
+    "name": "Pau Bhaji",
+    "description": "Buttered roll with spiced mashed vegetables",
+    "price": "7.90",
+    "currency": "GBP",
+    "category": "starter",
+    "is_recommended": false,
+    "is_vegetarian": true,
+    "is_gluten_free": false,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 12,
+  "fields": {
+    "restaurant": 7,
+    "name": "Okra Fries",
+    "description": "Crispy okra with black pepper and chaat masala",
+    "price": "6.50",
+    "currency": "GBP",
+    "category": "starter",
+    "is_recommended": false,
+    "is_vegetarian": true,
+    "is_gluten_free": true,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 13,
+  "fields": {
+    "restaurant": 7,
+    "name": "Black Daal",
+    "description": "24-hour slow-cooked black lentils with cream",
+    "price": "12.90",
+    "currency": "GBP",
+    "category": "main",
+    "is_recommended": true,
+    "is_vegetarian": true,
+    "is_gluten_free": true,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 14,
+  "fields": {
+    "restaurant": 7,
+    "name": "Lamb Raan",
+    "description": "Slow-roasted leg of lamb with biryani rice",
+    "price": "21.90",
+    "currency": "GBP",
+    "category": "main",
+    "is_recommended": true,
+    "is_vegetarian": false,
+    "is_gluten_free": true,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 15,
+  "fields": {
+    "restaurant": 7,
+    "name": "Chicken Ruby",
+    "description": "Classic curry with fresh tomato and ginger",
+    "price": "14.90",
+    "currency": "GBP",
+    "category": "main",
+    "is_recommended": false,
+    "is_vegetarian": false,
+    "is_gluten_free": true,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 16,
+  "fields": {
+    "restaurant": 7,
+    "name": "Paneer Tikka",
+    "description": "Grilled paneer with peppers and spiced yoghurt",
+    "price": "13.90",
+    "currency": "GBP",
+    "category": "main",
+    "is_recommended": false,
+    "is_vegetarian": true,
+    "is_gluten_free": true,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 17,
+  "fields": {
+    "restaurant": 7,
+    "name": "Kulfi",
+    "description": "Indian ice cream with pistachio and cardamom",
+    "price": "6.50",
+    "currency": "GBP",
+    "category": "dessert",
+    "is_recommended": true,
+    "is_vegetarian": true,
+    "is_gluten_free": true,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 18,
+  "fields": {
+    "restaurant": 7,
+    "name": "Chai",
+    "description": "Signature Dishoom masala chai",
+    "price": "3.20",
+    "currency": "GBP",
+    "category": "drink",
+    "is_recommended": true,
+    "is_vegetarian": true,
+    "is_gluten_free": true,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 19,
+  "fields": {
+    "restaurant": 7,
+    "name": "Mango Lassi",
+    "description": "Creamy mango yoghurt drink",
+    "price": "5.50",
+    "currency": "GBP",
+    "category": "drink",
+    "is_recommended": false,
+    "is_vegetarian": true,
+    "is_gluten_free": true,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 20,
+  "fields": {
+    "restaurant": 19,
+    "name": "Chawanmushi",
+    "description": "Steamed savoury egg custard with dashi",
+    "price": "1800.00",
+    "currency": "JPY",
+    "category": "starter",
+    "is_recommended": false,
+    "is_vegetarian": false,
+    "is_gluten_free": true,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 21,
+  "fields": {
+    "restaurant": 19,
+    "name": "Omakase Course",
+    "description": "20 pieces of nigiri, seasonal selection",
+    "price": "33000.00",
+    "currency": "JPY",
+    "category": "main",
+    "is_recommended": true,
+    "is_vegetarian": false,
+    "is_gluten_free": true,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 22,
+  "fields": {
+    "restaurant": 19,
+    "name": "Otoro",
+    "description": "Fatty tuna belly, finest cut",
+    "price": "4500.00",
+    "currency": "JPY",
+    "category": "main",
+    "is_recommended": true,
+    "is_vegetarian": false,
+    "is_gluten_free": true,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 23,
+  "fields": {
+    "restaurant": 19,
+    "name": "Uni",
+    "description": "Sea urchin from Hokkaido",
+    "price": "3800.00",
+    "currency": "JPY",
+    "category": "main",
+    "is_recommended": false,
+    "is_vegetarian": false,
+    "is_gluten_free": true,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 24,
+  "fields": {
+    "restaurant": 19,
+    "name": "Kohada",
+    "description": "Gizzard shad, signature preparation",
+    "price": "2200.00",
+    "currency": "JPY",
+    "category": "main",
+    "is_recommended": false,
+    "is_vegetarian": false,
+    "is_gluten_free": true,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 25,
+  "fields": {
+    "restaurant": 19,
+    "name": "Anago",
+    "description": "Conger eel, lightly grilled with sweet soy",
+    "price": "2800.00",
+    "currency": "JPY",
+    "category": "main",
+    "is_recommended": true,
+    "is_vegetarian": false,
+    "is_gluten_free": true,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 26,
+  "fields": {
+    "restaurant": 19,
+    "name": "Tamago",
+    "description": "Sweet rolled omelette",
+    "price": "1200.00",
+    "currency": "JPY",
+    "category": "dessert",
+    "is_recommended": false,
+    "is_vegetarian": true,
+    "is_gluten_free": true,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 27,
+  "fields": {
+    "restaurant": 19,
+    "name": "Junmai Daiginjo",
+    "description": "Premium sake, 180ml",
+    "price": "3500.00",
+    "currency": "JPY",
+    "category": "drink",
+    "is_recommended": false,
+    "is_vegetarian": true,
+    "is_gluten_free": true,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 28,
+  "fields": {
+    "restaurant": 22,
+    "name": "Meatballs",
+    "description": "Ricotta and basil, family recipe",
+    "price": "28.00",
+    "currency": "USD",
+    "category": "starter",
+    "is_recommended": false,
+    "is_vegetarian": false,
+    "is_gluten_free": false,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 29,
+  "fields": {
+    "restaurant": 22,
+    "name": "Caesar Salad",
+    "description": "Tableside preparation with white anchovies",
+    "price": "24.00",
+    "currency": "USD",
+    "category": "starter",
+    "is_recommended": false,
+    "is_vegetarian": true,
+    "is_gluten_free": true,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 30,
+  "fields": {
+    "restaurant": 22,
+    "name": "Spicy Rigatoni Vodka",
+    "description": "Rigatoni in spicy tomato-cream sauce",
+    "price": "32.00",
+    "currency": "USD",
+    "category": "main",
+    "is_recommended": true,
+    "is_vegetarian": true,
+    "is_gluten_free": false,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 31,
+  "fields": {
+    "restaurant": 22,
+    "name": "Veal Parmesan",
+    "description": "Lightly breaded, pan-fried, with marinara",
+    "price": "62.00",
+    "currency": "USD",
+    "category": "main",
+    "is_recommended": true,
+    "is_vegetarian": false,
+    "is_gluten_free": false,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 32,
+  "fields": {
+    "restaurant": 22,
+    "name": "Lobster Fra Diavolo",
+    "description": "Whole lobster in spicy red sauce over linguine",
+    "price": "72.00",
+    "currency": "USD",
+    "category": "main",
+    "is_recommended": false,
+    "is_vegetarian": false,
+    "is_gluten_free": false,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 33,
+  "fields": {
+    "restaurant": 22,
+    "name": "Tiramisu",
+    "description": "Classic layered mascarpone and espresso",
+    "price": "18.00",
+    "currency": "USD",
+    "category": "dessert",
+    "is_recommended": true,
+    "is_vegetarian": true,
+    "is_gluten_free": false,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 34,
+  "fields": {
+    "restaurant": 22,
+    "name": "Italian Cheesecake",
+    "description": "Ricotta cheesecake with amarena cherries",
+    "price": "16.00",
+    "currency": "USD",
+    "category": "dessert",
+    "is_recommended": false,
+    "is_vegetarian": true,
+    "is_gluten_free": true,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 35,
+  "fields": {
+    "restaurant": 22,
+    "name": "Negroni",
+    "description": "Classic with Campari, sweet vermouth, gin",
+    "price": "22.00",
+    "currency": "USD",
+    "category": "drink",
+    "is_recommended": false,
+    "is_vegetarian": true,
+    "is_gluten_free": true,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 36,
+  "fields": {
+    "restaurant": 33,
+    "name": "Kubaneh Bread",
+    "description": "Yemenite pull-apart bread with tomato dip",
+    "price": "38.00",
+    "currency": "ILS",
+    "category": "starter",
+    "is_recommended": false,
+    "is_vegetarian": true,
+    "is_gluten_free": false,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 37,
+  "fields": {
+    "restaurant": 33,
+    "name": "Polenta Fries",
+    "description": "Crispy polenta sticks with truffle aioli",
+    "price": "42.00",
+    "currency": "ILS",
+    "category": "starter",
+    "is_recommended": false,
+    "is_vegetarian": true,
+    "is_gluten_free": true,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 38,
+  "fields": {
+    "restaurant": 33,
+    "name": "Lamb Shoulder",
+    "description": "12-hour slow-cooked with pomegranate glaze",
+    "price": "128.00",
+    "currency": "ILS",
+    "category": "main",
+    "is_recommended": true,
+    "is_vegetarian": false,
+    "is_gluten_free": true,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 39,
+  "fields": {
+    "restaurant": 33,
+    "name": "Whole Roasted Cauliflower",
+    "description": "With tahini, herbs and pine nuts",
+    "price": "72.00",
+    "currency": "ILS",
+    "category": "main",
+    "is_recommended": true,
+    "is_vegetarian": true,
+    "is_gluten_free": true,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 40,
+  "fields": {
+    "restaurant": 33,
+    "name": "Beef Tartare",
+    "description": "Hand-cut with harissa and egg yolk",
+    "price": "86.00",
+    "currency": "ILS",
+    "category": "main",
+    "is_recommended": false,
+    "is_vegetarian": false,
+    "is_gluten_free": true,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 41,
+  "fields": {
+    "restaurant": 33,
+    "name": "Halva Parfait",
+    "description": "Sesame halva ice cream with chocolate",
+    "price": "48.00",
+    "currency": "ILS",
+    "category": "dessert",
+    "is_recommended": true,
+    "is_vegetarian": true,
+    "is_gluten_free": true,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 42,
+  "fields": {
+    "restaurant": 33,
+    "name": "Arak Limonade",
+    "description": "Anise spirit with fresh lemon and mint",
+    "price": "38.00",
+    "currency": "ILS",
+    "category": "drink",
+    "is_recommended": false,
+    "is_vegetarian": true,
+    "is_gluten_free": true,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 43,
+  "fields": {
+    "restaurant": 12,
+    "name": "Tuna La Colombe",
+    "description": "Seared tuna, wasabi, pickled ginger, avocado",
+    "price": "265.00",
+    "currency": "ZAR",
+    "category": "starter",
+    "is_recommended": true,
+    "is_vegetarian": false,
+    "is_gluten_free": true,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 44,
+  "fields": {
+    "restaurant": 12,
+    "name": "Duck Liver Parfait",
+    "description": "With brioche and fig compote",
+    "price": "195.00",
+    "currency": "ZAR",
+    "category": "starter",
+    "is_recommended": false,
+    "is_vegetarian": false,
+    "is_gluten_free": false,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 45,
+  "fields": {
+    "restaurant": 12,
+    "name": "Tasting Menu 6 Course",
+    "description": "Seasonal selection by the chef",
+    "price": "1650.00",
+    "currency": "ZAR",
+    "category": "main",
+    "is_recommended": true,
+    "is_vegetarian": false,
+    "is_gluten_free": false,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 46,
+  "fields": {
+    "restaurant": 12,
+    "name": "Springbok Loin",
+    "description": "With beetroot, blackberry and celeriac",
+    "price": "395.00",
+    "currency": "ZAR",
+    "category": "main",
+    "is_recommended": false,
+    "is_vegetarian": false,
+    "is_gluten_free": true,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 47,
+  "fields": {
+    "restaurant": 12,
+    "name": "Linefish",
+    "description": "Catch of the day with seasonal vegetables",
+    "price": "345.00",
+    "currency": "ZAR",
+    "category": "main",
+    "is_recommended": false,
+    "is_vegetarian": false,
+    "is_gluten_free": true,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 48,
+  "fields": {
+    "restaurant": 12,
+    "name": "Chocolate Fondant",
+    "description": "Valrhona dark chocolate with vanilla ice cream",
+    "price": "175.00",
+    "currency": "ZAR",
+    "category": "dessert",
+    "is_recommended": true,
+    "is_vegetarian": true,
+    "is_gluten_free": true,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 49,
+  "fields": {
+    "restaurant": 12,
+    "name": "Sauvignon Blanc",
+    "description": "Glass from Cape Point Vineyards",
+    "price": "120.00",
+    "currency": "ZAR",
+    "category": "drink",
+    "is_recommended": false,
+    "is_vegetarian": true,
+    "is_gluten_free": true,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 50,
+  "fields": {
+    "restaurant": 6,
+    "name": "Hummus de Remolacha",
+    "description": "Beetroot hummus with pita crisps",
+    "price": "5200.00",
+    "currency": "ARS",
+    "category": "starter",
+    "is_recommended": false,
+    "is_vegetarian": true,
+    "is_gluten_free": true,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 51,
+  "fields": {
+    "restaurant": 6,
+    "name": "Croquetas de Espinaca",
+    "description": "Spinach croquettes with cashew cream",
+    "price": "5800.00",
+    "currency": "ARS",
+    "category": "starter",
+    "is_recommended": true,
+    "is_vegetarian": true,
+    "is_gluten_free": false,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 52,
+  "fields": {
+    "restaurant": 6,
+    "name": "Bowl de Falafel",
+    "description": "Crispy falafel with tahini, pickles and greens",
+    "price": "8900.00",
+    "currency": "ARS",
+    "category": "main",
+    "is_recommended": true,
+    "is_vegetarian": true,
+    "is_gluten_free": true,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 53,
+  "fields": {
+    "restaurant": 6,
+    "name": "Burger Vegana",
+    "description": "Black bean and beet patty with avocado",
+    "price": "9200.00",
+    "currency": "ARS",
+    "category": "main",
+    "is_recommended": false,
+    "is_vegetarian": true,
+    "is_gluten_free": false,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 54,
+  "fields": {
+    "restaurant": 6,
+    "name": "Pad Thai de Vegetales",
+    "description": "Rice noodles with tofu, peanut sauce",
+    "price": "8500.00",
+    "currency": "ARS",
+    "category": "main",
+    "is_recommended": false,
+    "is_vegetarian": true,
+    "is_gluten_free": true,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 55,
+  "fields": {
+    "restaurant": 6,
+    "name": "Cheesecake de Anacardos",
+    "description": "Raw cashew cheesecake with berries",
+    "price": "6400.00",
+    "currency": "ARS",
+    "category": "dessert",
+    "is_recommended": true,
+    "is_vegetarian": true,
+    "is_gluten_free": true,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 56,
+  "fields": {
+    "restaurant": 6,
+    "name": "Jugo Verde",
+    "description": "Celery, apple, ginger, spinach",
+    "price": "4200.00",
+    "currency": "ARS",
+    "category": "drink",
+    "is_recommended": false,
+    "is_vegetarian": true,
+    "is_gluten_free": true,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 57,
+  "fields": {
+    "restaurant": 37,
+    "name": "Socca",
+    "description": "Chickpea flatbread with roasted vegetables",
+    "price": "12.00",
+    "currency": "EUR",
+    "category": "starter",
+    "is_recommended": false,
+    "is_vegetarian": true,
+    "is_gluten_free": true,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 58,
+  "fields": {
+    "restaurant": 37,
+    "name": "Tartare de Saumon",
+    "description": "Salmon tartare with avocado mousse",
+    "price": "16.00",
+    "currency": "EUR",
+    "category": "starter",
+    "is_recommended": true,
+    "is_vegetarian": false,
+    "is_gluten_free": true,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 59,
+  "fields": {
+    "restaurant": 37,
+    "name": "Risotto aux Champignons",
+    "description": "Wild mushroom risotto, parmesan",
+    "price": "22.00",
+    "currency": "EUR",
+    "category": "main",
+    "is_recommended": false,
+    "is_vegetarian": true,
+    "is_gluten_free": true,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 60,
+  "fields": {
+    "restaurant": 37,
+    "name": "Poulet Rôti",
+    "description": "Free-range roast chicken, root vegetables",
+    "price": "26.00",
+    "currency": "EUR",
+    "category": "main",
+    "is_recommended": true,
+    "is_vegetarian": false,
+    "is_gluten_free": true,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 61,
+  "fields": {
+    "restaurant": 37,
+    "name": "Filet de Bar",
+    "description": "Sea bass with fennel and citrus butter",
+    "price": "28.00",
+    "currency": "EUR",
+    "category": "main",
+    "is_recommended": false,
+    "is_vegetarian": false,
+    "is_gluten_free": true,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 62,
+  "fields": {
+    "restaurant": 37,
+    "name": "Tarte au Citron",
+    "description": "Gluten-free lemon tart with meringue",
+    "price": "12.00",
+    "currency": "EUR",
+    "category": "dessert",
+    "is_recommended": true,
+    "is_vegetarian": true,
+    "is_gluten_free": true,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 63,
+  "fields": {
+    "restaurant": 37,
+    "name": "Fondant au Chocolat",
+    "description": "Warm chocolate cake, salted caramel",
+    "price": "14.00",
+    "currency": "EUR",
+    "category": "dessert",
+    "is_recommended": true,
+    "is_vegetarian": true,
+    "is_gluten_free": true,
+    "image_url": ""
+  }
+},
+{
+  "model": "restaurants.menuitem",
+  "pk": 64,
+  "fields": {
+    "restaurant": 37,
+    "name": "Vin Naturel",
+    "description": "Glass of organic natural wine",
+    "price": "9.00",
+    "currency": "EUR",
+    "category": "drink",
+    "is_recommended": false,
+    "is_vegetarian": true,
+    "is_gluten_free": true,
+    "image_url": ""
+  }
+}
+]

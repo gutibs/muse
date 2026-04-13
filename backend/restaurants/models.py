@@ -29,8 +29,19 @@ class Tag(models.Model):
 
 
 class Restaurant(models.Model):
+	class ApprovalStatus(models.TextChoices):
+		PENDING = "pending", "Pending Review"
+		APPROVED = "approved", "Approved"
+		REJECTED = "rejected", "Rejected"
+
 	name = models.CharField(max_length=200)
 	location = gis_models.PointField(srid=4326)
+	approval_status = models.CharField(
+		max_length=10,
+		choices=ApprovalStatus.choices,
+		default=ApprovalStatus.PENDING,
+		db_index=True,
+	)
 	address = models.CharField(max_length=300, blank=True)
 	city = models.CharField(max_length=100, blank=True, db_index=True)
 	country = models.CharField(max_length=100, blank=True)

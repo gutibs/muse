@@ -168,6 +168,8 @@ const translations: Record<Locale, Record<string, string>> = {
 		'restaurant.mustTry': 'Must Try',
 		'restaurant.noMenu': 'No menu available yet',
 		'restaurant.noReviews': 'No reviews yet',
+		'restaurant.suggested': 'Restaurant submitted for review. It will appear once approved by an admin.',
+		'restaurant.pending': 'Pending approval',
 		'restaurant.starters': 'Starters',
 		'restaurant.mains': 'Mains',
 		'restaurant.sides': 'Sides',
