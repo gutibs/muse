@@ -1,7 +1,7 @@
 from django.contrib.gis.geos import Point
 from rest_framework import serializers
 
-from restaurants.models import Cuisine, Restaurant, Tag
+from restaurants.models import Cuisine, MenuItem, Restaurant, Tag
 
 
 class CuisineSerializer(serializers.ModelSerializer):
@@ -14,6 +14,16 @@ class TagSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = Tag
 		fields = ("id", "name", "slug")
+
+
+class MenuItemSerializer(serializers.ModelSerializer):
+	class Meta:
+		model = MenuItem
+		fields = (
+			"id", "name", "description", "price", "currency",
+			"category", "is_recommended", "is_vegetarian", "is_gluten_free",
+			"image_url",
+		)
 
 
 class RestaurantSerializer(serializers.ModelSerializer):
@@ -45,6 +55,7 @@ class RestaurantSerializer(serializers.ModelSerializer):
 			"address",
 			"city",
 			"country",
+			"image_url",
 			"cuisine",
 			"cuisine_detail",
 			"tag_ids",
@@ -90,3 +101,34 @@ class RestaurantSerializer(serializers.ModelSerializer):
 		if tags is not None:
 			instance.tags.set(tags)
 		return instance
+
+
+class RestaurantDetailSerializer(RestaurantSerializer):
+	menu_items = MenuItemSerializer(many=True, read_only=True)
+	reviews = serializers.SerializerMethodField()
+
+	class Meta(RestaurantSerializer.Meta):
+		fields = RestaurantSerializer.Meta.fields + ("menu_items", "reviews")
+
+	def get_reviews(self, obj):
+		from pins.models import Pin
+		pins = (
+			Pin.objects.filter(restaurant=obj, status="visited", comment__gt="")
+			.select_related("user__profile")
+			.order_by("-updated_at")[:20]
+		)
+		return [
+			{
+				"id": p.id,
+				"user": {
+					"id": p.user.id,
+					"display_name": getattr(p.user.profile, "display_name", ""),
+					"avatar": p.user.profile.avatar.url if p.user.profile.avatar else None,
+				},
+				"rating": p.rating,
+				"comment": p.comment,
+				"visited_at": p.visited_at,
+				"created_at": p.created_at,
+			}
+			for p in pins
+		]

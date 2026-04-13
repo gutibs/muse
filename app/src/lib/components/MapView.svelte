@@ -52,7 +52,19 @@
 			Leaflet.control.zoom({ position: 'bottomright' }).addTo(instance);
 
 			if (autoLocate) {
-				instance.locate({ setView: true, maxZoom: 14 });
+				let userInteracted = false;
+
+				instance.once('dragstart', () => { userInteracted = true; });
+				instance.once('zoomstart', () => { userInteracted = true; });
+				instance.once('popupopen', () => { userInteracted = true; });
+
+				instance.once('locationfound', (e: L.LocationEvent) => {
+					if (!userInteracted && instance) {
+						instance.setView(e.latlng, 14);
+					}
+				});
+
+				instance.locate({ setView: false, maxZoom: 14 });
 			}
 
 			map = instance;

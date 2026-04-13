@@ -1,4 +1,6 @@
 <script lang="ts">
+	import LanguagePicker from '$lib/components/LanguagePicker.svelte';
+	import { t } from '$lib/i18n/index.svelte';
 	import { authStore } from '$lib/stores/auth.store.svelte';
 	import { authService } from '$lib/services/auth.service';
 	import { ApiError } from '$lib/types';
@@ -63,7 +65,7 @@
 				<polyline points="15 18 9 12 15 6" />
 			</svg>
 		</a>
-		<h1 class="text-lg font-semibold text-ink">Settings</h1>
+		<h1 class="text-lg font-semibold text-ink">{t('settings.title')}</h1>
 	</header>
 
 	<div class="flex-1 overflow-y-auto px-5 pb-6">
@@ -75,7 +77,7 @@
 
 		<!-- Account section -->
 		<section>
-			<h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-ink-muted">Account</h2>
+			<h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-ink-muted">{t('settings.account')}</h2>
 			<div class="space-y-2">
 				<div class="rounded-card bg-white p-4 shadow-card">
 					<div class="text-xs text-ink-muted">Email</div>
@@ -86,7 +88,7 @@
 					onclick={togglePasswordForm}
 					class="flex w-full items-center justify-between rounded-card bg-white p-4 shadow-card active:scale-[0.98]"
 				>
-					<span class="text-sm font-medium text-ink">Change Password</span>
+					<span class="text-sm font-medium text-ink">{t('settings.changePassword')}</span>
 					<svg class="h-4 w-4 text-ink-muted transition-transform {changingPassword ? 'rotate-180' : ''}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 						<polyline points="6 9 12 15 18 9" />
 					</svg>
@@ -140,9 +142,15 @@
 			</div>
 		</section>
 
+		<!-- Language -->
+		<section class="mt-6">
+			<h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-ink-muted">{t('profile.language')}</h2>
+			<LanguagePicker />
+		</section>
+
 		<!-- About section -->
 		<section class="mt-6">
-			<h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-ink-muted">About</h2>
+			<h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-ink-muted">{t('settings.about')}</h2>
 			<div class="space-y-2">
 				<div class="rounded-card bg-white p-4 shadow-card">
 					<div class="text-sm font-medium text-ink">Muse</div>
@@ -157,7 +165,7 @@
 				onclick={() => authStore.logout()}
 				class="flex min-h-12 w-full items-center justify-center rounded-button border border-blush text-base font-medium text-blush active:scale-[0.98]"
 			>
-				Sign Out
+				{t('auth.signOut')}
 			</button>
 		</div>
 	</div>

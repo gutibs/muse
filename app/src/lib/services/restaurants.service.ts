@@ -1,5 +1,5 @@
 import { api } from './api.service';
-import type { Cuisine, Tag, Restaurant, RestaurantCreate, PaginatedResponse } from '$lib/types';
+import type { Cuisine, Tag, Restaurant, RestaurantCreate, RestaurantDetail, PaginatedResponse } from '$lib/types';
 
 export const restaurantsService = {
 	list(params?: { search?: string; city?: string; cuisine?: string; page?: number }): Promise<PaginatedResponse<Restaurant>> {
@@ -12,7 +12,7 @@ export const restaurantsService = {
 		return api.get(`/restaurants/${qs ? `?${qs}` : ''}`);
 	},
 
-	get(id: number): Promise<Restaurant> {
+	get(id: number): Promise<RestaurantDetail> {
 		return api.get(`/restaurants/${id}/`);
 	},
 

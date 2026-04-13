@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Avatar from '$lib/components/Avatar.svelte';
 	import { friendsService } from '$lib/services/friends.service';
+	import { t } from '$lib/i18n/index.svelte';
 	import type { Friendship, PublicUser } from '$lib/types';
 
 	type Tab = 'friends' | 'requests' | 'add';
@@ -135,15 +136,16 @@
 
 <div class="flex h-full flex-col">
 	<header class="shrink-0 px-5 py-4">
-		<h1 class="text-lg font-semibold text-ink">Friends</h1>
+		<h1 class="text-lg font-semibold text-ink">{t('friends.title')}</h1>
 
 		<!-- Tabs -->
 		<div class="mt-3 flex gap-1 rounded-card bg-cream-dark p-1">
-			{#each ([['friends', 'Friends'], ['requests', `Requests${requests.length ? ` (${requests.length})` : ''}`], ['add', 'Add']] as [Tab, string][]) as [t, label]}
+			{#each (['friends', 'requests', 'add'] as Tab[]) as tab_id}
+				{@const label = tab_id === 'friends' ? t('friends.title') : tab_id === 'requests' ? `${t('friends.requests')}${requests.length ? ` (${requests.length})` : ''}` : t('friends.add')}
 				<button
-					onclick={() => switchTab(t)}
+					onclick={() => switchTab(tab_id)}
 					class="flex-1 rounded-button py-2 text-sm font-medium transition-colors active:scale-[0.98]
-						{tab === t ? 'bg-white text-ink shadow-card' : 'text-ink-muted'}"
+						{tab === tab_id ? 'bg-white text-ink shadow-card' : 'text-ink-muted'}"
 				>
 					{label}
 				</button>
@@ -169,13 +171,13 @@
 							<path d="M16 3.13a4 4 0 0 1 0 7.75" />
 						</svg>
 					</div>
-					<p class="text-sm font-medium text-ink">No friends yet</p>
-					<p class="mt-1 text-xs text-ink-muted">Search for people or invite by email</p>
+					<p class="text-sm font-medium text-ink">{t('friends.noFriends')}</p>
+					<p class="mt-1 text-xs text-ink-muted">{t('friends.searchAndInvite')}</p>
 					<button
 						onclick={() => switchTab('add')}
 						class="mt-4 rounded-button bg-jade px-5 py-2.5 text-sm font-semibold text-white active:scale-[0.98]"
 					>
-						Add Friends
+						{t('friends.addFriends')}
 					</button>
 				</div>
 			{:else}
@@ -212,7 +214,7 @@
 				</div>
 			{:else if requests.length === 0}
 				<div class="flex flex-col items-center py-16 text-center">
-					<p class="text-sm text-ink-muted">No pending requests</p>
+					<p class="text-sm text-ink-muted">{t('friends.noRequests')}</p>
 				</div>
 			{:else}
 				<ul class="space-y-3 pt-2">
@@ -235,14 +237,14 @@
 									disabled={responding[req.id]}
 									class="flex min-h-10 flex-1 items-center justify-center rounded-button border border-cream-dark text-sm font-medium text-ink-light active:scale-[0.98] disabled:opacity-50"
 								>
-									Decline
+									{t('friends.decline')}
 								</button>
 								<button
 									onclick={() => respond(req.id, 'accepted')}
 									disabled={responding[req.id]}
 									class="flex min-h-10 flex-1 items-center justify-center rounded-button bg-jade text-sm font-semibold text-white active:scale-[0.98] disabled:opacity-50"
 								>
-									{responding[req.id] ? '...' : 'Accept'}
+									{responding[req.id] ? '...' : t('friends.accept')}
 								</button>
 							</div>
 						</li>
@@ -257,13 +259,13 @@
 
 				<!-- Search existing users -->
 				<div>
-					<p class="mb-2 text-sm font-medium text-ink">Search by name or email</p>
+					<p class="mb-2 text-sm font-medium text-ink">{t('friends.searchByName')}</p>
 					<div class="flex gap-2">
 						<input
 							type="search"
 							bind:value={searchQuery}
 							onkeydown={(e) => e.key === 'Enter' && doSearch()}
-							placeholder="Search people..."
+							placeholder={t('friends.searchPeople')}
 							class="flex-1 rounded-input border border-cream-dark bg-white px-4 py-3 text-base text-ink outline-none focus:border-jade"
 						/>
 						<button
@@ -298,15 +300,15 @@
 										disabled={sending[user.id]}
 										class="flex min-h-9 items-center rounded-button bg-jade px-3 text-sm font-semibold text-white active:scale-[0.98] disabled:opacity-50"
 									>
-										{sending[user.id] ? '...' : 'Add'}
+										{sending[user.id] ? '...' : t('friends.add')}
 									</button>
 								</li>
 							{/each}
 						</ul>
 					{:else if isSearchingSelf}
-						<p class="mt-3 text-sm text-ink-muted">That's your own email 😄</p>
+						<p class="mt-3 text-sm text-ink-muted">{t('friends.ownEmail')} 😄</p>
 					{:else if searchQuery.length >= 2 && !searching}
-						<p class="mt-3 text-sm text-ink-muted">No users found. Try inviting by email.</p>
+						<p class="mt-3 text-sm text-ink-muted">{t('friends.noUsersFound')}</p>
 					{/if}
 				</div>
 
@@ -314,8 +316,8 @@
 
 				<!-- Email invite -->
 				<div>
-					<p class="mb-2 text-sm font-medium text-ink">Invite by email</p>
-					<p class="mb-3 text-xs text-ink-muted">Send an invitation to someone not on Muse yet.</p>
+					<p class="mb-2 text-sm font-medium text-ink">{t('friends.inviteByEmail')}</p>
+					<p class="mb-3 text-xs text-ink-muted">{t('friends.inviteDesc')}</p>
 					{#if inviteMessage}
 						<div class="mb-3 rounded-card bg-jade/10 px-4 py-3 text-sm font-medium text-jade">
 							{inviteMessage}
@@ -337,7 +339,7 @@
 							disabled={inviting || !inviteEmail.trim()}
 							class="flex min-h-12 items-center rounded-button bg-jade px-4 text-sm font-semibold text-white active:scale-[0.98] disabled:opacity-40"
 						>
-							{inviting ? '...' : 'Invite'}
+							{inviting ? '...' : t('friends.invite')}
 						</button>
 					</div>
 				</div>

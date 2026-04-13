@@ -1,52 +1,57 @@
 <script lang="ts">
 	import Avatar from '$lib/components/Avatar.svelte';
 	import MuseLogo from '$lib/components/MuseLogo.svelte';
+	import { t } from '$lib/i18n/index.svelte';
+	import { feedService } from '$lib/services/feed.service';
+	import { friendsService } from '$lib/services/friends.service';
 	import { authStore } from '$lib/stores/auth.store.svelte';
+	import type { Activity } from '$lib/types';
 
 	const greeting = $derived(() => {
 		const hour = new Date().getHours();
-		if (hour < 12) return 'Good morning';
-		if (hour < 18) return 'Good afternoon';
-		return 'Good evening';
+		if (hour < 12) return t('home.goodMorning');
+		if (hour < 18) return t('home.goodAfternoon');
+		return t('home.goodEvening');
 	});
 
-	interface QuickAction {
-		label: string;
-		description: string;
-		href: string;
-		icon: string;
+	let recentActivity = $state<Activity[]>([]);
+	let pendingRequests = $state(0);
+	let loadingActivity = $state(true);
+
+	$effect(() => {
+		if (!authStore.isAuthenticated) return;
+		feedService.list()
+			.then((res) => { recentActivity = res.results.slice(0, 5); })
+			.catch(() => {})
+			.finally(() => { loadingActivity = false; });
+		friendsService.requests()
+			.then((r) => { pendingRequests = r.length; })
+			.catch(() => {});
+	});
+
+	function timeAgo(dateStr: string): string {
+		const diff = Date.now() - new Date(dateStr).getTime();
+		const mins = Math.floor(diff / 60000);
+		if (mins < 1) return 'just now';
+		if (mins < 60) return `${mins}m`;
+		const hours = Math.floor(mins / 60);
+		if (hours < 24) return `${hours}h`;
+		const days = Math.floor(hours / 24);
+		if (days < 7) return `${days}d`;
+		return new Date(dateStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 	}
 
-	const actions: QuickAction[] = [
-		{
-			label: 'Add a Pin',
-			description: 'Tag a restaurant you visited or want to visit',
-			href: '/map',
-			icon: 'pin',
-		},
-		{
-			label: 'Find Friends',
-			description: 'Invite friends and see their recommendations',
-			href: '/friends',
-			icon: 'friends',
-		},
-		{
-			label: 'Explore Map',
-			description: 'Discover restaurants on the map',
-			href: '/map',
-			icon: 'map',
-		},
-		{
-			label: 'Search',
-			description: 'Find restaurants, cuisines, or people',
-			href: '/search',
-			icon: 'search',
-		},
-	];
+	function activityText(a: Activity): string {
+		if (a.verb === 'joined') return t('feed.joinedMuse');
+		if (a.verb === 'friendship' && a.targetUser) return `${t('feed.becameFriends')} ${a.targetUser.displayName || a.targetUser.email}`;
+		if (a.verb === 'rated' && a.pin) return `${t('feed.visited')} ${a.pin.restaurantDetail.name}`;
+		if (a.verb === 'pinned' && a.pin) return `${t('feed.wantsToVisit')} ${a.pin.restaurantDetail.name}`;
+		if (a.verb === 'updated' && a.pin) return `${t('feed.updated')} ${a.pin.restaurantDetail.name}`;
+		return a.verb;
+	}
 </script>
 
 <div class="flex h-full flex-col">
-	<!-- Header -->
 	<header class="shrink-0 px-5 pb-4 pt-6">
 		<div class="flex items-center justify-between">
 			<div class="flex items-center gap-3">
@@ -62,85 +67,139 @@
 					</h1>
 				</div>
 			</div>
-			<MuseLogo width={48} />
+			<MuseLogo width={80} />
 		</div>
 	</header>
 
-	<!-- Content -->
 	<div class="flex-1 space-y-6 overflow-y-auto px-5 pb-6">
 		<!-- Stats -->
 		{#if authStore.user?.stats}
 			<div class="flex gap-3">
 				<div class="flex-1 rounded-card bg-white p-4 shadow-card">
 					<div class="text-2xl font-bold text-jade">{authStore.user.stats.pinCount}</div>
-					<div class="text-xs text-ink-muted">Pins</div>
+					<div class="text-xs text-ink-muted">{t('home.pins')}</div>
 				</div>
 				<div class="flex-1 rounded-card bg-white p-4 shadow-card">
 					<div class="text-2xl font-bold text-jade">{authStore.user.stats.visitedCount}</div>
-					<div class="text-xs text-ink-muted">Visited</div>
+					<div class="text-xs text-ink-muted">{t('home.visited')}</div>
 				</div>
 				<div class="flex-1 rounded-card bg-white p-4 shadow-card">
 					<div class="text-2xl font-bold text-jade">{authStore.user.stats.friendCount}</div>
-					<div class="text-xs text-ink-muted">Friends</div>
+					<div class="text-xs text-ink-muted">{t('home.friends')}</div>
 				</div>
 			</div>
 		{/if}
 
-		<!-- Quick Actions -->
-		<section>
-			<h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-ink-muted">Quick Actions</h2>
-			<div class="space-y-2">
-				{#each actions as action}
-					<a
-						href={action.href}
-						class="flex items-center gap-4 rounded-card bg-white p-4 shadow-card transition-transform active:scale-[0.98]"
-					>
-						<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-jade/10 text-jade">
-							{#if action.icon === 'pin'}
-								<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-									<path d="M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
-									<path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7Z" />
-								</svg>
-							{:else if action.icon === 'friends'}
-								<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-									<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-									<circle cx="9" cy="7" r="4" />
-									<path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-									<path d="M16 3.13a4 4 0 0 1 0 7.75" />
-								</svg>
-							{:else if action.icon === 'map'}
-								<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-									<polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
-									<line x1="8" y1="2" x2="8" y2="18" />
-									<line x1="16" y1="6" x2="16" y2="22" />
-								</svg>
-							{:else if action.icon === 'search'}
-								<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-									<circle cx="11" cy="11" r="8" />
-									<path d="m21 21-4.3-4.3" />
-								</svg>
-							{/if}
-						</div>
-						<div class="min-w-0 flex-1">
-							<div class="text-sm font-semibold text-ink">{action.label}</div>
-							<div class="text-xs text-ink-muted">{action.description}</div>
-						</div>
-						<svg class="h-4 w-4 shrink-0 text-ink-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-							<polyline points="9 18 15 12 9 6" />
-						</svg>
-					</a>
-				{/each}
-			</div>
-		</section>
+		<!-- Pending friend requests -->
+		{#if pendingRequests > 0}
+			<a
+				href="/friends"
+				class="flex items-center gap-3 rounded-card bg-jade/10 p-4 shadow-card active:scale-[0.98]"
+			>
+				<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-jade text-white">
+					<span class="text-sm font-bold">{pendingRequests}</span>
+				</div>
+				<div class="min-w-0 flex-1">
+					<div class="text-sm font-semibold text-jade">{pendingRequests > 1 ? t('home.friendRequestsPlural') : t('home.friendRequests')}</div>
+					<div class="text-xs text-jade/70">{t('home.tapToView')}</div>
+				</div>
+				<svg class="h-4 w-4 text-jade" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<polyline points="9 18 15 12 9 6" />
+				</svg>
+			</a>
+		{/if}
 
-		<!-- Activity Preview -->
-		<section>
-			<h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-ink-muted">Recent Activity</h2>
-			<div class="rounded-card bg-white p-5 shadow-card">
-				<p class="text-center text-sm text-ink-muted">
-					No activity yet. Add friends to see where they've been eating.
-				</p>
+		<!-- Primary action -->
+		<a
+			href="/pin/new"
+			class="flex items-center gap-4 rounded-card bg-jade p-4 shadow-card active:scale-[0.98]"
+		>
+			<div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white/20">
+				<svg class="h-6 w-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<line x1="12" y1="5" x2="12" y2="19" />
+					<line x1="5" y1="12" x2="19" y2="12" />
+				</svg>
 			</div>
+			<div class="flex-1">
+				<div class="text-base font-semibold text-white">{t('home.addPin')}</div>
+				<div class="text-xs text-white/70">{t('home.addPinDesc')}</div>
+			</div>
+			<svg class="h-5 w-5 shrink-0 text-white/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+				<polyline points="9 18 15 12 9 6" />
+			</svg>
+		</a>
+
+		<!-- Secondary actions -->
+		<div class="flex gap-2">
+			<a href="/map" class="flex flex-1 items-center gap-2.5 rounded-card bg-white px-4 py-3 shadow-card active:scale-[0.98]">
+				<svg class="h-5 w-5 shrink-0 text-jade" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" /><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7Z" />
+				</svg>
+				<span class="text-sm font-medium text-ink">{t('home.explore')}</span>
+			</a>
+			<a href="/search" class="flex flex-1 items-center gap-2.5 rounded-card bg-white px-4 py-3 shadow-card active:scale-[0.98]">
+				<svg class="h-5 w-5 shrink-0 text-jade" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+					<circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
+				</svg>
+				<span class="text-sm font-medium text-ink">{t('nav.search')}</span>
+			</a>
+			<a href="/friends" class="flex flex-1 items-center gap-2.5 rounded-card bg-white px-4 py-3 shadow-card active:scale-[0.98]">
+				<svg class="h-5 w-5 shrink-0 text-jade" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
+				</svg>
+				<span class="text-sm font-medium text-ink">{t('home.friends')}</span>
+			</a>
+		</div>
+
+		<!-- Recent Activity (real) -->
+		<section>
+			<div class="mb-3 flex items-center justify-between">
+				<h2 class="text-sm font-semibold uppercase tracking-wide text-ink-muted">{t('home.recentActivity')}</h2>
+				{#if recentActivity.length > 0}
+					<a href="/feed" class="text-xs font-medium text-jade active:opacity-70">{t('home.seeAll')}</a>
+				{/if}
+			</div>
+
+			{#if loadingActivity}
+				<div class="space-y-2">
+					{#each Array(3) as _}
+						<div class="animate-pulse rounded-card bg-white p-4 shadow-card">
+							<div class="flex gap-3">
+								<div class="h-8 w-8 rounded-full bg-cream-dark"></div>
+								<div class="flex-1 space-y-2">
+									<div class="h-3 w-3/4 rounded bg-cream-dark"></div>
+									<div class="h-3 w-1/2 rounded bg-cream-dark"></div>
+								</div>
+							</div>
+						</div>
+					{/each}
+				</div>
+			{:else if recentActivity.length === 0}
+				<div class="rounded-card bg-white p-5 shadow-card">
+					<p class="text-center text-sm text-ink-muted">
+						{t('home.noActivity')}
+					</p>
+				</div>
+			{:else}
+				<div class="space-y-2">
+					{#each recentActivity as activity (activity.id)}
+						<div class="flex items-start gap-3 rounded-card bg-white p-4 shadow-card">
+							<Avatar name={activity.actor.displayName} src={activity.actor.avatar} size={32} />
+							<div class="min-w-0 flex-1">
+								<p class="text-sm text-ink">
+									<span class="font-semibold">{activity.actor.displayName || activity.actor.email}</span>
+									{' '}
+									<span class="text-ink-muted">{activityText(activity)}</span>
+								</p>
+								{#if activity.pin?.rating}
+									<p class="mt-0.5 text-xs text-amber-500">{'★'.repeat(activity.pin.rating)}{'☆'.repeat(5 - activity.pin.rating)}</p>
+								{/if}
+								<p class="mt-0.5 text-xs text-ink-muted">{timeAgo(activity.createdAt)}</p>
+							</div>
+						</div>
+					{/each}
+				</div>
+			{/if}
 		</section>
 	</div>
 </div>

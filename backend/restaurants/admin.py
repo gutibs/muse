@@ -1,6 +1,6 @@
 from django.contrib.gis import admin as gis_admin
 
-from restaurants.models import Cuisine, Restaurant, Tag
+from restaurants.models import Cuisine, MenuItem, Restaurant, Tag
 
 
 @gis_admin.register(Restaurant)
@@ -22,3 +22,10 @@ class CuisineAdmin(gis_admin.ModelAdmin):
 class TagAdmin(gis_admin.ModelAdmin):
 	list_display = ("name", "slug")
 	prepopulated_fields = {"slug": ("name",)}
+
+
+@gis_admin.register(MenuItem)
+class MenuItemAdmin(gis_admin.ModelAdmin):
+	list_display = ("name", "restaurant", "category", "price", "is_recommended")
+	list_filter = ("category", "is_recommended", "is_vegetarian", "is_gluten_free")
+	search_fields = ("name", "restaurant__name")

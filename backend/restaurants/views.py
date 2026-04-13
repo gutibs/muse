@@ -6,12 +6,17 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from restaurants.models import Cuisine, Restaurant, Tag
-from restaurants.serializers import CuisineSerializer, RestaurantSerializer, TagSerializer
+from restaurants.serializers import CuisineSerializer, RestaurantDetailSerializer, RestaurantSerializer, TagSerializer
 
 
 class RestaurantViewSet(viewsets.ModelViewSet):
 	serializer_class = RestaurantSerializer
 	http_method_names = ["get", "post", "patch"]
+
+	def get_serializer_class(self):
+		if self.action == "retrieve":
+			return RestaurantDetailSerializer
+		return RestaurantSerializer
 
 	def get_queryset(self):
 		return Restaurant.objects.annotate(

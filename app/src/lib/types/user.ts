@@ -12,6 +12,11 @@ export interface Profile {
 	bio: string;
 	avatar: string | null;
 	city: string;
+	website: string;
+	instagram: string;
+	favouriteCuisine: number | null;
+	favouriteCuisineDetail: { id: number; name: string; slug: string } | null;
+	dietary: string;
 	stats: UserStats;
 	createdAt: string;
 }

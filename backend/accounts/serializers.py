@@ -11,6 +11,7 @@ User = get_user_model()
 class ProfileSerializer(serializers.ModelSerializer):
 	email = serializers.EmailField(source="user.email", read_only=True)
 	stats = serializers.SerializerMethodField()
+	favourite_cuisine_detail = serializers.SerializerMethodField()
 
 	class Meta:
 		model = Profile
@@ -21,10 +22,20 @@ class ProfileSerializer(serializers.ModelSerializer):
 			"bio",
 			"avatar",
 			"city",
+			"website",
+			"instagram",
+			"favourite_cuisine",
+			"favourite_cuisine_detail",
+			"dietary",
 			"stats",
 			"created_at",
 		)
-		read_only_fields = ("id", "email", "stats", "created_at")
+		read_only_fields = ("id", "email", "stats", "favourite_cuisine_detail", "created_at")
+
+	def get_favourite_cuisine_detail(self, obj):
+		if obj.favourite_cuisine:
+			return {"id": obj.favourite_cuisine.id, "name": obj.favourite_cuisine.name, "slug": obj.favourite_cuisine.slug}
+		return None
 
 	def get_stats(self, obj):
 		user = obj.user

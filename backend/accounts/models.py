@@ -16,6 +16,16 @@ class Profile(models.Model):
 	avatar = models.ImageField(upload_to="avatars/", blank=True)
 	city = models.CharField(max_length=100, blank=True)
 	location = gis_models.PointField(null=True, blank=True, srid=4326)
+	website = models.URLField(blank=True)
+	instagram = models.CharField(max_length=60, blank=True)
+	favourite_cuisine = models.ForeignKey(
+		"restaurants.Cuisine",
+		on_delete=models.SET_NULL,
+		null=True,
+		blank=True,
+		related_name="+",
+	)
+	dietary = models.CharField(max_length=50, blank=True)
 	created_at = models.DateTimeField(auto_now_add=True)
 	updated_at = models.DateTimeField(auto_now=True)
 

@@ -1,14 +1,16 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
 	import { goto } from '$app/navigation';
+	import DietaryBadges from '$lib/components/DietaryBadges.svelte';
 	import MapView from '$lib/components/MapView.svelte';
+	import { t } from '$lib/i18n/index.svelte';
 	import { restaurantsService } from '$lib/services/restaurants.service';
 	import type { Cuisine, Restaurant } from '$lib/types';
+	import { dietaryBadgesHtml } from '$lib/utils/dietary-badges';
 	import type L from 'leaflet';
 
-	function viewOnMap(r: Restaurant) {
-		if (!r.lat || !r.lng) return;
-		goto(`/map?focus=${r.id}`);
+	function viewRestaurant(r: Restaurant) {
+		goto(`/restaurant/${r.id}`);
 	}
 
 	let query = $state('');
@@ -153,6 +155,7 @@
 						${r.city ? `<br><span style="color:#8A8A8A;font-size:12px;">${r.city}</span>` : ''}
 						${r.cuisineDetail ? `<br><span style="color:#8A8A8A;font-size:11px;">${r.cuisineDetail.name}</span>` : ''}
 						${r.averageRating ? `<br><span style="color:#2D6A4F;font-size:13px;">★ ${r.averageRating.toFixed(1)}</span>` : ''}
+						${dietaryBadgesHtml(r.tagsDetail)}
 					</div>
 				`);
 			bounds.push([r.lat, r.lng]);
@@ -170,7 +173,7 @@
 
 <div class="flex h-full flex-col">
 	<header class="shrink-0 px-5 pb-3 pt-4">
-		<h1 class="mb-3 text-lg font-semibold text-ink">Search</h1>
+		<h1 class="mb-3 text-lg font-semibold text-ink">{t('search.title')}</h1>
 
 		<!-- Search input -->
 		<div class="relative">
@@ -182,7 +185,7 @@
 				bind:value={query}
 				oninput={onInputChange}
 				onkeydown={(e) => e.key === 'Enter' && runSearch()}
-				placeholder="Restaurant name..."
+				placeholder={t('search.placeholder')}
 				class="w-full rounded-input border border-cream-dark bg-white py-3 pl-10 pr-4 text-base text-ink outline-none focus:border-jade"
 			/>
 		</div>
@@ -194,7 +197,7 @@
 				bind:value={cityFilter}
 				oninput={onInputChange}
 				onkeydown={(e) => e.key === 'Enter' && runSearch()}
-				placeholder="City"
+				placeholder={t('search.city')}
 				class="min-w-0 flex-1 rounded-input border border-cream-dark bg-white px-3 py-2.5 text-base text-ink outline-none focus:border-jade"
 			/>
 			<select
@@ -202,7 +205,7 @@
 				onchange={runSearch}
 				class="min-w-0 flex-1 rounded-input border border-cream-dark bg-white px-3 py-2.5 text-base text-ink outline-none focus:border-jade"
 			>
-				<option value="">Any cuisine</option>
+				<option value="">{t('search.anyCuisine')}</option>
 				{#each cuisines as c}
 					<option value={c.slug}>{c.name}</option>
 				{/each}
@@ -219,13 +222,13 @@
 				<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 					<circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
 				</svg>
-				Search
+				{t('search.search')}
 			{:else}
 				<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 					<path d="M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
 					<path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7Z" />
 				</svg>
-				Find nearby
+				{t('search.findNearby')}
 			{/if}
 		</button>
 
@@ -238,14 +241,14 @@
 						class="flex-1 rounded-button py-1.5 text-sm font-medium active:scale-[0.98]
 							{view === 'list' ? 'bg-white text-ink shadow-card' : 'text-ink-muted'}"
 					>
-						List
+						{t('search.list')}
 					</button>
 					<button
 						onclick={() => (view = 'map')}
 						class="flex-1 rounded-button py-1.5 text-sm font-medium active:scale-[0.98]
 							{view === 'map' ? 'bg-white text-ink shadow-card' : 'text-ink-muted'}"
 					>
-						Map
+						{t('search.map')}
 					</button>
 				</div>
 				{#if hasFilters}
@@ -253,7 +256,7 @@
 						onclick={clearAll}
 						class="flex min-h-9 items-center gap-1 rounded-button border border-cream-dark px-3 text-xs font-medium text-ink-muted active:scale-[0.98]"
 					>
-						Clear
+						{t('search.clear')}
 					</button>
 				{/if}
 			</div>
@@ -266,7 +269,7 @@
 			<div class="flex h-full flex-col items-center justify-center gap-3">
 				<div class="h-7 w-7 animate-spin rounded-full border-2 border-jade border-t-transparent"></div>
 				{#if locating}
-					<p class="text-xs text-ink-muted">Getting your location...</p>
+					<p class="text-xs text-ink-muted">{t('search.gettingLocation')}</p>
 				{/if}
 			</div>
 
@@ -285,7 +288,7 @@
 						<circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
 					</svg>
 				</div>
-				<p class="text-sm font-medium text-ink">Find restaurants</p>
+				<p class="text-sm font-medium text-ink">{t('search.findRestaurants')}</p>
 				<p class="mt-1 text-xs text-ink-muted">
 					Press <span class="font-medium text-ink">Find nearby</span> to see what's around you,<br />
 					or filter by name, city or cuisine.
@@ -294,8 +297,8 @@
 
 		{:else if results.length === 0}
 			<div class="flex h-full flex-col items-center justify-center px-8 text-center">
-				<p class="text-sm font-medium text-ink">No restaurants found</p>
-				<p class="mt-1 text-xs text-ink-muted">Try different filters or check the spelling</p>
+				<p class="text-sm font-medium text-ink">{t('search.noResults')}</p>
+				<p class="mt-1 text-xs text-ink-muted">{t('search.noResultsDesc')}</p>
 			</div>
 
 		{:else if view === 'list'}
@@ -306,19 +309,27 @@
 							<path d="M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
 							<path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7Z" />
 						</svg>
-						Showing restaurants near you (~20km)
+						{t('search.nearYou')}
 					</li>
 				{/if}
 				{#each results as r (r.id)}
 					<li>
 						<button
 							type="button"
-							onclick={() => viewOnMap(r)}
-							class="flex w-full items-start gap-3 rounded-card bg-white p-4 text-left shadow-card active:scale-[0.98]"
+							onclick={() => viewRestaurant(r)}
+							class="flex w-full overflow-hidden rounded-card bg-white text-left shadow-card active:scale-[0.98]"
 						>
-							<div class="min-w-0 flex-1">
+							{#if r.imageUrl}
+								<img
+									src={r.imageUrl}
+									alt={r.name}
+									class="h-28 w-24 shrink-0 object-cover"
+									loading="lazy"
+								/>
+							{/if}
+							<div class="flex min-w-0 flex-1 flex-col justify-center gap-1 p-3">
 								<p class="truncate text-sm font-semibold text-ink">{r.name}</p>
-								<p class="mt-0.5 flex flex-wrap items-center gap-1 text-xs text-ink-muted">
+								<p class="flex flex-wrap items-center gap-1 text-xs text-ink-muted">
 									{#if r.city}<span>{r.city}</span>{/if}
 									{#if r.cuisineDetail}
 										<span>·</span>
@@ -330,17 +341,26 @@
 									{/if}
 								</p>
 								{#if r.averageRating}
-									<p class="mt-1 text-sm text-amber-500">
-										★ <span class="text-xs text-ink-muted">{r.averageRating.toFixed(1)} ({r.pinCount} pin{r.pinCount === 1 ? '' : 's'})</span>
-									</p>
+									<div class="flex items-center gap-1.5">
+										<div class="flex text-amber-400">
+											{#each Array(5) as _, i}
+												{#if i < Math.round(r.averageRating ?? 0)}
+													<svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+												{:else}
+													<svg class="h-3.5 w-3.5 text-cream-dark" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+												{/if}
+											{/each}
+										</div>
+										<span class="text-xs text-ink-muted">{r.averageRating.toFixed(1)}</span>
+										<span class="text-xs text-ink-muted">({r.pinCount})</span>
+									</div>
 								{:else if r.pinCount > 0}
-									<p class="mt-1 text-xs text-ink-muted">{r.pinCount} pin{r.pinCount === 1 ? '' : 's'}</p>
+									<p class="text-xs text-ink-muted">{r.pinCount} pin{r.pinCount === 1 ? '' : 's'}</p>
+								{/if}
+								{#if r.tagsDetail?.length}
+									<DietaryBadges tags={r.tagsDetail} />
 								{/if}
 							</div>
-							<svg class="mt-1 h-4 w-4 shrink-0 text-ink-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-								<path d="M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
-								<path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7Z" />
-							</svg>
 						</button>
 					</li>
 				{/each}

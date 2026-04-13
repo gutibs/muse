@@ -20,7 +20,7 @@ export const authService = {
 		return api.get('/auth/profile/');
 	},
 
-	updateProfile(data: Partial<Pick<Profile, 'displayName' | 'bio' | 'city'>>): Promise<Profile> {
+	updateProfile(data: Partial<Pick<Profile, 'displayName' | 'bio' | 'city' | 'website' | 'instagram' | 'dietary' | 'favouriteCuisine'>>): Promise<Profile> {
 		return api.patch('/auth/profile/', data);
 	},
 

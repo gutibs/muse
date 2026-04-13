@@ -86,10 +86,7 @@
 		}
 	}
 
-	function stars(n: number | null): string {
-		if (!n) return '';
-		return '★'.repeat(n) + '☆'.repeat(5 - n);
-	}
+
 </script>
 
 <div class="flex h-full flex-col">
@@ -194,24 +191,37 @@
 					{:else}
 						<ul class="h-full space-y-2 overflow-y-auto px-5 pb-6">
 							{#each filteredPins as pin (pin.id)}
-								<li class="rounded-card bg-white p-4 shadow-card">
-									<div class="flex items-start justify-between gap-3">
-										<div class="min-w-0 flex-1">
+								<li class="flex overflow-hidden rounded-card bg-white shadow-card">
+									{#if pin.restaurantDetail.imageUrl}
+										<img src={pin.restaurantDetail.imageUrl} alt={pin.restaurantDetail.name} class="h-28 w-24 shrink-0 object-cover" loading="lazy" />
+									{/if}
+									<div class="flex min-w-0 flex-1 flex-col justify-center gap-1 p-3">
+										<div class="flex items-start justify-between gap-2">
 											<p class="truncate text-sm font-semibold text-ink">{pin.restaurantDetail.name}</p>
-											{#if pin.restaurantDetail.city}
-												<p class="text-xs text-ink-muted">{pin.restaurantDetail.city}</p>
-											{/if}
-											{#if pin.rating}
-												<p class="mt-1 text-sm tracking-tight text-amber-500">{stars(pin.rating)}</p>
-											{/if}
-											{#if pin.comment}
-												<p class="mt-1 text-xs italic text-ink-light">"{pin.comment}"</p>
-											{/if}
+											<span class="shrink-0 rounded-full px-2 py-0.5 text-xs font-medium
+												{pin.status === 'visited' ? 'bg-jade/10 text-jade' : 'bg-cream-dark text-ink-muted'}">
+												{pin.status === 'visited' ? 'Visited' : 'To Visit'}
+											</span>
 										</div>
-										<span class="shrink-0 rounded-full px-2 py-0.5 text-xs font-medium
-											{pin.status === 'visited' ? 'bg-jade/10 text-jade' : 'bg-cream-dark text-ink-muted'}">
-											{pin.status === 'visited' ? 'Visited' : 'To Visit'}
-										</span>
+										{#if pin.restaurantDetail.city}
+											<p class="text-xs text-ink-muted">{pin.restaurantDetail.city}</p>
+										{/if}
+										{#if pin.rating}
+											<div class="flex items-center gap-1">
+												<div class="flex text-amber-400">
+													{#each Array(5) as _, i}
+														{#if i < pin.rating}
+															<svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+														{:else}
+															<svg class="h-3.5 w-3.5 text-cream-dark" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+														{/if}
+													{/each}
+												</div>
+											</div>
+										{/if}
+										{#if pin.comment}
+											<p class="line-clamp-2 text-xs italic text-ink-light">"{pin.comment}"</p>
+										{/if}
 									</div>
 								</li>
 							{/each}
