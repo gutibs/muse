@@ -1,8 +1,13 @@
-from rest_framework import permissions, viewsets
+from rest_framework import generics, permissions, viewsets
 from rest_framework.response import Response
 
-from pins.models import Persona, Pin
-from pins.serializers import PersonaSerializer, PinSerializer
+from pins.models import Persona, Pin, SharedList
+from pins.serializers import (
+	PersonaSerializer,
+	PinSerializer,
+	SharedListPublicSerializer,
+	SharedListSerializer,
+)
 
 
 class PinViewSet(viewsets.ModelViewSet):
@@ -40,3 +45,21 @@ class PersonaViewSet(viewsets.ReadOnlyModelViewSet):
 	queryset = Persona.objects.all()
 	serializer_class = PersonaSerializer
 	pagination_class = None
+
+
+class SharedListViewSet(viewsets.ModelViewSet):
+	serializer_class = SharedListSerializer
+	http_method_names = ["get", "post", "patch", "delete"]
+
+	def get_queryset(self):
+		return SharedList.objects.filter(user=self.request.user)
+
+
+class SharedListPublicView(generics.RetrieveAPIView):
+	serializer_class = SharedListPublicSerializer
+	permission_classes = (permissions.AllowAny,)
+	authentication_classes = ()
+	lookup_field = "token"
+
+	def get_queryset(self):
+		return SharedList.objects.filter(is_active=True).select_related("user__profile")

@@ -1,3 +1,5 @@
+import uuid
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
@@ -62,3 +64,27 @@ class Pin(models.Model):
 			raise ValidationError("Rating is required for visited restaurants.")
 		if self.status == self.Status.TO_VISIT and self.rating is not None:
 			raise ValidationError("Cannot rate a restaurant you have not visited.")
+
+
+class SharedList(models.Model):
+	user = models.ForeignKey(
+		settings.AUTH_USER_MODEL,
+		on_delete=models.CASCADE,
+		related_name="shared_lists",
+	)
+	token = models.UUIDField(default=uuid.uuid4, unique=True, db_index=True)
+	title = models.CharField(max_length=200, blank=True)
+	status_filter = models.CharField(
+		max_length=10,
+		choices=[("all", "All"), *Pin.Status.choices],
+		default="all",
+	)
+	is_active = models.BooleanField(default=True)
+	created_at = models.DateTimeField(auto_now_add=True)
+
+	class Meta:
+		db_table = "pins_shared_list"
+		ordering = ["-created_at"]
+
+	def __str__(self):
+		return f"{self.user} — {self.title or 'My List'} ({self.token})"

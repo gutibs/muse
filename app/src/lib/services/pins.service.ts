@@ -1,5 +1,5 @@
 import { api } from './api.service';
-import type { Persona, Pin, PinCreate, PaginatedResponse } from '$lib/types';
+import type { Persona, Pin, PinCreate, PaginatedResponse, SharedList, SharedListPublic } from '$lib/types';
 
 export const pinsService = {
 	list(params?: { status?: string; persona?: string; city?: string }): Promise<PaginatedResponse<Pin>> {
@@ -29,5 +29,23 @@ export const pinsService = {
 
 	personas(): Promise<Persona[]> {
 		return api.get('/personas/');
+	},
+
+	// Shared lists
+	sharedLists(): Promise<SharedList[]> {
+		const res = api.get<PaginatedResponse<SharedList> | SharedList[]>('/shared-lists/');
+		return res.then((r) => (Array.isArray(r) ? r : r.results));
+	},
+
+	createSharedList(data: { title?: string; statusFilter?: string }): Promise<SharedList> {
+		return api.post('/shared-lists/', data);
+	},
+
+	deleteSharedList(id: number): Promise<void> {
+		return api.delete(`/shared-lists/${id}/`);
+	},
+
+	getSharedList(token: string): Promise<SharedListPublic> {
+		return api.get(`/shared/${token}/`);
 	},
 };

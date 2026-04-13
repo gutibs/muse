@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
-from pins.models import Persona, Pin
+from accounts.serializers import UserPublicSerializer
+from pins.models import Persona, Pin, SharedList
 from restaurants.serializers import RestaurantSerializer
 
 
@@ -68,3 +69,38 @@ class PinSerializer(serializers.ModelSerializer):
 		if personas is not None:
 			instance.personas.set(personas)
 		return instance
+
+
+class SharedListSerializer(serializers.ModelSerializer):
+	url = serializers.SerializerMethodField()
+
+	class Meta:
+		model = SharedList
+		fields = ("id", "token", "title", "status_filter", "is_active", "url", "created_at")
+		read_only_fields = ("id", "token", "url", "created_at")
+
+	def get_url(self, obj):
+		return f"/shared/{obj.token}"
+
+	def create(self, validated_data):
+		validated_data["user"] = self.context["request"].user
+		return super().create(validated_data)
+
+
+class SharedListPublicSerializer(serializers.ModelSerializer):
+	owner = UserPublicSerializer(source="user", read_only=True)
+	pins = serializers.SerializerMethodField()
+
+	class Meta:
+		model = SharedList
+		fields = ("id", "title", "owner", "pins", "created_at")
+
+	def get_pins(self, obj):
+		qs = (
+			Pin.objects.filter(user=obj.user)
+			.select_related("restaurant", "restaurant__cuisine")
+			.prefetch_related("personas")
+		)
+		if obj.status_filter != "all":
+			qs = qs.filter(status=obj.status_filter)
+		return PinSerializer(qs, many=True).data

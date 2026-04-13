@@ -1,17 +1,68 @@
 <script lang="ts">
 	import Avatar from '$lib/components/Avatar.svelte';
+	import { pinsService } from '$lib/services/pins.service';
 	import { authStore } from '$lib/stores/auth.store.svelte';
 	import { ApiError } from '$lib/types';
+	import type { SharedList } from '$lib/types';
 
 	let editing = $state(false);
 	let saving = $state(false);
 	let error = $state('');
 	let success = $state('');
 
+	// Share
+	let sharing = $state(false);
+	let shareLink = $state('');
+	let sharedLists = $state<SharedList[]>([]);
+
 	// Edit fields
 	let editName = $state('');
 	let editBio = $state('');
 	let editCity = $state('');
+
+	async function loadSharedLists() {
+		try {
+			sharedLists = await pinsService.sharedLists();
+		} catch {
+			sharedLists = [];
+		}
+	}
+
+	async function createShareLink() {
+		sharing = true;
+		shareLink = '';
+		try {
+			const list = await pinsService.createSharedList({ title: `${authStore.user?.displayName}'s List` });
+			shareLink = `${window.location.origin}${list.url}`;
+			sharedLists = [...sharedLists, list];
+			await navigator.clipboard.writeText(shareLink);
+			success = 'Link copied to clipboard!';
+			setTimeout(() => (success = ''), 3000);
+		} catch {
+			error = 'Could not create share link.';
+		} finally {
+			sharing = false;
+		}
+	}
+
+	async function deleteSharedList(id: number) {
+		try {
+			await pinsService.deleteSharedList(id);
+			sharedLists = sharedLists.filter((l) => l.id !== id);
+		} catch {
+			error = 'Could not remove link.';
+		}
+	}
+
+	function copyLink(url: string) {
+		navigator.clipboard.writeText(`${window.location.origin}${url}`);
+		success = 'Link copied!';
+		setTimeout(() => (success = ''), 3000);
+	}
+
+	$effect(() => {
+		if (authStore.isAuthenticated) loadSharedLists();
+	});
 
 	function startEditing() {
 		editName = authStore.user?.displayName || '';
@@ -202,6 +253,51 @@
 					</button>
 				</div>
 			</div>
+		{/if}
+
+		<!-- Share your list -->
+		{#if !editing}
+			<section class="mb-6">
+				<h3 class="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-muted">Share your list</h3>
+
+				{#if sharedLists.length > 0}
+					<ul class="space-y-2">
+						{#each sharedLists as list (list.id)}
+							<li class="flex items-center gap-3 rounded-card bg-white p-4 shadow-card">
+								<div class="min-w-0 flex-1">
+									<p class="truncate text-sm font-medium text-ink">{list.title || 'My List'}</p>
+									<p class="truncate text-xs text-ink-muted">{list.url}</p>
+								</div>
+								<button
+									onclick={() => copyLink(list.url)}
+									class="flex min-h-9 items-center rounded-button bg-jade/10 px-3 text-xs font-semibold text-jade active:scale-[0.98]"
+								>
+									Copy
+								</button>
+								<button
+									onclick={() => deleteSharedList(list.id)}
+									class="flex min-h-9 items-center rounded-button border border-cream-dark px-3 text-xs font-medium text-ink-muted active:scale-[0.98]"
+								>
+									Remove
+								</button>
+							</li>
+						{/each}
+					</ul>
+				{/if}
+
+				<button
+					onclick={createShareLink}
+					disabled={sharing}
+					class="mt-2 flex min-h-12 w-full items-center justify-center gap-2 rounded-button bg-jade text-base font-semibold text-white active:scale-[0.98] disabled:opacity-50"
+				>
+					<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+						<polyline points="16 6 12 2 8 6" />
+						<line x1="12" y1="2" x2="12" y2="15" />
+					</svg>
+					{sharing ? 'Creating...' : 'Create share link'}
+				</button>
+			</section>
 		{/if}
 
 		<!-- Menu items (view mode) -->

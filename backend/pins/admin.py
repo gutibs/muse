@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from pins.models import Persona, Pin
+from pins.models import Persona, Pin, SharedList
 
 
 @admin.register(Pin)
@@ -21,3 +21,10 @@ class PinAdmin(admin.ModelAdmin):
 class PersonaAdmin(admin.ModelAdmin):
 	list_display = ("name", "slug", "icon", "color")
 	prepopulated_fields = {"slug": ("name",)}
+
+
+@admin.register(SharedList)
+class SharedListAdmin(admin.ModelAdmin):
+	list_display = ("user", "title", "status_filter", "is_active", "token", "created_at")
+	list_filter = ("is_active", "status_filter")
+	readonly_fields = ("token", "created_at")
