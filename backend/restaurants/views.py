@@ -65,13 +65,7 @@ class RestaurantViewSet(viewsets.ModelViewSet):
 		serializer = self.get_serializer(data=request.data)
 		serializer.is_valid(raise_exception=True)
 		serializer.save()
-		return Response(
-			{
-				"detail": "Restaurant submitted for review. It will appear once approved.",
-				"restaurant": serializer.data,
-			},
-			status=status.HTTP_201_CREATED,
-		)
+		return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 	def retrieve(self, request, *args, **kwargs):
 		"""Allow retrieving a specific restaurant even if pending (for the user who created it)."""

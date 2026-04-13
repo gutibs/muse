@@ -233,7 +233,7 @@
 	<button
 		aria-label="Add pin"
 		onclick={() => goto('/pin/new')}
-		class="absolute bottom-4 right-4 z-1000 flex h-14 w-14 items-center justify-center rounded-full bg-jade text-white shadow-elevated active:scale-95"
+		class="absolute bottom-24 right-4 z-1000 flex h-14 w-14 items-center justify-center rounded-full bg-jade text-white shadow-elevated active:scale-95"
 	>
 		<svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 			<line x1="12" y1="5" x2="12" y2="19" />
