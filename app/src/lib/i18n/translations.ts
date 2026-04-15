@@ -89,7 +89,7 @@ const translations: Record<Locale, Record<string, string>> = {
 		'feed.loadMore': 'Load more',
 		'feed.joinedMuse': 'joined Muse',
 		'feed.becameFriends': 'became friends with',
-		'feed.wantsToVisit': 'put {restaurant} on their list',
+		'feed.wantsToVisit': 'put {restaurant} on the list',
 		'feed.visited': 'rated',
 		'feed.updated': 'updated their pin for',
 		'feed.tryAgain': 'Try again',
