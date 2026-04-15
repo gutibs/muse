@@ -74,7 +74,10 @@ class UserSearchView(generics.ListAPIView):
 		name_ids = User.objects.filter(
 			profile__display_name__icontains=query
 		).values_list("id", flat=True)
-		matching_ids = set(email_ids) | set(name_ids)
+		phone_ids = User.objects.filter(
+			profile__phone__icontains=query
+		).values_list("id", flat=True)
+		matching_ids = set(email_ids) | set(name_ids) | set(phone_ids)
 		matching_ids.discard(self.request.user.id)
 
 		return User.objects.filter(id__in=matching_ids).select_related("profile")[:20]

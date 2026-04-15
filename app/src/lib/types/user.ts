@@ -14,6 +14,7 @@ export interface Profile {
 	city: string;
 	website: string;
 	instagram: string;
+	phone: string;
 	favouriteCuisine: number | null;
 	favouriteCuisineDetail: { id: number; name: string; slug: string } | null;
 	dietary: string;

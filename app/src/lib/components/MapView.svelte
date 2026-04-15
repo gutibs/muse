@@ -45,7 +45,7 @@
 				noWrap: true,
 			}).addTo(instance);
 
-			Leaflet.control.attribution({ position: 'bottomleft', prefix: false })
+			Leaflet.control.attribution({ position: 'bottomright', prefix: false })
 				.addAttribution('&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>')
 				.addTo(instance);
 

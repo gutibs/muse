@@ -51,9 +51,6 @@
 		}
 	}
 
-	function stars(n: number): string {
-		return '★'.repeat(n) + '☆'.repeat(5 - n);
-	}
 </script>
 
 <div class="flex h-full flex-col">
@@ -80,7 +77,7 @@
 			<div class="flex flex-col items-center py-16 text-center">
 				<div class="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-jade/10 text-jade">
 					<svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-						<path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+						<path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/>
 					</svg>
 				</div>
 				<p class="text-sm font-medium text-ink">{t('feed.empty')}</p>
@@ -116,6 +113,12 @@
 										<span class="text-ink-muted">{t('feed.becameFriends')}</span>
 										{' '}
 										<span class="font-semibold">{activity.targetUser.displayName || activity.targetUser.email}</span>
+									{:else if activity.verb === 'pinned' && activity.pin}
+										{@const parts = t('feed.wantsToVisit').split('{restaurant}')}
+										<span class="text-ink-muted">{parts[0]}</span><span class="font-semibold">{activity.pin.restaurantDetail.name}</span><span class="text-ink-muted">{parts[1] || ''}</span>
+										{#if activity.pin.restaurantDetail.city}
+											<span class="text-ink-muted">, {activity.pin.restaurantDetail.city}</span>
+										{/if}
 									{:else if activity.pin}
 										<span class="text-ink-muted">{verbLabel(activity)}</span>
 										{' '}
@@ -128,9 +131,15 @@
 
 								<!-- Rating -->
 								{#if activity.verb === 'rated' && activity.pin?.rating}
-									<p class="mt-0.5 text-sm tracking-tight text-amber-500">
-										{stars(activity.pin.rating)}
-									</p>
+									<div class="mt-0.5 flex text-rose-400">
+										{#each Array(5) as _, i}
+											{#if i < activity.pin.rating}
+												<svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+											{:else}
+												<svg class="h-3.5 w-3.5 text-cream-dark" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+											{/if}
+										{/each}
+									</div>
 								{/if}
 
 								<!-- Comment -->

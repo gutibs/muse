@@ -11,9 +11,9 @@ const translations: Record<Locale, Record<string, string>> = {
 		// Nav
 		'nav.home': 'Home',
 		'nav.feed': 'Feed',
-		'nav.map': 'Map',
+		'nav.map': 'Explore',
 		'nav.search': 'Search',
-		'nav.profile': 'Profile',
+		'nav.profile': 'Me',
 
 		// Auth
 		'auth.signIn': 'Sign In',
@@ -68,7 +68,7 @@ const translations: Record<Locale, Record<string, string>> = {
 		'home.goodAfternoon': 'Good afternoon',
 		'home.goodEvening': 'Good evening',
 		'home.addPin': 'Add a Pin',
-		'home.addPinDesc': 'Tag a restaurant you\'ve been to or want to try',
+		'home.addPinDesc': 'Rate a restaurant you\'ve visited or add one to your list',
 		'home.explore': 'Explore',
 		'home.friends': 'Friends',
 		'home.friendRequests': 'Friend request',
@@ -78,7 +78,7 @@ const translations: Record<Locale, Record<string, string>> = {
 		'home.seeAll': 'See all',
 		'home.noActivity': 'No activity yet. Add friends to see where they\'ve been eating.',
 		'home.pins': 'Pins',
-		'home.visited': 'Visited',
+		'home.visited': 'Rated',
 
 		// Feed
 		'feed.title': 'Feed',
@@ -89,16 +89,16 @@ const translations: Record<Locale, Record<string, string>> = {
 		'feed.loadMore': 'Load more',
 		'feed.joinedMuse': 'joined Muse',
 		'feed.becameFriends': 'became friends with',
-		'feed.wantsToVisit': 'wants to visit',
-		'feed.visited': 'visited',
+		'feed.wantsToVisit': 'put {restaurant} on their list',
+		'feed.visited': 'rated',
 		'feed.updated': 'updated their pin for',
 		'feed.tryAgain': 'Try again',
 
 		// Map
 		'map.friendsOn': 'Friends ON',
 		'map.friendsOff': 'Friends OFF',
-		'map.yourVisited': 'Your visited',
-		'map.yourToVisit': 'Your to-visit',
+		'map.yourVisited': 'Your rated',
+		'map.yourToVisit': 'Your on the list',
 		'map.friendPins': 'Friend pins',
 		'map.restaurants': 'Restaurants',
 
@@ -142,7 +142,10 @@ const translations: Record<Locale, Record<string, string>> = {
 		'profile.linkCopiedClipboard': 'Link copied to clipboard!',
 		'profile.language': 'Language',
 		'profile.since': 'Since',
-		'profile.toVisit': 'To Visit',
+		'profile.toVisit': 'On the List',
+
+		// Pin
+		'pin.myNotes': 'My Notes',
 
 		// Friends
 		'friends.title': 'Friends',
@@ -154,7 +157,7 @@ const translations: Record<Locale, Record<string, string>> = {
 		'friends.noRequests': 'No pending requests',
 		'friends.accept': 'Accept',
 		'friends.decline': 'Decline',
-		'friends.searchByName': 'Search by name or email',
+		'friends.searchByName': 'Search by name, email or phone',
 		'friends.searchPeople': 'Search people...',
 		'friends.noUsersFound': 'No users found. Try inviting by email.',
 		'friends.ownEmail': "That's your own email",
@@ -183,8 +186,8 @@ const translations: Record<Locale, Record<string, string>> = {
 		'settings.about': 'About',
 
 		// Common
-		'common.visited': 'Visited',
-		'common.toVisit': 'To Visit',
+		'common.visited': 'Rated',
+		'common.toVisit': 'On the List',
 		'common.all': 'All',
 		'common.error': 'Something went wrong.',
 		'common.back': 'Back',
@@ -193,9 +196,9 @@ const translations: Record<Locale, Record<string, string>> = {
 	es: {
 		'nav.home': 'Inicio',
 		'nav.feed': 'Feed',
-		'nav.map': 'Mapa',
+		'nav.map': 'Explorar',
 		'nav.search': 'Buscar',
-		'nav.profile': 'Perfil',
+		'nav.profile': 'Yo',
 
 		'auth.signIn': 'Iniciar Sesión',
 		'auth.signingIn': 'Iniciando sesión...',
@@ -246,7 +249,7 @@ const translations: Record<Locale, Record<string, string>> = {
 		'home.goodAfternoon': 'Buenas tardes',
 		'home.goodEvening': 'Buenas noches',
 		'home.addPin': 'Agregar Pin',
-		'home.addPinDesc': 'Marcá un restaurante que visitaste o querés visitar',
+		'home.addPinDesc': 'Calificá un restaurante que visitaste o agregá uno a tu lista',
 		'home.explore': 'Explorar',
 		'home.friends': 'Amigos',
 		'home.friendRequests': 'Solicitud de amistad',
@@ -256,7 +259,7 @@ const translations: Record<Locale, Record<string, string>> = {
 		'home.seeAll': 'Ver todo',
 		'home.noActivity': 'Sin actividad aún. Agregá amigos para ver dónde están comiendo.',
 		'home.pins': 'Pins',
-		'home.visited': 'Visitados',
+		'home.visited': 'Calificados',
 
 		'feed.title': 'Feed',
 		'feed.subtitle': 'Qué están comiendo tus amigos',
@@ -266,15 +269,15 @@ const translations: Record<Locale, Record<string, string>> = {
 		'feed.loadMore': 'Cargar más',
 		'feed.joinedMuse': 'se unió a Muse',
 		'feed.becameFriends': 'se hizo amigo de',
-		'feed.wantsToVisit': 'quiere visitar',
-		'feed.visited': 'visitó',
+		'feed.wantsToVisit': 'puso {restaurant} en su lista',
+		'feed.visited': 'calificó',
 		'feed.updated': 'actualizó su pin de',
 		'feed.tryAgain': 'Reintentar',
 
 		'map.friendsOn': 'Amigos ON',
 		'map.friendsOff': 'Amigos OFF',
-		'map.yourVisited': 'Tus visitados',
-		'map.yourToVisit': 'Tus por visitar',
+		'map.yourVisited': 'Tus calificados',
+		'map.yourToVisit': 'Tu lista',
 		'map.friendPins': 'Pins de amigos',
 		'map.restaurants': 'Restaurantes',
 
@@ -316,7 +319,9 @@ const translations: Record<Locale, Record<string, string>> = {
 		'profile.linkCopiedClipboard': '¡Link copiado al portapapeles!',
 		'profile.language': 'Idioma',
 		'profile.since': 'Desde',
-		'profile.toVisit': 'Por Visitar',
+		'profile.toVisit': 'En la Lista',
+
+		'pin.myNotes': 'Mis Notas',
 
 		'friends.title': 'Amigos',
 		'friends.requests': 'Solicitudes',
@@ -351,8 +356,8 @@ const translations: Record<Locale, Record<string, string>> = {
 		'settings.changePassword': 'Cambiar Contraseña',
 		'settings.about': 'Acerca de',
 
-		'common.visited': 'Visitado',
-		'common.toVisit': 'Por Visitar',
+		'common.visited': 'Calificado',
+		'common.toVisit': 'En la Lista',
 		'common.all': 'Todos',
 		'common.error': 'Algo salió mal.',
 		'common.back': 'Volver',
@@ -361,9 +366,9 @@ const translations: Record<Locale, Record<string, string>> = {
 	it: {
 		'nav.home': 'Home',
 		'nav.feed': 'Feed',
-		'nav.map': 'Mappa',
+		'nav.map': 'Esplora',
 		'nav.search': 'Cerca',
-		'nav.profile': 'Profilo',
+		'nav.profile': 'Io',
 
 		'auth.signIn': 'Accedi',
 		'auth.signingIn': 'Accesso in corso...',
@@ -414,7 +419,7 @@ const translations: Record<Locale, Record<string, string>> = {
 		'home.goodAfternoon': 'Buon pomeriggio',
 		'home.goodEvening': 'Buonasera',
 		'home.addPin': 'Aggiungi Pin',
-		'home.addPinDesc': 'Segna un ristorante che hai visitato o vuoi provare',
+		'home.addPinDesc': 'Valuta un ristorante che hai visitato o aggiungine uno alla tua lista',
 		'home.explore': 'Esplora',
 		'home.friends': 'Amici',
 		'home.friendRequests': 'Richiesta di amicizia',
@@ -424,7 +429,7 @@ const translations: Record<Locale, Record<string, string>> = {
 		'home.seeAll': 'Vedi tutto',
 		'home.noActivity': 'Nessuna attività. Aggiungi amici per vedere dove mangiano.',
 		'home.pins': 'Pin',
-		'home.visited': 'Visitati',
+		'home.visited': 'Valutati',
 
 		'feed.title': 'Feed',
 		'feed.subtitle': 'Cosa stanno mangiando i tuoi amici',
@@ -434,15 +439,15 @@ const translations: Record<Locale, Record<string, string>> = {
 		'feed.loadMore': 'Carica altro',
 		'feed.joinedMuse': 'si è unito a Muse',
 		'feed.becameFriends': 'è diventato amico di',
-		'feed.wantsToVisit': 'vuole visitare',
-		'feed.visited': 'ha visitato',
+		'feed.wantsToVisit': 'ha aggiunto {restaurant} alla sua lista',
+		'feed.visited': 'ha valutato',
 		'feed.updated': 'ha aggiornato il pin di',
 		'feed.tryAgain': 'Riprova',
 
 		'map.friendsOn': 'Amici ON',
 		'map.friendsOff': 'Amici OFF',
-		'map.yourVisited': 'I tuoi visitati',
-		'map.yourToVisit': 'Da visitare',
+		'map.yourVisited': 'I tuoi valutati',
+		'map.yourToVisit': 'La tua lista',
 		'map.friendPins': 'Pin amici',
 		'map.restaurants': 'Ristoranti',
 
@@ -484,7 +489,9 @@ const translations: Record<Locale, Record<string, string>> = {
 		'profile.linkCopiedClipboard': 'Link copiato negli appunti!',
 		'profile.language': 'Lingua',
 		'profile.since': 'Dal',
-		'profile.toVisit': 'Da Visitare',
+		'profile.toVisit': 'In Lista',
+
+		'pin.myNotes': 'Le Mie Note',
 
 		'friends.title': 'Amici',
 		'friends.requests': 'Richieste',
@@ -519,8 +526,8 @@ const translations: Record<Locale, Record<string, string>> = {
 		'settings.changePassword': 'Cambia Password',
 		'settings.about': 'Informazioni',
 
-		'common.visited': 'Visitato',
-		'common.toVisit': 'Da Visitare',
+		'common.visited': 'Valutato',
+		'common.toVisit': 'In Lista',
 		'common.all': 'Tutti',
 		'common.error': 'Qualcosa è andato storto.',
 		'common.back': 'Indietro',

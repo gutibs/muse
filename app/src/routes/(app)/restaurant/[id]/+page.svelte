@@ -4,14 +4,13 @@
 	import Avatar from '$lib/components/Avatar.svelte';
 	import DietaryBadges from '$lib/components/DietaryBadges.svelte';
 	import { restaurantsService } from '$lib/services/restaurants.service';
-	import type { MenuItem, RestaurantDetail } from '$lib/types';
+	import type { RestaurantDetail } from '$lib/types';
 
 	let restaurantId = $derived(Number(page.params.id));
 
 	let restaurant = $state<RestaurantDetail | null>(null);
 	let loading = $state(true);
 	let error = $state('');
-	let activeTab = $state<'menu' | 'reviews'>('menu');
 
 	$effect(() => {
 		const id = restaurantId;
@@ -28,45 +27,6 @@
 			}
 		});
 	});
-
-	const CATEGORY_ORDER = ['starter', 'main', 'side', 'dessert', 'drink'] as const;
-	const CATEGORY_LABELS: Record<string, string> = {
-		starter: 'Starters',
-		main: 'Mains',
-		side: 'Sides',
-		dessert: 'Desserts',
-		drink: 'Drinks',
-	};
-
-	let menuByCategory = $derived(() => {
-		if (!restaurant?.menuItems) return [];
-		const grouped = new Map<string, MenuItem[]>();
-		for (const item of restaurant.menuItems) {
-			const list = grouped.get(item.category) || [];
-			list.push(item);
-			grouped.set(item.category, list);
-		}
-		return CATEGORY_ORDER
-			.filter((c) => grouped.has(c))
-			.map((c) => ({ category: c, label: CATEGORY_LABELS[c], items: grouped.get(c)! }));
-	});
-
-	let recommended = $derived(
-		restaurant?.menuItems?.filter((i) => i.isRecommended) ?? []
-	);
-
-	function formatPrice(rawPrice: number | string | null, currency: string): string {
-		if (rawPrice === null || rawPrice === undefined) return '';
-		const price = typeof rawPrice === 'string' ? parseFloat(rawPrice) : rawPrice;
-		if (isNaN(price)) return '';
-		const symbols: Record<string, string> = {
-			USD: '$', GBP: '\u00a3', EUR: '\u20ac', ARS: 'AR$', JPY: '\u00a5',
-			ILS: '\u20aa', ZAR: 'R', BRL: 'R$',
-		};
-		const sym = symbols[currency] || currency + ' ';
-		if (currency === 'JPY') return `${sym}${price.toLocaleString()}`;
-		return `${sym}${price.toFixed(price % 1 === 0 ? 0 : 2)}`;
-	}
 
 	function timeAgo(dateStr: string): string {
 		const diff = Date.now() - new Date(dateStr).getTime();
@@ -119,12 +79,12 @@
 			<div class="flex items-center gap-3 px-5 py-3">
 				{#if restaurant.averageRating}
 					<div class="flex items-center gap-1">
-						<div class="flex text-amber-400">
+						<div class="flex text-rose-400">
 							{#each Array(5) as _, i}
 								{#if i < Math.round(restaurant.averageRating ?? 0)}
-									<svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+									<svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
 								{:else}
-									<svg class="h-4 w-4 text-cream-dark" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+									<svg class="h-4 w-4 text-cream-dark" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
 								{/if}
 							{/each}
 						</div>
@@ -137,125 +97,77 @@
 				{/if}
 			</div>
 
-			<!-- Recommended dishes -->
-			{#if recommended.length > 0}
-				<section class="px-5 pb-4">
-					<h2 class="mb-2 text-sm font-semibold uppercase tracking-wide text-jade">Must Try</h2>
-					<div class="flex gap-2 overflow-x-auto pb-1">
-						{#each recommended as item (item.id)}
-							<div class="flex shrink-0 items-center gap-2 rounded-card bg-jade/5 px-3 py-2">
-								<span class="text-sm">🔥</span>
-								<div>
-									<p class="text-sm font-medium text-ink">{item.name}</p>
-									{#if item.price !== null}
-										<p class="text-xs text-jade">{formatPrice(item.price, item.currency)}</p>
-									{/if}
-								</div>
-							</div>
-						{/each}
+			<!-- Info section: website + address -->
+			<div class="space-y-3 px-5 pb-4">
+				{#if restaurant.website}
+					<a
+						href={restaurant.website}
+						target="_blank"
+						rel="noopener"
+						class="flex items-center gap-3 rounded-card bg-white p-4 shadow-card active:scale-[0.98]"
+					>
+						<svg class="h-5 w-5 shrink-0 text-jade" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+							<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+						</svg>
+						<span class="text-sm font-medium text-jade">Visit Website</span>
+					</a>
+				{/if}
+				{#if restaurant.address}
+					<div class="flex items-start gap-3 rounded-card bg-white p-4 shadow-card">
+						<svg class="mt-0.5 h-5 w-5 shrink-0 text-ink-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+							<path d="M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
+							<path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7Z"/>
+						</svg>
+						<span class="text-sm text-ink">{restaurant.address}{#if restaurant.city}, {restaurant.city}{/if}</span>
 					</div>
-				</section>
-			{/if}
-
-			<!-- Tabs -->
-			<div class="mx-5 flex gap-1 rounded-card bg-cream-dark p-1">
-				<button
-					onclick={() => (activeTab = 'menu')}
-					class="flex-1 rounded-button py-2 text-sm font-medium active:scale-[0.98]
-						{activeTab === 'menu' ? 'bg-white text-ink shadow-card' : 'text-ink-muted'}"
-				>
-					Menu{restaurant.menuItems?.length ? ` (${restaurant.menuItems.length})` : ''}
-				</button>
-				<button
-					onclick={() => (activeTab = 'reviews')}
-					class="flex-1 rounded-button py-2 text-sm font-medium active:scale-[0.98]
-						{activeTab === 'reviews' ? 'bg-white text-ink shadow-card' : 'text-ink-muted'}"
-				>
-					Reviews{restaurant.reviews?.length ? ` (${restaurant.reviews.length})` : ''}
-				</button>
+				{/if}
 			</div>
 
-			<!-- Menu -->
-			{#if activeTab === 'menu'}
-				<div class="px-5 pb-6 pt-4">
-					{#if menuByCategory().length === 0}
-						<p class="py-8 text-center text-sm text-ink-muted">No menu available yet</p>
-					{:else}
-						{#each menuByCategory() as group}
-							<div class="mb-5">
-								<h3 class="mb-2 border-b border-cream-dark pb-1 text-xs font-semibold uppercase tracking-wider text-ink-muted">{group.label}</h3>
-								<ul class="space-y-3">
-									{#each group.items as item (item.id)}
-										<li class="flex gap-3">
-											<div class="min-w-0 flex-1">
-												<div class="flex items-center gap-1.5">
-													<p class="text-sm font-medium text-ink">{item.name}</p>
-													{#if item.isRecommended}
-														<span class="text-xs" title="Recommended">🔥</span>
-													{/if}
-													{#if item.isVegetarian}
-														<span class="h-3.5 w-3.5 rounded-full bg-green-100 text-center text-[9px] leading-[14px] text-green-700" title="Vegetarian">V</span>
-													{/if}
-													{#if item.isGlutenFree}
-														<span class="h-3.5 w-3.5 rounded-full bg-amber-100 text-center text-[9px] leading-[14px] text-amber-700" title="Gluten-free">GF</span>
-													{/if}
-												</div>
-												{#if item.description}
-													<p class="mt-0.5 text-xs leading-relaxed text-ink-muted">{item.description}</p>
-												{/if}
-											</div>
-											{#if item.price !== null}
-												<span class="shrink-0 text-sm font-semibold text-ink">{formatPrice(item.price, item.currency)}</span>
-											{/if}
-										</li>
-									{/each}
-								</ul>
-							</div>
-						{/each}
-					{/if}
+			<!-- Reviews header -->
+			<div class="mx-5 rounded-card bg-cream-dark p-1">
+				<div class="rounded-button bg-white py-2 text-center text-sm font-medium text-ink shadow-card">
+					Reviews{restaurant.reviews?.length ? ` (${restaurant.reviews.length})` : ''}
 				</div>
-			{/if}
+			</div>
 
 			<!-- Reviews -->
-			{#if activeTab === 'reviews'}
-				<div class="px-5 pb-6 pt-4">
-					{#if !restaurant.reviews?.length}
-						<p class="py-8 text-center text-sm text-ink-muted">No reviews yet</p>
-					{:else}
-						<ul class="space-y-3">
-							{#each restaurant.reviews as review (review.id)}
-								<li class="rounded-card bg-white p-4 shadow-card">
-									<div class="flex items-start gap-3">
-										<a href={`/users/${review.user.id}`} class="shrink-0">
-											<Avatar name={review.user.displayName} src={review.user.avatar} size={36} />
-										</a>
-										<div class="min-w-0 flex-1">
-											<div class="flex items-center justify-between">
-												<a href={`/users/${review.user.id}`} class="text-sm font-semibold text-ink active:text-jade">
-													{review.user.displayName || 'Anonymous'}
-												</a>
-												<span class="text-xs text-ink-muted">{timeAgo(review.createdAt)}</span>
-											</div>
-											{#if review.rating}
-												<div class="mt-0.5 flex gap-0.5 text-rose-400">
-													{#each Array(5) as _, i}
-														{#if i < review.rating}
-															<svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-														{:else}
-															<svg class="h-3.5 w-3.5 text-cream-dark" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-														{/if}
-													{/each}
-												</div>
-											{/if}
-											<p class="mt-1.5 text-sm leading-relaxed text-ink-light">{review.comment}</p>
+			<div class="px-5 pb-6 pt-4">
+				{#if !restaurant.reviews?.length}
+					<p class="py-8 text-center text-sm text-ink-muted">No reviews yet</p>
+				{:else}
+					<ul class="space-y-3">
+						{#each restaurant.reviews as review (review.id)}
+							<li class="rounded-card bg-white p-4 shadow-card">
+								<div class="flex items-start gap-3">
+									<a href={`/users/${review.user.id}`} class="shrink-0">
+										<Avatar name={review.user.displayName} src={review.user.avatar} size={36} />
+									</a>
+									<div class="min-w-0 flex-1">
+										<div class="flex items-center justify-between">
+											<a href={`/users/${review.user.id}`} class="text-sm font-semibold text-ink active:text-jade">
+												{review.user.displayName || 'Anonymous'}
+											</a>
+											<span class="text-xs text-ink-muted">{timeAgo(review.createdAt)}</span>
 										</div>
+										{#if review.rating}
+											<div class="mt-0.5 flex gap-0.5 text-rose-400">
+												{#each Array(5) as _, i}
+													{#if i < review.rating}
+														<svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+													{:else}
+														<svg class="h-3.5 w-3.5 text-cream-dark" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+													{/if}
+												{/each}
+											</div>
+										{/if}
+										<p class="mt-1.5 text-sm leading-relaxed text-ink-light">{review.comment}</p>
 									</div>
-								</li>
-							{/each}
-						</ul>
-					{/if}
-				</div>
-			{/if}
+								</div>
+							</li>
+						{/each}
+					</ul>
+				{/if}
+			</div>
 		</div>
 	{/if}
 </div>

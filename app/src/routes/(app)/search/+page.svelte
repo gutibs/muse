@@ -154,7 +154,7 @@
 						<strong style="font-size:14px;">${r.name}</strong>
 						${r.city ? `<br><span style="color:#8A8A8A;font-size:12px;">${r.city}</span>` : ''}
 						${r.cuisineDetail ? `<br><span style="color:#8A8A8A;font-size:11px;">${r.cuisineDetail.name}</span>` : ''}
-						${r.averageRating ? `<br><span style="color:#2D6A4F;font-size:13px;">★ ${r.averageRating.toFixed(1)}</span>` : ''}
+						${r.averageRating ? `<br><span style="color:#2D6A4F;font-size:13px;">♥ ${r.averageRating.toFixed(1)}</span>` : ''}
 						${dietaryBadgesHtml(r.tagsDetail)}
 					</div>
 				`);
@@ -342,20 +342,23 @@
 								</p>
 								{#if r.averageRating}
 									<div class="flex items-center gap-1.5">
-										<div class="flex text-amber-400">
+										<div class="flex text-rose-400">
 											{#each Array(5) as _, i}
 												{#if i < Math.round(r.averageRating ?? 0)}
-													<svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+													<svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
 												{:else}
-													<svg class="h-3.5 w-3.5 text-cream-dark" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+													<svg class="h-3.5 w-3.5 text-cream-dark" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
 												{/if}
 											{/each}
 										</div>
 										<span class="text-xs text-ink-muted">{r.averageRating.toFixed(1)}</span>
 										<span class="text-xs text-ink-muted">({r.pinCount})</span>
 									</div>
-								{:else if r.pinCount > 0}
-									<p class="text-xs text-ink-muted">{r.pinCount} pin{r.pinCount === 1 ? '' : 's'}</p>
+								{:else}
+									<p class="text-xs italic text-ink-muted">Not rated yet — be the first!</p>
+								{/if}
+								{#if r.address}
+									<p class="truncate text-xs text-ink-muted">{r.address}</p>
 								{/if}
 								{#if r.tagsDetail?.length}
 									<DietaryBadges tags={r.tagsDetail} />

@@ -221,7 +221,7 @@
 									</div>
 								</div>
 								{#if restaurant.averageRating}
-									<span class="text-sm font-medium text-jade">&#9733; {restaurant.averageRating.toFixed(1)}</span>
+									<span class="text-sm font-medium text-jade">&#9829; {restaurant.averageRating.toFixed(1)}</span>
 								{/if}
 							</button>
 						{/each}
@@ -346,9 +346,9 @@
 					</div>
 				{/if}
 
-				<!-- Comment -->
+				<!-- My Notes -->
 				<div>
-					<label for="comment" class="mb-1 block text-sm font-medium text-ink-light">Comment</label>
+					<label for="comment" class="mb-1 block text-sm font-medium text-ink-light">My Notes</label>
 					<textarea
 						id="comment"
 						bind:value={comment}

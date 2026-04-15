@@ -18,6 +18,7 @@ class Profile(models.Model):
 	location = gis_models.PointField(null=True, blank=True, srid=4326)
 	website = models.URLField(blank=True)
 	instagram = models.CharField(max_length=60, blank=True)
+	phone = models.CharField(max_length=20, blank=True)
 	favourite_cuisine = models.ForeignKey(
 		"restaurants.Cuisine",
 		on_delete=models.SET_NULL,

@@ -24,6 +24,7 @@ class ProfileSerializer(serializers.ModelSerializer):
 			"city",
 			"website",
 			"instagram",
+			"phone",
 			"favourite_cuisine",
 			"favourite_cuisine_detail",
 			"dietary",

@@ -5,9 +5,13 @@
 	import { t } from '$lib/i18n/index.svelte';
 	import { authStore } from '$lib/stores/auth.store.svelte';
 	import { ApiError } from '$lib/types';
-	import type { Cuisine, SharedList } from '$lib/types';
+	import type { Cuisine, Pin, SharedList } from '$lib/types';
 
 	let editing = $state(false);
+
+	// My restaurants
+	let myPins = $state<Pin[]>([]);
+	let loadingPins = $state(true);
 	let saving = $state(false);
 	let error = $state('');
 	let success = $state('');
@@ -25,6 +29,7 @@
 	let editCity = $state('');
 	let editWebsite = $state('');
 	let editInstagram = $state('');
+	let editPhone = $state('');
 	let editDietary = $state('');
 	let editCuisine = $state<number | ''>('');
 
@@ -68,10 +73,23 @@
 		setTimeout(() => (success = ''), 3000);
 	}
 
+	async function loadMyPins() {
+		loadingPins = true;
+		try {
+			const res = await pinsService.list();
+			myPins = res.results;
+		} catch {
+			myPins = [];
+		} finally {
+			loadingPins = false;
+		}
+	}
+
 	$effect(() => {
 		if (authStore.isAuthenticated) {
 			loadSharedLists();
 			loadCuisines();
+			loadMyPins();
 		}
 	});
 
@@ -81,6 +99,7 @@
 		editCity = authStore.user?.city || '';
 		editWebsite = authStore.user?.website || '';
 		editInstagram = authStore.user?.instagram || '';
+		editPhone = authStore.user?.phone || '';
 		editDietary = authStore.user?.dietary || '';
 		editCuisine = authStore.user?.favouriteCuisine || '';
 		error = '';
@@ -103,6 +122,7 @@
 				city: editCity,
 				website: editWebsite,
 				instagram: editInstagram,
+				phone: editPhone,
 				dietary: editDietary,
 				favouriteCuisine: editCuisine || null,
 			});
@@ -240,6 +260,71 @@
 				</div>
 			{/if}
 
+			<!-- My Restaurants -->
+			<section class="mt-6">
+				<div class="mb-2 flex items-center justify-between">
+					<h3 class="text-sm font-semibold uppercase tracking-wide text-ink-muted">My Restaurants</h3>
+					{#if myPins.length > 0}
+						<span class="text-xs text-ink-muted">{myPins.length}</span>
+					{/if}
+				</div>
+				{#if loadingPins}
+					<div class="space-y-2">
+						{#each Array(2) as _}
+							<div class="animate-pulse rounded-card bg-white p-4 shadow-card">
+								<div class="h-3 w-3/4 rounded bg-cream-dark"></div>
+								<div class="mt-2 h-3 w-1/2 rounded bg-cream-dark"></div>
+							</div>
+						{/each}
+					</div>
+				{:else if myPins.length === 0}
+					<div class="rounded-card bg-white p-5 text-center shadow-card">
+						<p class="text-sm text-ink-muted">No restaurants yet</p>
+						<a href="/pin/new" class="mt-2 inline-block text-sm font-medium text-jade active:opacity-70">Add your first</a>
+					</div>
+				{:else}
+					<ul class="space-y-2">
+						{#each myPins.slice(0, 5) as pin (pin.id)}
+							<li>
+								<a href={`/restaurant/${pin.restaurantDetail.id}`} class="flex overflow-hidden rounded-card bg-white shadow-card active:scale-[0.98]">
+									{#if pin.restaurantDetail.imageUrl}
+										<img src={pin.restaurantDetail.imageUrl} alt={pin.restaurantDetail.name} class="h-20 w-16 shrink-0 object-cover" loading="lazy" />
+									{/if}
+									<div class="flex min-w-0 flex-1 items-center justify-between gap-2 px-3 py-2">
+										<div class="min-w-0">
+											<p class="truncate text-sm font-semibold text-ink">{pin.restaurantDetail.name}</p>
+											{#if pin.restaurantDetail.city}
+												<p class="text-xs text-ink-muted">{pin.restaurantDetail.city}</p>
+											{/if}
+											{#if pin.rating}
+												<div class="mt-0.5 flex text-rose-400">
+													{#each Array(5) as _, i}
+														{#if i < pin.rating}
+															<svg class="h-3 w-3" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+														{:else}
+															<svg class="h-3 w-3 text-cream-dark" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+														{/if}
+													{/each}
+												</div>
+											{/if}
+										</div>
+										<span class="shrink-0 rounded-full px-2 py-0.5 text-xs font-medium
+											{pin.status === 'visited' ? 'bg-jade/10 text-jade' : 'bg-cream-dark text-ink-muted'}">
+											{pin.status === 'visited' ? t('common.visited') : t('common.toVisit')}
+										</span>
+									</div>
+								</a>
+							</li>
+						{/each}
+					</ul>
+					{#if myPins.length > 5}
+						<a href="/map" class="mt-2 block text-center text-xs font-medium text-jade active:opacity-70">
+							View all {myPins.length} on map
+						</a>
+					{/if}
+				{/if}
+			</section>
+
 			<!-- Share section -->
 			<section class="mt-6">
 				<h3 class="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-muted">{t('profile.shareList')}</h3>
@@ -279,7 +364,7 @@
 			<div class="mt-6 space-y-2">
 				<a href="/friends" class="flex items-center gap-3 rounded-card bg-white p-4 shadow-card active:scale-[0.98]">
 					<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-jade/10 text-jade">
-						<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+						<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-4-4h-4a4 4 0 0 0-4 4v2"/><circle cx="19" cy="7" r="4"/></svg>
 					</div>
 					<span class="flex-1 text-sm font-medium text-ink">{t('home.friends')}</span>
 					<svg class="h-4 w-4 text-ink-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
@@ -352,6 +437,11 @@
 						<span class="pl-4 text-base text-ink-muted">@</span>
 						<input id="editInstagram" type="text" bind:value={editInstagram} class="flex-1 bg-transparent px-2 py-3 text-base text-ink outline-none" placeholder="username" />
 					</div>
+				</div>
+
+				<div>
+					<label for="editPhone" class="mb-1 block text-sm font-medium text-ink-light">Phone</label>
+					<input id="editPhone" type="tel" bind:value={editPhone} class="w-full rounded-input border border-cream-dark bg-white px-4 py-3 text-base text-ink outline-none focus:border-jade" placeholder="+44 7..." />
 				</div>
 
 				<div>

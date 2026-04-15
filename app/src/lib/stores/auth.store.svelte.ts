@@ -84,7 +84,7 @@ class AuthStore {
 		this.user = result.user;
 	}
 
-	async updateProfile(data: Partial<Pick<Profile, 'displayName' | 'bio' | 'city' | 'website' | 'instagram' | 'dietary' | 'favouriteCuisine'>>) {
+	async updateProfile(data: Partial<Pick<Profile, 'displayName' | 'bio' | 'city' | 'website' | 'instagram' | 'phone' | 'dietary' | 'favouriteCuisine'>>) {
 		this.user = await authService.updateProfile(data);
 	}
 
