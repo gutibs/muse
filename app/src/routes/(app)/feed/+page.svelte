@@ -115,14 +115,14 @@
 										<span class="font-semibold">{activity.targetUser.displayName || activity.targetUser.email}</span>
 									{:else if activity.verb === 'pinned' && activity.pin}
 										{@const parts = t('feed.wantsToVisit').split('{restaurant}')}
-										<span class="text-ink-muted">{parts[0]}</span><a href={`/restaurant/${activity.pin.restaurantDetail.id}`} class="font-semibold text-ink active:text-jade">{activity.pin.restaurantDetail.name}</a><span class="text-ink-muted">{parts[1] || ''}</span>
+										<span class="text-ink-muted">{parts[0]}</span><a href={`/map?focus=${activity.pin.restaurantDetail.id}`} class="font-semibold text-ink active:text-jade">{activity.pin.restaurantDetail.name}</a><span class="text-ink-muted">{parts[1] || ''}</span>
 										{#if activity.pin.restaurantDetail.city}
 											<span class="text-ink-muted">, {activity.pin.restaurantDetail.city}</span>
 										{/if}
 									{:else if activity.pin}
 										<span class="text-ink-muted">{verbLabel(activity)}</span>
 										{' '}
-										<a href={`/restaurant/${activity.pin.restaurantDetail.id}`} class="font-semibold text-ink active:text-jade">{activity.pin.restaurantDetail.name}</a>
+										<a href={`/map?focus=${activity.pin.restaurantDetail.id}`} class="font-semibold text-ink active:text-jade">{activity.pin.restaurantDetail.name}</a>
 										{#if activity.pin.restaurantDetail.city}
 											<span class="text-ink-muted">, {activity.pin.restaurantDetail.city}</span>
 										{/if}
