@@ -13,7 +13,7 @@
 	import type L from 'leaflet';
 
 	let hasFocus = $derived(Boolean(page.url.searchParams.get('focus')));
-	let showFriendPins = $state(false);
+	let showFriendPins = $state(true);
 	let showSearch = $state(false);
 	let friendLayers = $state<L.LayerGroup | null>(null);
 	let mapRef = $state<L.Map | null>(null);
@@ -84,7 +84,7 @@
 		return f.fromUser.id === myId ? f.toUser : f.fromUser;
 	}
 
-	async function loadFriendPins(map: L.Map, Leaflet: typeof L) {
+	async function loadFriendPins(map: L.Map, Leaflet: typeof L, markersById?: Map<number, L.Marker>) {
 		try {
 			const friendships = await friendsService.list();
 			friendCount = friendships.length;
@@ -107,7 +107,7 @@
 							iconAnchor: [11, 11],
 						});
 
-						Leaflet.marker([r.lat, r.lng], { icon })
+						const marker = Leaflet.marker([r.lat, r.lng], { icon })
 							.addTo(group)
 							.bindPopup(`
 								<div style="font-family:Inter,sans-serif;min-width:140px;">
@@ -117,6 +117,10 @@
 									${pin.rating ? `<br><span style="color:#2D6A4F;font-size:13px;">♥ ${pin.rating}/5</span>` : ''}
 								</div>
 							`);
+						// Only register if not already present (own pins take priority)
+						if (markersById && !markersById.has(r.id)) {
+							markersById.set(r.id, marker);
+						}
 					}
 				} catch {
 					// friend might have no pins or permission error
@@ -177,15 +181,24 @@
 		}
 
 		const focusId = Number(page.url.searchParams.get('focus'));
-		if (focusId) {
+		function tryFocus() {
+			if (!focusId) return false;
 			const target = markersById.get(focusId);
 			if (target) {
-				map.setView(target.getLatLng(), 15, { animate: true });
+				map.setView(target.getLatLng(), 17, { animate: true });
 				target.openPopup();
+				return true;
 			}
+			return false;
 		}
 
-		loadFriendPins(map, L);
+		// Try focusing on user's own pins first
+		const focused = tryFocus();
+
+		// Load friend pins and retry focus if not yet found
+		loadFriendPins(map, L, markersById).then(() => {
+			if (!focused) tryFocus();
+		});
 	}
 </script>
 
@@ -275,6 +288,11 @@
 		<span class="flex items-center gap-1 rounded-full bg-white/90 px-2 py-1 text-[10px] font-medium text-ink shadow-card">
 			<span class="inline-block h-2 w-2 rounded-full" style="background:#8A8A8A;"></span>{t('map.yourToVisit')}
 		</span>
+		{#if friendCount > 0}
+			<span class="flex items-center gap-1 rounded-full bg-white/90 px-2 py-1 text-[10px] font-medium text-ink shadow-card">
+				<span class="inline-block h-2 w-2 rounded-full" style="background:#D4A373;"></span>{t('map.friendPins')}
+			</span>
+		{/if}
 	</div>
 
 	<!-- FAB: Add Pin -->
