@@ -260,10 +260,10 @@
 				</div>
 			{/if}
 
-			<!-- My Restaurants -->
+			<!-- My Restaurant Pins -->
 			<section class="mt-6">
 				<div class="mb-2 flex items-center justify-between">
-					<h3 class="text-sm font-semibold uppercase tracking-wide text-ink-muted">My Restaurants</h3>
+					<h3 class="text-sm font-semibold uppercase tracking-wide text-ink-muted">My Restaurant Pins</h3>
 					{#if myPins.length > 0}
 						<span class="text-xs text-ink-muted">{myPins.length}</span>
 					{/if}
@@ -362,13 +362,6 @@
 
 			<!-- Navigation -->
 			<div class="mt-6 space-y-2">
-				<a href="/friends" class="flex items-center gap-3 rounded-card bg-white p-4 shadow-card active:scale-[0.98]">
-					<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-jade/10 text-jade">
-						<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-4-4h-4a4 4 0 0 0-4 4v2"/><circle cx="19" cy="7" r="4"/></svg>
-					</div>
-					<span class="flex-1 text-sm font-medium text-ink">{t('home.friends')}</span>
-					<svg class="h-4 w-4 text-ink-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-				</a>
 				<a href="/settings" class="flex items-center gap-3 rounded-card bg-white p-4 shadow-card active:scale-[0.98]">
 					<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-jade/10 text-jade">
 						<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>

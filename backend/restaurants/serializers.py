@@ -113,12 +113,50 @@ class RestaurantSerializer(serializers.ModelSerializer):
 class RestaurantDetailSerializer(RestaurantSerializer):
 	menu_items = MenuItemSerializer(many=True, read_only=True)
 	reviews = serializers.SerializerMethodField()
+	friend_stats = serializers.SerializerMethodField()
 
 	class Meta(RestaurantSerializer.Meta):
-		fields = RestaurantSerializer.Meta.fields + ("menu_items", "reviews")
+		fields = RestaurantSerializer.Meta.fields + ("menu_items", "reviews", "friend_stats")
+
+	def _friend_ids(self):
+		from accounts.models import Friendship
+		from django.db.models import Q
+		user = self.context["request"].user
+		if not user.is_authenticated:
+			return set()
+		friendships = Friendship.objects.filter(
+			Q(from_user=user) | Q(to_user=user),
+			status=Friendship.Status.ACCEPTED,
+		).values_list("from_user_id", "to_user_id")
+		ids = set()
+		for a, b in friendships:
+			ids.add(a)
+			ids.add(b)
+		ids.discard(user.id)
+		return ids
+
+	def get_friend_stats(self, obj):
+		from django.db.models import Avg
+		from pins.models import Pin
+		friend_ids = self._friend_ids()
+		if not friend_ids:
+			return {"rating_avg": None, "rated_count": 0, "on_list_count": 0}
+
+		friend_pins = Pin.objects.filter(restaurant=obj, user_id__in=friend_ids)
+		rated = friend_pins.filter(status="visited", rating__isnull=False)
+		on_list = friend_pins.filter(status="to_visit")
+
+		avg = rated.aggregate(avg=Avg("rating"))["avg"]
+		return {
+			"rating_avg": round(avg, 1) if avg is not None else None,
+			"rated_count": rated.count(),
+			"on_list_count": on_list.count(),
+		}
 
 	def get_reviews(self, obj):
 		from pins.models import Pin
+		friend_ids = self._friend_ids()
+		# Prefer friend reviews first, then everyone else
 		pins = (
 			Pin.objects.filter(restaurant=obj, status="visited", comment__gt="")
 			.select_related("user__profile")
@@ -136,6 +174,7 @@ class RestaurantDetailSerializer(RestaurantSerializer):
 				"comment": p.comment,
 				"visited_at": p.visited_at,
 				"created_at": p.created_at,
+				"is_friend": p.user_id in friend_ids,
 			}
 			for p in pins
 		]

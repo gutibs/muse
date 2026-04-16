@@ -126,7 +126,7 @@
 				restaurantId = restaurant.id;
 				// New restaurant needs approval — can't pin it yet
 				if (restaurant.approvalStatus === 'pending') {
-					goto('/home');
+					goto(`/home?pending=${encodeURIComponent(restaurant.name)}`);
 					return;
 				}
 			} else {

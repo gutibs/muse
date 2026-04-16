@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	import Avatar from '$lib/components/Avatar.svelte';
 	import MuseLogo from '$lib/components/MuseLogo.svelte';
 	import { t } from '$lib/i18n/index.svelte';
@@ -6,6 +7,8 @@
 	import { friendsService } from '$lib/services/friends.service';
 	import { authStore } from '$lib/stores/auth.store.svelte';
 	import type { Activity } from '$lib/types';
+
+	let pendingRestaurant = $derived(page.url.searchParams.get('pending'));
 
 	const greeting = $derived(() => {
 		const hour = new Date().getHours();
@@ -86,6 +89,21 @@
 				<div class="flex-1 rounded-card bg-white p-4 shadow-card">
 					<div class="text-2xl font-bold text-jade">{authStore.user.stats.friendCount}</div>
 					<div class="text-xs text-ink-muted">{t('home.friends')}</div>
+				</div>
+			</div>
+		{/if}
+
+		<!-- Restaurant submitted for approval -->
+		{#if pendingRestaurant}
+			<div class="flex items-start gap-3 rounded-card bg-amber-50 p-4 shadow-card">
+				<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+					<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+					</svg>
+				</div>
+				<div class="min-w-0 flex-1">
+					<div class="text-sm font-semibold text-amber-900">"{pendingRestaurant}" submitted</div>
+					<div class="text-xs text-amber-800">It will appear once approved by an admin.</div>
 				</div>
 			</div>
 		{/if}

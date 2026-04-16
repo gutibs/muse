@@ -113,12 +113,55 @@
 					</a>
 				{/if}
 				{#if restaurant.address}
-					<div class="flex items-start gap-3 rounded-card bg-white p-4 shadow-card">
-						<svg class="mt-0.5 h-5 w-5 shrink-0 text-ink-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+					<a
+						href={`/map?focus=${restaurant.id}`}
+						class="flex items-start gap-3 rounded-card bg-white p-4 shadow-card active:scale-[0.98]"
+					>
+						<svg class="mt-0.5 h-5 w-5 shrink-0 text-jade" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
 							<path d="M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
 							<path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7Z"/>
 						</svg>
-						<span class="text-sm text-ink">{restaurant.address}{#if restaurant.city}, {restaurant.city}{/if}</span>
+						<span class="flex-1 text-sm text-ink">{restaurant.address}{#if restaurant.city}, {restaurant.city}{/if}</span>
+						<svg class="mt-0.5 h-4 w-4 shrink-0 text-ink-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<polyline points="9 18 15 12 9 6" />
+						</svg>
+					</a>
+				{/if}
+			</div>
+
+			<!-- Friend stats -->
+			<div class="px-5 pb-4">
+				<h2 class="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-muted">From your friends</h2>
+				{#if restaurant.friendStats.ratedCount === 0 && restaurant.friendStats.onListCount === 0}
+					<div class="rounded-card bg-white p-4 text-center shadow-card">
+						<p class="text-sm text-ink-muted">No friends have visited yet — be the first!</p>
+					</div>
+				{:else}
+					<div class="grid grid-cols-3 gap-2">
+						<!-- Friends rating avg -->
+						<div class="rounded-card bg-white p-3 text-center shadow-card">
+							{#if restaurant.friendStats.ratingAvg !== null}
+								<div class="flex items-center justify-center gap-1 text-rose-400">
+									<svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+									<span class="text-base font-bold text-ink">{restaurant.friendStats.ratingAvg}</span>
+								</div>
+							{:else}
+								<div class="text-base font-bold text-ink-muted">—</div>
+							{/if}
+							<div class="mt-0.5 text-[10px] text-ink-muted">Friends rating</div>
+						</div>
+
+						<!-- Rated count -->
+						<div class="rounded-card bg-white p-3 text-center shadow-card">
+							<div class="text-base font-bold text-jade">{restaurant.friendStats.ratedCount}</div>
+							<div class="mt-0.5 text-[10px] text-ink-muted">Friends rated</div>
+						</div>
+
+						<!-- On the list count -->
+						<div class="rounded-card bg-white p-3 text-center shadow-card">
+							<div class="text-base font-bold text-jade">{restaurant.friendStats.onListCount}</div>
+							<div class="mt-0.5 text-[10px] text-ink-muted">On the list</div>
+						</div>
 					</div>
 				{/if}
 			</div>
@@ -126,27 +169,32 @@
 			<!-- Reviews header -->
 			<div class="mx-5 rounded-card bg-cream-dark p-1">
 				<div class="rounded-button bg-white py-2 text-center text-sm font-medium text-ink shadow-card">
-					Reviews{restaurant.reviews?.length ? ` (${restaurant.reviews.length})` : ''}
+					Notes{restaurant.reviews?.length ? ` (${restaurant.reviews.length})` : ''}
 				</div>
 			</div>
 
 			<!-- Reviews -->
 			<div class="px-5 pb-6 pt-4">
 				{#if !restaurant.reviews?.length}
-					<p class="py-8 text-center text-sm text-ink-muted">No reviews yet</p>
+					<p class="py-8 text-center text-sm text-ink-muted">Not rated yet — be the first!</p>
 				{:else}
 					<ul class="space-y-3">
 						{#each restaurant.reviews as review (review.id)}
-							<li class="rounded-card bg-white p-4 shadow-card">
+							<li class="rounded-card bg-white p-4 shadow-card {review.isFriend ? 'ring-1 ring-jade/30' : ''}">
 								<div class="flex items-start gap-3">
 									<a href={`/users/${review.user.id}`} class="shrink-0">
 										<Avatar name={review.user.displayName} src={review.user.avatar} size={36} />
 									</a>
 									<div class="min-w-0 flex-1">
 										<div class="flex items-center justify-between">
-											<a href={`/users/${review.user.id}`} class="text-sm font-semibold text-ink active:text-jade">
-												{review.user.displayName || 'Anonymous'}
-											</a>
+											<div class="flex items-center gap-1.5">
+												<a href={`/users/${review.user.id}`} class="text-sm font-semibold text-ink active:text-jade">
+													{review.user.displayName || 'Anonymous'}
+												</a>
+												{#if review.isFriend}
+													<span class="rounded-full bg-jade/10 px-1.5 py-0.5 text-[9px] font-medium uppercase text-jade">Friend</span>
+												{/if}
+											</div>
 											<span class="text-xs text-ink-muted">{timeAgo(review.createdAt)}</span>
 										</div>
 										{#if review.rating}

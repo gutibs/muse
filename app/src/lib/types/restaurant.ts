@@ -52,11 +52,19 @@ export interface Review {
 	comment: string;
 	visitedAt: string | null;
 	createdAt: string;
+	isFriend: boolean;
+}
+
+export interface FriendStats {
+	ratingAvg: number | null;
+	ratedCount: number;
+	onListCount: number;
 }
 
 export interface RestaurantDetail extends Restaurant {
 	menuItems: MenuItem[];
 	reviews: Review[];
+	friendStats: FriendStats;
 }
 
 export interface RestaurantCreate {
