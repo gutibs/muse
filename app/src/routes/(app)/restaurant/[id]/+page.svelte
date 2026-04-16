@@ -109,7 +109,12 @@
 						<svg class="h-5 w-5 shrink-0 text-jade" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
 							<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
 						</svg>
-						<span class="text-sm font-medium text-jade">Visit Website</span>
+						<span class="flex-1 truncate text-sm text-ink">
+							{restaurant.website.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}
+						</span>
+						<svg class="h-4 w-4 shrink-0 text-ink-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+						</svg>
 					</a>
 				{/if}
 				{#if restaurant.address}
