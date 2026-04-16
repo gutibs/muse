@@ -104,6 +104,48 @@ class RestaurantViewSet(viewsets.ModelViewSet):
 		serializer = self.get_serializer(qs[:50], many=True)
 		return Response(serializer.data)
 
+	@action(detail=False, methods=["post"])
+	def from_google(self, request):
+		"""Find or create a Restaurant from a Google Place payload.
+
+		If a restaurant with the same google_place_id already exists, return it.
+		Otherwise create a new one (auto-approved since data comes from Google).
+		"""
+		from django.contrib.gis.geos import Point
+
+		data = request.data
+		place_id = data.get("placeId") or data.get("place_id")
+		if not place_id:
+			return Response({"detail": "placeId is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+		existing = Restaurant.objects.filter(google_place_id=place_id).first()
+		if existing:
+			serializer = self.get_serializer(self._base_queryset().get(pk=existing.pk))
+			return Response(serializer.data)
+
+		lat = data.get("lat")
+		lng = data.get("lng")
+		if lat is None or lng is None:
+			return Response({"detail": "lat/lng required."}, status=status.HTTP_400_BAD_REQUEST)
+
+		restaurant = Restaurant.objects.create(
+			name=data.get("name", "") or "Unknown",
+			location=Point(float(lng), float(lat), srid=4326),
+			address=data.get("address", ""),
+			city=data.get("city", ""),
+			country=data.get("country", ""),
+			website=data.get("website", ""),
+			phone=data.get("phone", ""),
+			image_url=data.get("imageUrl") or data.get("image_url") or "",
+			opening_hours=data.get("openingHours") or data.get("opening_hours") or [],
+			google_place_id=place_id,
+			created_by=request.user,
+			# Google-sourced data is trusted, auto-approve
+			approval_status=Restaurant.ApprovalStatus.APPROVED,
+		)
+		serializer = self.get_serializer(self._base_queryset().get(pk=restaurant.pk))
+		return Response(serializer.data, status=status.HTTP_201_CREATED)
+
 	@action(detail=False, methods=["get"])
 	def my_suggestions(self, request):
 		"""List restaurants the current user has suggested (pending/rejected)."""

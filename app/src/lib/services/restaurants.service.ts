@@ -20,6 +20,10 @@ export const restaurantsService = {
 		return api.post('/restaurants/', data);
 	},
 
+	fromGoogle(placeData: Record<string, unknown>): Promise<Restaurant> {
+		return api.post('/restaurants/from_google/', placeData);
+	},
+
 	nearby(lat: number, lng: number, radius = 5): Promise<Restaurant[]> {
 		return api.get(`/restaurants/nearby/?lat=${lat}&lng=${lng}&radius=${radius}`);
 	},

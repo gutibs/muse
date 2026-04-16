@@ -10,6 +10,9 @@ DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
 
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 
+# Google Places API — server-side only
+GOOGLE_PLACES_API_KEY = os.environ.get("GOOGLE_PLACES_API_KEY", "")
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -27,6 +30,7 @@ INSTALLED_APPS = [
     "restaurants",
     "pins",
     "feed",
+    "places",
 ]
 
 MIDDLEWARE = [

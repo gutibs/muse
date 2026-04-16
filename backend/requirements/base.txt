@@ -7,3 +7,4 @@ django-filter>=24,<25
 psycopg[binary]>=3.2,<4
 gunicorn>=22,<23
 Pillow>=10,<11
+requests>=2.32,<3

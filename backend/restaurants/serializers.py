@@ -67,6 +67,8 @@ class RestaurantSerializer(serializers.ModelSerializer):
 			"average_rating",
 			"pin_count",
 			"approval_status",
+			"google_place_id",
+			"opening_hours",
 			"created_at",
 		)
 		read_only_fields = ("id", "approval_status", "created_at")

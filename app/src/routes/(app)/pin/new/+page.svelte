@@ -8,6 +8,7 @@
 	import StatusToggle from '$lib/components/StatusToggle.svelte';
 	import TagCheckboxes from '$lib/components/TagCheckboxes.svelte';
 	import { pinsService } from '$lib/services/pins.service';
+	import { placesService, type PlaceSuggestion } from '$lib/services/places.service';
 	import { restaurantsService } from '$lib/services/restaurants.service';
 	import type { Cuisine, Persona, PinStatus, Restaurant, Tag } from '$lib/types';
 	import { ApiError } from '$lib/types';
@@ -20,7 +21,9 @@
 	// Restaurant search
 	let searchQuery = $state('');
 	let searchResults = $state<Restaurant[]>([]);
+	let googleResults = $state<PlaceSuggestion[]>([]);
 	let searching = $state(false);
+	let importingPlaceId = $state<string | null>(null);
 	let selectedRestaurant = $state<Restaurant | null>(null);
 	let creatingNew = $state(false);
 
@@ -56,24 +59,59 @@
 		pinsService.personas().then((p) => (personas = p));
 	});
 
-	// Debounced search
+	// Debounced search — queries both our DB and Google Places in parallel
 	let searchTimeout: ReturnType<typeof setTimeout>;
 	function handleSearch() {
 		clearTimeout(searchTimeout);
 		if (searchQuery.length < 2) {
 			searchResults = [];
+			googleResults = [];
 			return;
 		}
 		searchTimeout = setTimeout(async () => {
 			searching = true;
+			const query = searchQuery;
 			try {
-				const res = await restaurantsService.list({ search: searchQuery });
-				searchResults = res.results;
+				const [dbRes, placesRes] = await Promise.allSettled([
+					restaurantsService.list({ search: query }),
+					placesService.autocomplete(query),
+				]);
+				searchResults = dbRes.status === 'fulfilled' ? dbRes.value.results : [];
+				googleResults = placesRes.status === 'fulfilled' ? placesRes.value.results : [];
 			} catch {
 				searchResults = [];
+				googleResults = [];
 			}
 			searching = false;
 		}, 300);
+	}
+
+	async function selectFromGoogle(suggestion: PlaceSuggestion) {
+		importingPlaceId = suggestion.placeId;
+		error = '';
+		try {
+			const details = await placesService.details(suggestion.placeId);
+			const restaurant = await restaurantsService.fromGoogle({
+				placeId: details.placeId,
+				name: details.name,
+				address: details.address,
+				city: details.city,
+				country: details.country,
+				lat: details.lat,
+				lng: details.lng,
+				website: details.website,
+				phone: details.phone,
+				imageUrl: details.imageUrl,
+				openingHours: details.openingHours,
+			});
+			selectedRestaurant = restaurant;
+			creatingNew = false;
+			step = 2;
+		} catch {
+			error = 'Could not import this place. Try another.';
+		} finally {
+			importingPlaceId = null;
+		}
 	}
 
 	function selectRestaurant(r: Restaurant) {
@@ -202,30 +240,67 @@
 				{/if}
 
 				{#if searchResults.length > 0}
-					<div class="space-y-2">
-						{#each searchResults as restaurant}
-							<button
-								onclick={() => selectRestaurant(restaurant)}
-								class="flex w-full items-center gap-3 rounded-card bg-white p-4 text-left shadow-card active:scale-[0.98]"
-							>
-								<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-jade/10 text-jade">
-									<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-										<path d="M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
-										<path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7Z" />
-									</svg>
-								</div>
-								<div class="min-w-0 flex-1">
-									<div class="text-sm font-semibold text-ink">{restaurant.name}</div>
-									<div class="text-xs text-ink-muted">
-										{restaurant.city || restaurant.address || 'No location info'}
+					<div>
+						<p class="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-muted">Already on Muse</p>
+						<div class="space-y-2">
+							{#each searchResults as restaurant}
+								<button
+									onclick={() => selectRestaurant(restaurant)}
+									class="flex w-full items-center gap-3 rounded-card bg-white p-4 text-left shadow-card active:scale-[0.98]"
+								>
+									<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-jade/10 text-jade">
+										<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+											<path d="M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+											<path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7Z" />
+										</svg>
 									</div>
-								</div>
-								{#if restaurant.averageRating}
-									<span class="text-sm font-medium text-jade">&#9829; {restaurant.averageRating.toFixed(1)}</span>
-								{/if}
-							</button>
-						{/each}
+									<div class="min-w-0 flex-1">
+										<div class="truncate text-sm font-semibold text-ink">{restaurant.name}</div>
+										<div class="truncate text-xs text-ink-muted">
+											{restaurant.city || restaurant.address || 'No location info'}
+										</div>
+									</div>
+									{#if restaurant.averageRating}
+										<span class="shrink-0 text-sm font-medium text-rose-400">&#9829; {restaurant.averageRating.toFixed(1)}</span>
+									{/if}
+								</button>
+							{/each}
+						</div>
 					</div>
+				{/if}
+
+				{#if googleResults.length > 0}
+					<div>
+						<p class="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-muted">From Google</p>
+						<div class="space-y-2">
+							{#each googleResults as place (place.placeId)}
+								<button
+									onclick={() => selectFromGoogle(place)}
+									disabled={importingPlaceId !== null}
+									class="flex w-full items-center gap-3 rounded-card bg-white p-4 text-left shadow-card active:scale-[0.98] disabled:opacity-50"
+								>
+									<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-50 text-amber-700">
+										{#if importingPlaceId === place.placeId}
+											<div class="h-4 w-4 animate-spin rounded-full border-2 border-amber-700 border-t-transparent"></div>
+										{:else}
+											<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+												<path d="M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+												<path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7Z" />
+											</svg>
+										{/if}
+									</div>
+									<div class="min-w-0 flex-1">
+										<div class="truncate text-sm font-semibold text-ink">{place.name}</div>
+										<div class="truncate text-xs text-ink-muted">{place.address}</div>
+									</div>
+								</button>
+							{/each}
+						</div>
+					</div>
+				{/if}
+
+				{#if searchQuery.length >= 2 && !searching && searchResults.length === 0 && googleResults.length === 0}
+					<p class="py-4 text-center text-sm text-ink-muted">No results found</p>
 				{/if}
 
 				<button
@@ -239,8 +314,8 @@
 						</svg>
 					</div>
 					<div>
-						<div class="text-sm font-semibold text-jade">Add new restaurant</div>
-						<div class="text-xs text-ink-muted">Not in the list? Create it.</div>
+						<div class="text-sm font-semibold text-jade">Add manually</div>
+						<div class="text-xs text-ink-muted">If you can't find it above</div>
 					</div>
 				</button>
 			</div>

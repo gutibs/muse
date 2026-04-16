@@ -66,6 +66,8 @@ class Restaurant(models.Model):
 	image_url = models.URLField(blank=True)
 	website = models.URLField(blank=True)
 	phone = models.CharField(max_length=30, blank=True)
+	google_place_id = models.CharField(max_length=255, blank=True, unique=True, null=True)
+	opening_hours = models.JSONField(default=list, blank=True)
 	created_by = models.ForeignKey(
 		settings.AUTH_USER_MODEL,
 		on_delete=models.SET_NULL,
