@@ -107,8 +107,18 @@
 			selectedRestaurant = restaurant;
 			creatingNew = false;
 			step = 2;
-		} catch {
-			error = 'Could not import this place. Try another.';
+		} catch (err) {
+			if (err instanceof ApiError) {
+				if (err.status === 503) {
+					error = 'Google Places integration is not configured on the server. Contact the admin.';
+				} else if (err.status === 502) {
+					error = 'Google Places is temporarily unavailable. Try again shortly.';
+				} else {
+					error = 'Could not import this place. Try adding it manually below.';
+				}
+			} else {
+				error = 'Network error. Check your connection and try again.';
+			}
 		} finally {
 			importingPlaceId = null;
 		}

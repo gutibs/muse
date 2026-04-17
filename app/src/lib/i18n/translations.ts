@@ -97,9 +97,9 @@ const translations: Record<Locale, Record<string, string>> = {
 		// Map
 		'map.friendsOn': 'Friends ON',
 		'map.friendsOff': 'Friends OFF',
-		'map.yourVisited': 'Your rated',
-		'map.yourToVisit': 'Your on the list',
-		'map.friendPins': 'Friend pins',
+		'map.yourVisited': "{name}'s rated",
+		'map.yourToVisit': "{name}'s on the list",
+		'map.friendPins': "Your friends' pins",
 		'map.restaurants': 'Restaurants',
 
 		// Search
@@ -276,9 +276,9 @@ const translations: Record<Locale, Record<string, string>> = {
 
 		'map.friendsOn': 'Amigos ON',
 		'map.friendsOff': 'Amigos OFF',
-		'map.yourVisited': 'Tus calificados',
-		'map.yourToVisit': 'Tu lista',
-		'map.friendPins': 'Pins de amigos',
+		'map.yourVisited': "Calificados de {name}",
+		'map.yourToVisit': "Lista de {name}",
+		'map.friendPins': 'Pins de tus amigos',
 		'map.restaurants': 'Restaurantes',
 
 		'search.title': 'Buscar',
@@ -446,9 +446,9 @@ const translations: Record<Locale, Record<string, string>> = {
 
 		'map.friendsOn': 'Amici ON',
 		'map.friendsOff': 'Amici OFF',
-		'map.yourVisited': 'I tuoi valutati',
-		'map.yourToVisit': 'La tua lista',
-		'map.friendPins': 'Pin amici',
+		'map.yourVisited': "Valutati di {name}",
+		'map.yourToVisit': "Lista di {name}",
+		'map.friendPins': 'Pin dei tuoi amici',
 		'map.restaurants': 'Ristoranti',
 
 		'search.title': 'Cerca',

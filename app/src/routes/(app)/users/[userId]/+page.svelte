@@ -60,7 +60,7 @@
 			const r = pin.restaurantDetail;
 			if (!r?.lat || !r?.lng) continue;
 
-			const color = pin.status === 'visited' ? '#2D6A4F' : '#8A8A8A';
+			const color = pin.status === 'visited' ? '#5D4E3F' : '#9A8E7E';
 			const icon = L.divIcon({
 				className: '',
 				html: `<div style="width:28px;height:28px;background:${color};border:3px solid white;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.2);"></div>`,
@@ -73,8 +73,8 @@
 				.bindPopup(`
 					<div style="font-family:Inter,sans-serif;min-width:140px;">
 						<strong style="font-size:14px;">${r.name}</strong>
-						${r.city ? `<br><span style="color:#8A8A8A;font-size:12px;">${r.city}</span>` : ''}
-						${pin.rating ? `<br><span style="color:#2D6A4F;font-size:13px;">♥ ${pin.rating}/5</span>` : ''}
+						${r.city ? `<br><span style="color:#9A8E7E;font-size:12px;">${r.city}</span>` : ''}
+						${pin.rating ? `<br><span style="color:#5D4E3F;font-size:13px;">♥ ${pin.rating}/5</span>` : ''}
 					</div>
 				`);
 
@@ -92,11 +92,11 @@
 <div class="flex h-full flex-col">
 	<!-- Header -->
 	<header class="flex shrink-0 items-center gap-3 px-5 py-3">
-		<a href="/friends" class="flex min-h-11 min-w-11 items-center justify-center text-ink active:opacity-70" aria-label="Back">
+		<button onclick={() => history.back()} class="flex min-h-11 min-w-11 items-center justify-center text-ink active:opacity-70" aria-label="Back">
 			<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 				<polyline points="15 18 9 12 15 6" />
 			</svg>
-		</a>
+		</button>
 		<h1 class="flex-1 text-lg font-semibold text-ink">
 			{profile?.displayName || 'Profile'}
 		</h1>

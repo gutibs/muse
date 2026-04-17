@@ -87,7 +87,7 @@
 
 			const icon = Leaflet.divIcon({
 				className: '',
-				html: '<div style="width:32px;height:32px;background:#2D6A4F;border:3px solid white;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.3);cursor:grab;"></div>',
+				html: '<div style="width:32px;height:32px;background:#5D4E3F;border:3px solid white;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.3);cursor:grab;"></div>',
 				iconSize: [32, 32],
 				iconAnchor: [16, 16],
 			});

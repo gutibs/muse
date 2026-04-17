@@ -12,6 +12,11 @@
 	// My restaurants
 	let myPins = $state<Pin[]>([]);
 	let loadingPins = $state(true);
+	let pinsFilter = $state<'all' | 'visited' | 'to_visit'>('all');
+
+	const filteredPins = $derived(
+		pinsFilter === 'all' ? myPins : myPins.filter((p) => p.status === pinsFilter)
+	);
 	let saving = $state(false);
 	let error = $state('');
 	let success = $state('');
@@ -265,9 +270,36 @@
 				<div class="mb-2 flex items-center justify-between">
 					<h3 class="text-sm font-semibold uppercase tracking-wide text-ink-muted">My Restaurant Pins</h3>
 					{#if myPins.length > 0}
-						<span class="text-xs text-ink-muted">{myPins.length}</span>
+						<span class="text-xs text-ink-muted">{filteredPins.length} / {myPins.length}</span>
 					{/if}
 				</div>
+
+				{#if myPins.length > 0}
+					<div class="mb-3 flex gap-1 rounded-card bg-cream-dark p-1">
+						<button
+							onclick={() => (pinsFilter = 'all')}
+							class="flex-1 rounded-button py-1.5 text-xs font-medium active:scale-[0.98]
+								{pinsFilter === 'all' ? 'bg-white text-ink shadow-card' : 'text-ink-muted'}"
+						>
+							{t('common.all')}
+						</button>
+						<button
+							onclick={() => (pinsFilter = 'visited')}
+							class="flex-1 rounded-button py-1.5 text-xs font-medium active:scale-[0.98]
+								{pinsFilter === 'visited' ? 'bg-white text-ink shadow-card' : 'text-ink-muted'}"
+						>
+							{t('common.visited')}
+						</button>
+						<button
+							onclick={() => (pinsFilter = 'to_visit')}
+							class="flex-1 rounded-button py-1.5 text-xs font-medium active:scale-[0.98]
+								{pinsFilter === 'to_visit' ? 'bg-white text-ink shadow-card' : 'text-ink-muted'}"
+						>
+							{t('common.toVisit')}
+						</button>
+					</div>
+				{/if}
+
 				{#if loadingPins}
 					<div class="space-y-2">
 						{#each Array(2) as _}
@@ -282,9 +314,13 @@
 						<p class="text-sm text-ink-muted">No restaurants yet</p>
 						<a href="/pin/new" class="mt-2 inline-block text-sm font-medium text-jade active:opacity-70">Add your first</a>
 					</div>
+				{:else if filteredPins.length === 0}
+					<div class="rounded-card bg-white p-5 text-center shadow-card">
+						<p class="text-sm text-ink-muted">No pins match this filter</p>
+					</div>
 				{:else}
 					<ul class="space-y-2">
-						{#each myPins.slice(0, 5) as pin (pin.id)}
+						{#each filteredPins.slice(0, 5) as pin (pin.id)}
 							<li>
 								<a href={`/restaurant/${pin.restaurantDetail.id}`} class="flex overflow-hidden rounded-card bg-white shadow-card active:scale-[0.98]">
 									{#if pin.restaurantDetail.imageUrl}
@@ -317,9 +353,9 @@
 							</li>
 						{/each}
 					</ul>
-					{#if myPins.length > 5}
+					{#if filteredPins.length > 5}
 						<a href="/map" class="mt-2 block text-center text-xs font-medium text-jade active:opacity-70">
-							View all {myPins.length} on map
+							View all {filteredPins.length} on map
 						</a>
 					{/if}
 				{/if}

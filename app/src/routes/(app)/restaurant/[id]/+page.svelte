@@ -53,9 +53,9 @@
 			<div class="relative shrink-0">
 				<img src={restaurant.imageUrl} alt={restaurant.name} class="h-48 w-full object-cover" />
 				<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-				<a href="/search" class="absolute left-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-black/30 text-white active:scale-95" aria-label="Back">
+				<button onclick={() => history.back()} class="absolute left-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-black/30 text-white active:scale-95" aria-label="Back">
 					<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-				</a>
+				</button>
 				<div class="absolute bottom-4 left-5 right-5">
 					<h1 class="text-xl font-bold text-white drop-shadow">{restaurant.name}</h1>
 					<p class="text-sm text-white/80">
@@ -67,9 +67,9 @@
 			</div>
 		{:else}
 			<header class="flex shrink-0 items-center gap-3 px-5 py-3">
-				<a href="/search" class="flex min-h-11 min-w-11 items-center justify-center text-ink active:opacity-70" aria-label="Back">
+				<button onclick={() => history.back()} class="flex min-h-11 min-w-11 items-center justify-center text-ink active:opacity-70" aria-label="Back">
 					<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-				</a>
+				</button>
 				<h1 class="flex-1 text-lg font-semibold text-ink">{restaurant.name}</h1>
 			</header>
 		{/if}
@@ -174,7 +174,7 @@
 			<!-- Reviews header -->
 			<div class="mx-5 rounded-card bg-cream-dark p-1">
 				<div class="rounded-button bg-white py-2 text-center text-sm font-medium text-ink shadow-card">
-					Notes{restaurant.reviews?.length ? ` (${restaurant.reviews.length})` : ''}
+					Your friends' notes{restaurant.reviews?.length ? ` (${restaurant.reviews.length})` : ''}
 				</div>
 			</div>
 

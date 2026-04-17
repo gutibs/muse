@@ -4,6 +4,7 @@
 	import DietaryBadges from '$lib/components/DietaryBadges.svelte';
 	import MapView from '$lib/components/MapView.svelte';
 	import { t } from '$lib/i18n/index.svelte';
+	import { placesService, type PlaceSuggestion } from '$lib/services/places.service';
 	import { restaurantsService } from '$lib/services/restaurants.service';
 	import type { Cuisine, Restaurant } from '$lib/types';
 	import { dietaryBadgesHtml } from '$lib/utils/dietary-badges';
@@ -19,6 +20,8 @@
 
 	let cuisines = $state<Cuisine[]>([]);
 	let results = $state<Restaurant[]>([]);
+	let googleResults = $state<PlaceSuggestion[]>([]);
+	let importingPlaceId = $state<string | null>(null);
 	let view = $state<'list' | 'map'>('list');
 
 	let searched = $state(false);
@@ -96,14 +99,46 @@
 		error = '';
 		searched = true;
 		nearbyMode = false;
+		googleResults = [];
 		try {
-			const res = await restaurantsService.list(params);
-			results = res.results;
+			// Search our DB + Google Places in parallel when there's a name query
+			const googleQuery = [query.trim(), cityFilter.trim()].filter(Boolean).join(' ');
+			const [dbRes, placesRes] = await Promise.allSettled([
+				restaurantsService.list(params),
+				googleQuery ? placesService.autocomplete(googleQuery) : Promise.resolve({ results: [] }),
+			]);
+			results = dbRes.status === 'fulfilled' ? dbRes.value.results : [];
+			googleResults = placesRes.status === 'fulfilled' ? placesRes.value.results : [];
 		} catch {
 			error = 'Could not load results.';
 			results = [];
 		} finally {
 			loading = false;
+		}
+	}
+
+	async function importFromGoogle(suggestion: PlaceSuggestion) {
+		importingPlaceId = suggestion.placeId;
+		try {
+			const details = await placesService.details(suggestion.placeId);
+			const restaurant = await restaurantsService.fromGoogle({
+				placeId: details.placeId,
+				name: details.name,
+				address: details.address,
+				city: details.city,
+				country: details.country,
+				lat: details.lat,
+				lng: details.lng,
+				website: details.website,
+				phone: details.phone,
+				imageUrl: details.imageUrl,
+				openingHours: details.openingHours,
+			});
+			goto(`/restaurant/${restaurant.id}`);
+		} catch {
+			error = 'Could not import this place.';
+		} finally {
+			importingPlaceId = null;
 		}
 	}
 
@@ -142,7 +177,7 @@
 		for (const r of validResults) {
 			const icon = L.divIcon({
 				className: '',
-				html: `<div style="width:28px;height:28px;background:#2D6A4F;border:3px solid white;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.2);"></div>`,
+				html: `<div style="width:28px;height:28px;background:#5D4E3F;border:3px solid white;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.2);"></div>`,
 				iconSize: [28, 28],
 				iconAnchor: [14, 14],
 			});
@@ -152,9 +187,9 @@
 				.bindPopup(`
 					<div style="font-family:Inter,sans-serif;min-width:140px;">
 						<strong style="font-size:14px;">${r.name}</strong>
-						${r.city ? `<br><span style="color:#8A8A8A;font-size:12px;">${r.city}</span>` : ''}
-						${r.cuisineDetail ? `<br><span style="color:#8A8A8A;font-size:11px;">${r.cuisineDetail.name}</span>` : ''}
-						${r.averageRating ? `<br><span style="color:#2D6A4F;font-size:13px;">♥ ${r.averageRating.toFixed(1)}</span>` : ''}
+						${r.city ? `<br><span style="color:#9A8E7E;font-size:12px;">${r.city}</span>` : ''}
+						${r.cuisineDetail ? `<br><span style="color:#9A8E7E;font-size:11px;">${r.cuisineDetail.name}</span>` : ''}
+						${r.averageRating ? `<br><span style="color:#5D4E3F;font-size:13px;">♥ ${r.averageRating.toFixed(1)}</span>` : ''}
 						${dietaryBadgesHtml(r.tagsDetail)}
 					</div>
 				`);
@@ -295,10 +330,10 @@
 				</p>
 			</div>
 
-		{:else if results.length === 0}
+		{:else if results.length === 0 && googleResults.length === 0}
 			<div class="flex h-full flex-col items-center justify-center px-8 text-center">
-				<p class="text-sm font-medium text-ink">{t('search.noResults')}</p>
-				<p class="mt-1 text-xs text-ink-muted">{t('search.noResultsDesc')}</p>
+				<p class="text-sm font-medium text-ink">Not on anyone's list yet</p>
+				<p class="mt-1 text-xs text-ink-muted">No one has rated or added this restaurant yet. Try a different search or be the first to add it.</p>
 			</div>
 
 		{:else if view === 'list'}
@@ -367,6 +402,37 @@
 						</button>
 					</li>
 				{/each}
+
+				{#if googleResults.length > 0}
+					<li class="pt-2">
+						<p class="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-muted">From Google — not on Muse yet</p>
+					</li>
+					{#each googleResults as place (place.placeId)}
+						<li>
+							<button
+								type="button"
+								onclick={() => importFromGoogle(place)}
+								disabled={importingPlaceId !== null}
+								class="flex w-full items-center gap-3 rounded-card bg-white p-4 text-left shadow-card active:scale-[0.98] disabled:opacity-50"
+							>
+								<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-50 text-amber-700">
+									{#if importingPlaceId === place.placeId}
+										<div class="h-4 w-4 animate-spin rounded-full border-2 border-amber-700 border-t-transparent"></div>
+									{:else}
+										<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+											<path d="M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+											<path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7Z" />
+										</svg>
+									{/if}
+								</div>
+								<div class="min-w-0 flex-1">
+									<div class="truncate text-sm font-semibold text-ink">{place.name}</div>
+									<div class="truncate text-xs text-ink-muted">{place.address}</div>
+								</div>
+							</button>
+						</li>
+					{/each}
+				{/if}
 			</ul>
 
 		{:else}

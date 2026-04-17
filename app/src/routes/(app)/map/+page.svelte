@@ -19,6 +19,10 @@
 	let mapRef = $state<L.Map | null>(null);
 	let friendCount = $state(0);
 
+	// Track markers with their cuisine slug for filtering
+	type MarkerEntry = { marker: L.Marker; cuisineSlug: string; isFriend: boolean };
+	let allMarkers = $state<MarkerEntry[]>([]);
+
 	// Map search
 	let citySearch = $state('');
 	let cuisineSearch = $state('');
@@ -30,6 +34,24 @@
 			restaurantsService.cuisines().then((c) => (cuisinesList = c)).catch(() => {});
 		}
 	});
+
+	function applyMarkerFilter() {
+		if (!mapRef) return;
+		const cuisineFilter = cuisineSearch;
+		for (const entry of allMarkers) {
+			// Friend pins also respect the showFriendPins toggle handled elsewhere;
+			// only filter by cuisine here.
+			const matches = !cuisineFilter || entry.cuisineSlug === cuisineFilter;
+			if (matches) {
+				// Add to map only if it's not already and (if friend) toggle is on
+				if (!mapRef.hasLayer(entry.marker)) {
+					if (!entry.isFriend || showFriendPins) entry.marker.addTo(mapRef);
+				}
+			} else {
+				if (mapRef.hasLayer(entry.marker)) entry.marker.removeFrom(mapRef);
+			}
+		}
+	}
 
 	async function mapSearch() {
 		if (!mapRef) return;
@@ -45,32 +67,25 @@
 				const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(citySearch.trim())}&format=json&limit=1`);
 				const data = await res.json();
 				if (data.length > 0) {
-					const { lat, lon, boundingbox } = data[0];
-					if (boundingbox) {
-						mapRef.fitBounds([
-							[parseFloat(boundingbox[0]), parseFloat(boundingbox[2])],
-							[parseFloat(boundingbox[1]), parseFloat(boundingbox[3])],
-						]);
-					} else {
-						mapRef.setView([parseFloat(lat), parseFloat(lon)], 13, { animate: true });
-					}
+					const { lat, lon } = data[0];
+					// Zoom to a city-level view that shows streets/neighborhoods
+					mapRef.setView([parseFloat(lat), parseFloat(lon)], 13, { animate: true });
 				}
 			}
 
-			// If cuisine selected, highlight matching restaurants
-			if (hasCuisineQuery) {
-				// Get all visible markers and dim non-matching ones
-				const results = await restaurantsService.list({ cuisine: cuisineSearch, city: hasCityQuery ? citySearch.trim() : undefined });
-				if (results.results.length > 0) {
-					const leaflet = await import('leaflet');
-					const L = leaflet.default;
-					const bounds: [number, number][] = [];
-					for (const r of results.results) {
-						if (r.lat && r.lng) bounds.push([r.lat, r.lng]);
+			// Filter visible markers by cuisine
+			applyMarkerFilter();
+
+			// If cuisine filter narrows things, fit map to matching markers
+			if (hasCuisineQuery && !hasCityQuery) {
+				const bounds: [number, number][] = [];
+				for (const entry of allMarkers) {
+					if (entry.cuisineSlug === cuisineSearch && mapRef.hasLayer(entry.marker)) {
+						bounds.push([entry.marker.getLatLng().lat, entry.marker.getLatLng().lng]);
 					}
-					if (bounds.length > 0 && !hasCityQuery) {
-						mapRef.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 });
-					}
+				}
+				if (bounds.length > 0) {
+					mapRef.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 });
 				}
 			}
 		} catch {
@@ -102,25 +117,30 @@
 
 						const icon = Leaflet.divIcon({
 							className: '',
-							html: `<div style="width:22px;height:22px;background:#D4A373;border:3px solid white;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.2);"></div>`,
-							iconSize: [22, 22],
-							iconAnchor: [11, 11],
+							html: `<div style="width:28px;height:28px;background:#C9A678;border:3px solid white;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.2);"></div>`,
+							iconSize: [28, 28],
+							iconAnchor: [14, 14],
 						});
 
 						const marker = Leaflet.marker([r.lat, r.lng], { icon })
 							.addTo(group)
 							.bindPopup(`
 								<div style="font-family:Inter,sans-serif;min-width:140px;">
-									<span style="color:#D4A373;font-size:11px;font-weight:600;">${other.displayName || other.email}</span>
+									<span style="color:#C9A678;font-size:11px;font-weight:600;">${other.displayName || other.email}</span>
 									<br><a href="/restaurant/${r.id}" style="font-size:14px;font-weight:700;color:#1A1A1A;text-decoration:none;">${r.name}</a>
-									${r.city ? `<br><span style="color:#8A8A8A;font-size:12px;">${r.city}</span>` : ''}
-									${pin.rating ? `<br><span style="color:#2D6A4F;font-size:13px;">♥ ${pin.rating}/5</span>` : ''}
+									${r.city ? `<br><span style="color:#9A8E7E;font-size:12px;">${r.city}</span>` : ''}
+									${pin.rating ? `<br><span style="color:#5D4E3F;font-size:13px;">♥ ${pin.rating}/5</span>` : ''}
 								</div>
 							`);
 						// Only register if not already present (own pins take priority)
 						if (markersById && !markersById.has(r.id)) {
 							markersById.set(r.id, marker);
 						}
+						allMarkers.push({
+							marker,
+							cuisineSlug: r.cuisineDetail?.slug || '',
+							isFriend: true,
+						});
 					}
 				} catch {
 					// friend might have no pins or permission error
@@ -153,13 +173,14 @@
 		const L = leaflet.default;
 
 		const markersById = new Map<number, L.Marker>();
+		allMarkers = [];
 
 		// Only show restaurants that the user has pinned (rated or on the list)
 		for (const pin of pins) {
 			const r = pin.restaurantDetail;
 			if (!r?.lat || !r?.lng) continue;
 
-			const color = pin.status === 'visited' ? '#2D6A4F' : '#8A8A8A';
+			const color = pin.status === 'visited' ? '#5D4E3F' : '#9A8E7E';
 			const icon = L.divIcon({
 				className: '',
 				html: `<div style="width:28px;height:28px;background:${color};border:3px solid white;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.2);"></div>`,
@@ -172,12 +193,17 @@
 				.bindPopup(`
 					<div style="font-family:Inter,sans-serif;min-width:140px;">
 						<a href="/restaurant/${r.id}" style="font-size:14px;font-weight:700;color:#1A1A1A;text-decoration:none;">${r.name}</a>
-						${r.city ? `<br><span style="color:#8A8A8A;font-size:12px;">${r.city}</span>` : ''}
-						${pin.rating ? `<br><span style="color:#2D6A4F;font-size:13px;">♥ ${pin.rating}/5</span>` : ''}
-						<br><span style="color:#8A8A8A;font-size:11px;">${pin.status === 'visited' ? 'Rated' : 'On the List'}</span>
+						${r.city ? `<br><span style="color:#9A8E7E;font-size:12px;">${r.city}</span>` : ''}
+						${pin.rating ? `<br><span style="color:#5D4E3F;font-size:13px;">♥ ${pin.rating}/5</span>` : ''}
+						<br><span style="color:#9A8E7E;font-size:11px;">${pin.status === 'visited' ? 'Rated' : 'On the List'}</span>
 					</div>
 				`);
 			markersById.set(r.id, marker);
+			allMarkers.push({
+				marker,
+				cuisineSlug: r.cuisineDetail?.slug || '',
+				isFriend: false,
+			});
 		}
 
 		const focusId = Number(page.url.searchParams.get('focus'));
@@ -283,14 +309,14 @@
 	<!-- Legend — inline chips, always visible -->
 	<div class="absolute left-4 z-1000 flex flex-wrap gap-1.5" style="bottom: calc(var(--sab, 0px) + 1rem);">
 		<span class="flex items-center gap-1 rounded-full bg-white/90 px-2 py-1 text-[10px] font-medium text-ink shadow-card">
-			<span class="inline-block h-2 w-2 rounded-full" style="background:#2D6A4F;"></span>{t('map.yourVisited')}
+			<span class="inline-block h-2 w-2 rounded-full" style="background:#5D4E3F;"></span>{t('map.yourVisited', { name: authStore.user?.displayName || 'You' })}
 		</span>
 		<span class="flex items-center gap-1 rounded-full bg-white/90 px-2 py-1 text-[10px] font-medium text-ink shadow-card">
-			<span class="inline-block h-2 w-2 rounded-full" style="background:#8A8A8A;"></span>{t('map.yourToVisit')}
+			<span class="inline-block h-2 w-2 rounded-full" style="background:#9A8E7E;"></span>{t('map.yourToVisit', { name: authStore.user?.displayName || 'You' })}
 		</span>
 		{#if friendCount > 0}
 			<span class="flex items-center gap-1 rounded-full bg-white/90 px-2 py-1 text-[10px] font-medium text-ink shadow-card">
-				<span class="inline-block h-2 w-2 rounded-full" style="background:#D4A373;"></span>{t('map.friendPins')}
+				<span class="inline-block h-2 w-2 rounded-full" style="background:#C9A678;"></span>{t('map.friendPins')}
 			</span>
 		{/if}
 	</div>

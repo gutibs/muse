@@ -2,22 +2,22 @@
 
 @theme {
 	/* Neutrals */
-	--color-cream: #F7F6F4;
-	--color-cream-dark: #EDECE8;
+	--color-cream: #F7F2EA;
+	--color-cream-dark: #E8DFD1;
 
-	/* Primary */
-	--color-jade: #2D6A4F;
-	--color-jade-light: #40916C;
-	--color-jade-dark: #1B4332;
+	/* Primary — taupe palette (was jade green) */
+	--color-jade: #8A7357;
+	--color-jade-light: #A68F72;
+	--color-jade-dark: #5D4E3F;
 
 	/* Accent */
 	--color-blush: #B5464A;
 	--color-blush-light: #D4777A;
 
 	/* Ink */
-	--color-ink: #1A1A1A;
-	--color-ink-light: #4A4A4A;
-	--color-ink-muted: #8A8A8A;
+	--color-ink: #2B221A;
+	--color-ink-light: #5C5044;
+	--color-ink-muted: #9A8E7E;
 
 	/* Typography */
 	--font-sans: 'Inter', system-ui, sans-serif;
@@ -86,6 +86,9 @@ body {
 /* Forms */
 input,
 textarea,
-select {
+select,
+button {
 	font-size: 16px; /* prevents iOS auto-zoom */
+	font-family: inherit;
+	color: inherit;
 }
