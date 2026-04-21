@@ -3,6 +3,12 @@ name: Deploy
 on:
   push:
     branches: [main]
+    paths:
+      - 'backend/**'
+      - 'nginx/default-aws.conf'
+      - 'nginx/Dockerfile.aws'
+      - 'docker-compose.aws.yml'
+      - '.github/workflows/deploy.yml'
 
 jobs:
   deploy:
