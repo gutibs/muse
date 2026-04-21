@@ -1,4 +1,4 @@
-.PHONY: setup up down dev frontend logs migrate migrations superuser shell build sync
+.PHONY: setup up down dev frontend logs migrate migrations superuser shell build sync apk
 
 # Primera vez: crea .env, levanta Docker, instala deps frontend
 setup:
@@ -50,6 +50,14 @@ build:
 # Sincroniza build con Capacitor (Android/iOS)
 sync:
 	cd app && npx cap sync
+
+# Build + sync apuntando a desarrollo (muse.dothecode.com) — para uso propio
+apk:
+	cd app && npm run build:apk && npx cap sync
+
+# Build + sync apuntando a produccion (lovemuse.app) — para el cliente / stores
+apk-prod:
+	cd app && npm run build:apk-prod && npx cap sync
 
 # Carga datos iniciales (cuisines + personas)
 seed:

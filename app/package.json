@@ -6,6 +6,8 @@
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build",
+		"build:apk": "vite build --mode capacitor",
+		"build:apk-prod": "vite build --mode capacitor-prod",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
@@ -20,8 +22,10 @@
 		"vite": "^7.3.1"
 	},
 	"dependencies": {
+		"@capacitor/android": "^8.3.1",
 		"@capacitor/cli": "^8.3.0",
 		"@capacitor/core": "^8.3.0",
+		"@capacitor/ios": "^8.3.1",
 		"@sveltejs/adapter-static": "^3.0.10",
 		"@tailwindcss/vite": "^4.2.2",
 		"@types/leaflet": "^1.9.21",
