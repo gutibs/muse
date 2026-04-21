@@ -1,3 +1,10 @@
+FROM node:22-alpine AS frontend
+WORKDIR /app
+COPY app/package*.json ./
+RUN npm ci
+COPY app/ .
+RUN npm run build
+
 FROM python:3.13-slim AS backend
 RUN apt-get update && apt-get install -y \
     gdal-bin \
@@ -11,4 +18,5 @@ RUN DJANGO_SECRET_KEY=build python manage.py collectstatic --noinput
 
 FROM nginx:alpine
 COPY nginx/default.conf /etc/nginx/conf.d/default.conf
+COPY --from=frontend /app/build /usr/share/nginx/html
 COPY --from=backend /app/staticfiles /usr/share/nginx/static
