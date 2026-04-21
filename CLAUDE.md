@@ -56,6 +56,17 @@ El backend usa `djangorestframework-camel-case`:
 En pantallas > 480px se muestra un frame de celular simulado (390x844px).
 NO afecta el build de Capacitor.
 
+## Infraestructura AWS (producción)
+
+- **EC2** `t3.small` Ubuntu 24.04 — IP fija `3.129.56.80`
+- **RDS** `db.t3.micro` PostgreSQL 16 — endpoint `database-1.c1yuu8ceyjpj.us-east-2.rds.amazonaws.com`
+- **Security Group EC2** (`muse-ec2-sg`): puertos 22 (0.0.0.0/0), 80, 443 — el 22 abierto a todos es intencional para GitHub Actions
+- **Security Group RDS** (`muse-rds-sg`): puerto 5432 solo desde `muse-ec2-sg`
+- **Deploy automático**: push a `main` → GitHub Actions → SSH al EC2 → `docker-compose up --build`
+- **Secrets en GitHub**: `EC2_HOST`, `EC2_SSH_KEY` (clave `~/.ssh/id_ed25519` del EC2)
+- **Variables de entorno**: en `/home/ubuntu/muse/.env` en el servidor (no en el repo)
+- **Pendiente**: dominio + SSL con Certbot + actualizar ALLOWED_HOSTS y CORS
+
 ## Convenciones
 - Indentación con tabs
 - Comillas simples en JS/TS
