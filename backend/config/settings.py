@@ -176,7 +176,10 @@ CSRF_TRUSTED_ORIGINS = os.environ.get(
 if not DEBUG:
     # Proxy headers (Traefik/nginx) — trust only behind a known reverse proxy
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-    SECURE_SSL_REDIRECT = os.environ.get("DJANGO_SECURE_SSL_REDIRECT", "1") == "1"
+    # Off by default: our reverse proxy (Traefik via Coolify) already enforces
+    # HTTPS and terminates TLS. Enabling this caused redirect loops in prod
+    # because Traefik talks HTTP to the backend.
+    SECURE_SSL_REDIRECT = os.environ.get("DJANGO_SECURE_SSL_REDIRECT", "0") == "1"
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_HSTS_SECONDS = int(os.environ.get("DJANGO_SECURE_HSTS_SECONDS", "31536000"))
