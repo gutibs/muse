@@ -203,7 +203,10 @@ class RestaurantViewSet(viewsets.ModelViewSet):
 		if photos:
 			photo_name = photos[0].get("name")
 			if photo_name:
-				photo_url = f"/api/v1/places/photo/?ref={photo_name}"
+				# Absolute URL so it passes URLField validation when persisted.
+				photo_url = request.build_absolute_uri(
+					f"/api/v1/places/photo/?ref={photo_name}"
+				)
 
 		hours = p.get("regularOpeningHours") or {}
 
