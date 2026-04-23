@@ -10,9 +10,15 @@ import requests
 from django.conf import settings
 from django.http import HttpResponseRedirect
 from rest_framework import status
-from rest_framework.decorators import api_view, throttle_classes
+from rest_framework.decorators import (
+	api_view,
+	authentication_classes,
+	permission_classes,
+	throttle_classes,
+)
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from rest_framework.throttling import UserRateThrottle
+from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +36,10 @@ _ALLOWED_PHOTO_HOSTS = {
 
 
 class PlacesThrottle(UserRateThrottle):
+	scope = "places"
+
+
+class PlacesAnonThrottle(AnonRateThrottle):
 	scope = "places"
 
 
@@ -226,9 +236,15 @@ def place_details(request, place_id: str):
 
 
 @api_view(["GET"])
-@throttle_classes([PlacesThrottle])
+@authentication_classes([])
+@permission_classes([AllowAny])
+@throttle_classes([PlacesAnonThrottle, PlacesThrottle])
 def place_photo(request):
 	"""Redirect to the signed Google URL for a place photo.
+
+	Public: <img src> tags can't send Authorization headers. Only returns a
+	302 to a Google-hosted CDN URL, so there's no private data to leak.
+	Throttled to stop abuse of our Google quota.
 
 	Query: ref (photo resource name)
 	"""
