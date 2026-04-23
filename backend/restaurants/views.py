@@ -1,3 +1,5 @@
+import logging
+
 import requests
 from django.conf import settings
 from django.contrib.gis.db.models.functions import Distance
@@ -9,6 +11,8 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
 from restaurants.models import Cuisine, Restaurant, Tag
+
+logger = logging.getLogger(__name__)
 from restaurants.serializers import (
 	CuisineSerializer,
 	RestaurantDetailSerializer,
@@ -210,20 +214,31 @@ class RestaurantViewSet(viewsets.ModelViewSet):
 
 		hours = p.get("regularOpeningHours") or {}
 
-		restaurant = Restaurant.objects.create(
-			name=(p.get("displayName") or {}).get("text", "") or "Unknown",
-			location=Point(float(lng), float(lat), srid=4326),
-			address=p.get("formattedAddress", ""),
-			city=city,
-			country=country,
-			website=p.get("websiteUri", ""),
-			phone=p.get("internationalPhoneNumber", ""),
-			image_url=photo_url,
-			opening_hours=hours.get("weekdayDescriptions", []),
-			google_place_id=place_id,
-			created_by=request.user,
-			approval_status=Restaurant.ApprovalStatus.APPROVED,
-		)
+		try:
+			restaurant = Restaurant.objects.create(
+				name=(p.get("displayName") or {}).get("text", "") or "Unknown",
+				location=Point(float(lng), float(lat), srid=4326),
+				address=p.get("formattedAddress", "") or "",
+				city=city,
+				country=country,
+				website=p.get("websiteUri", "") or "",
+				phone=(p.get("internationalPhoneNumber", "") or "")[:30],
+				image_url=photo_url,
+				opening_hours=hours.get("weekdayDescriptions", []) or [],
+				google_place_id=place_id,
+				created_by=request.user,
+				approval_status=Restaurant.ApprovalStatus.APPROVED,
+			)
+		except Exception:
+			logger.exception(
+				"from_google failed to create restaurant for place_id=%s payload=%r",
+				place_id,
+				p,
+			)
+			return Response(
+				{"detail": "Could not save this place."},
+				status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+			)
 		serializer = self.get_serializer(self._base_queryset().get(pk=restaurant.pk))
 		return Response(serializer.data, status=status.HTTP_201_CREATED)
 
