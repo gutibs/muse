@@ -71,7 +71,14 @@ class RestaurantSerializer(serializers.ModelSerializer):
 			"opening_hours",
 			"created_at",
 		)
-		read_only_fields = ("id", "approval_status", "created_at")
+		read_only_fields = (
+			"id",
+			"approval_status",
+			"created_at",
+			"google_place_id",
+			"average_rating",
+			"pin_count",
+		)
 
 	def get_lat(self, obj):
 		return obj.location.y if obj.location else None
@@ -84,6 +91,10 @@ class RestaurantSerializer(serializers.ModelSerializer):
 		lng = data.pop("longitude", None)
 		if lat is not None and lng is not None:
 			data["location"] = Point(lng, lat, srid=4326)
+		elif lat is not None or lng is not None:
+			raise serializers.ValidationError(
+				"latitude and longitude must be provided together."
+			)
 		elif not self.instance:
 			raise serializers.ValidationError("latitude and longitude are required.")
 		return data
@@ -121,11 +132,14 @@ class RestaurantDetailSerializer(RestaurantSerializer):
 		fields = RestaurantSerializer.Meta.fields + ("menu_items", "reviews", "friend_stats")
 
 	def _friend_ids(self):
+		if hasattr(self, "_cached_friend_ids"):
+			return self._cached_friend_ids
 		from accounts.models import Friendship
 		from django.db.models import Q
 		user = self.context["request"].user
 		if not user.is_authenticated:
-			return set()
+			self._cached_friend_ids = set()
+			return self._cached_friend_ids
 		friendships = Friendship.objects.filter(
 			Q(from_user=user) | Q(to_user=user),
 			status=Friendship.Status.ACCEPTED,
@@ -135,6 +149,7 @@ class RestaurantDetailSerializer(RestaurantSerializer):
 			ids.add(a)
 			ids.add(b)
 		ids.discard(user.id)
+		self._cached_friend_ids = ids
 		return ids
 
 	def get_friend_stats(self, obj):
@@ -158,12 +173,12 @@ class RestaurantDetailSerializer(RestaurantSerializer):
 	def get_reviews(self, obj):
 		from pins.models import Pin
 		friend_ids = self._friend_ids()
-		# Prefer friend reviews first, then everyone else
-		pins = (
+		pins = list(
 			Pin.objects.filter(restaurant=obj, status="visited", comment__gt="")
 			.select_related("user__profile")
 			.order_by("-updated_at")[:20]
 		)
+		pins.sort(key=lambda p: (0 if p.user_id in friend_ids else 1, -p.updated_at.timestamp()))
 		return [
 			{
 				"id": p.id,

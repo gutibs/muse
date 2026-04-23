@@ -3,6 +3,8 @@
 	import { friendsService } from '$lib/services/friends.service';
 	import { t } from '$lib/i18n/index.svelte';
 	import type { Friendship, PublicUser } from '$lib/types';
+	import { getOtherUser } from '$lib/utils/friendship';
+	import { extractFirstDrfError } from '$lib/utils/api-error';
 
 	type Tab = 'friends' | 'requests' | 'add';
 
@@ -32,10 +34,15 @@
 	let responding = $state<Record<number, boolean>>({});
 	let sending = $state<Record<number, boolean>>({});
 
+	let listError = $state('');
+
 	async function loadFriends() {
 		loadingFriends = true;
+		listError = '';
 		try {
 			friends = await friendsService.list();
+		} catch {
+			listError = 'Could not load your friends. Pull to retry.';
 		} finally {
 			loadingFriends = false;
 		}
@@ -43,8 +50,11 @@
 
 	async function loadRequests() {
 		loadingRequests = true;
+		listError = '';
 		try {
 			requests = await friendsService.requests();
+		} catch {
+			listError = 'Could not load friend requests.';
 		} finally {
 			loadingRequests = false;
 		}
@@ -67,9 +77,8 @@
 		try {
 			await friendsService.sendRequest(user.id);
 			searchResults = searchResults.filter((u) => u.id !== user.id);
-		} catch (err: unknown) {
-			const e = err as { data?: { toUserId?: string[] } };
-			searchError = e?.data?.toUserId?.[0] || 'Could not send request.';
+		} catch (err) {
+			searchError = extractFirstDrfError(err, 'Could not send request.');
 		} finally {
 			sending[user.id] = false;
 		}
@@ -106,9 +115,8 @@
 			await friendsService.inviteByEmail(email);
 			inviteMessage = `Invitation sent to ${email}`;
 			inviteEmail = '';
-		} catch (err: unknown) {
-			const e = err as { data?: { email?: string[] } };
-			inviteError = e?.data?.email?.[0] || 'Could not send invite.';
+		} catch (err) {
+			inviteError = extractFirstDrfError(err, 'Could not send invite.');
 		} finally {
 			inviting = false;
 		}
@@ -125,10 +133,6 @@
 		loadFriends();
 		loadRequests();
 	});
-
-	function getOtherUser(f: Friendship, myId: number): PublicUser {
-		return f.fromUser.id === myId ? f.toUser : f.fromUser;
-	}
 
 	import { authStore } from '$lib/stores/auth.store.svelte';
 	let myId = $derived(authStore.user?.id ?? 0);
@@ -154,6 +158,12 @@
 	</header>
 
 	<main class="flex-1 overflow-y-auto px-5 pb-6">
+
+		{#if listError}
+			<div class="mt-3 rounded-card bg-blush-light/20 px-4 py-3 text-sm text-blush">
+				{listError}
+			</div>
+		{/if}
 
 		<!-- FRIENDS TAB -->
 		{#if tab === 'friends'}

@@ -1,13 +1,14 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import CityAutocomplete from '$lib/components/CityAutocomplete.svelte';
 	import LanguagePicker from '$lib/components/LanguagePicker.svelte';
 	import MuseLogo from '$lib/components/MuseLogo.svelte';
 	import PasswordStrength from '$lib/components/PasswordStrength.svelte';
 	import { t } from '$lib/i18n/index.svelte';
 	import { restaurantsService } from '$lib/services/restaurants.service';
 	import { authStore } from '$lib/stores/auth.store.svelte';
-	import { ApiError } from '$lib/types';
 	import type { Cuisine } from '$lib/types';
+	import { extractFirstDrfError } from '$lib/utils/api-error';
 
 	// Step 1: account
 	let displayName = $state('');
@@ -57,14 +58,7 @@
 			try { cuisines = await restaurantsService.cuisines(); } catch {}
 			step = 2;
 		} catch (err) {
-			if (err instanceof ApiError && err.data) {
-				const data = err.data as Record<string, string[]>;
-				const firstKey = Object.keys(data)[0];
-				const messages = data[firstKey];
-				error = Array.isArray(messages) ? messages[0] : String(messages);
-			} else {
-				error = 'Something went wrong. Please try again.';
-			}
+			error = extractFirstDrfError(err);
 		} finally {
 			submitting = false;
 		}
@@ -198,13 +192,7 @@
 				<!-- City -->
 				<div>
 					<label for="city" class="mb-1 block text-sm font-medium text-ink-light">{t('onboarding.city')}</label>
-					<input
-						id="city"
-						type="text"
-						bind:value={city}
-						class="w-full rounded-input border border-cream-dark bg-white px-4 py-3 text-base text-ink outline-none focus:border-jade"
-						placeholder={t('onboarding.cityPlaceholder')}
-					/>
+					<CityAutocomplete bind:value={city} placeholder={t('onboarding.cityPlaceholder')} id="city" />
 				</div>
 
 				<!-- Dietary -->

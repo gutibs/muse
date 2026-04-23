@@ -5,6 +5,7 @@
 	import DietaryBadges from '$lib/components/DietaryBadges.svelte';
 	import { restaurantsService } from '$lib/services/restaurants.service';
 	import type { RestaurantDetail } from '$lib/types';
+	import { timeAgo } from '$lib/utils/time';
 
 	let restaurantId = $derived(Number(page.params.id));
 
@@ -28,14 +29,6 @@
 		});
 	});
 
-	function timeAgo(dateStr: string): string {
-		const diff = Date.now() - new Date(dateStr).getTime();
-		const days = Math.floor(diff / 86400000);
-		if (days < 1) return 'today';
-		if (days < 7) return `${days}d ago`;
-		if (days < 30) return `${Math.floor(days / 7)}w ago`;
-		return new Date(dateStr).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
-	}
 </script>
 
 <div class="flex h-full flex-col">

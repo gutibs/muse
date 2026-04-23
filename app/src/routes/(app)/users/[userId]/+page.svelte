@@ -6,6 +6,7 @@
 	import { usersService } from '$lib/services/users.service';
 	import type { Pin, Profile } from '$lib/types';
 	import { ApiError } from '$lib/types';
+	import { createPinIcon, PIN_COLORS } from '$lib/utils/map';
 	import type L from 'leaflet';
 
 	let userId = $derived(Number(page.params.userId));
@@ -60,13 +61,8 @@
 			const r = pin.restaurantDetail;
 			if (!r?.lat || !r?.lng) continue;
 
-			const color = pin.status === 'visited' ? '#5D4E3F' : '#9A8E7E';
-			const icon = L.divIcon({
-				className: '',
-				html: `<div style="width:28px;height:28px;background:${color};border:3px solid white;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.2);"></div>`,
-				iconSize: [28, 28],
-				iconAnchor: [14, 14],
-			});
+			const color = pin.status === 'visited' ? PIN_COLORS.visited : PIN_COLORS.toVisit;
+			const icon = createPinIcon(color);
 
 			L.marker([r.lat, r.lng], { icon })
 				.addTo(map)

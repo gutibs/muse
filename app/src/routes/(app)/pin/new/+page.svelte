@@ -12,6 +12,7 @@
 	import { restaurantsService } from '$lib/services/restaurants.service';
 	import type { Cuisine, Persona, PinStatus, Restaurant, Tag } from '$lib/types';
 	import { ApiError } from '$lib/types';
+	import { extractFirstDrfError } from '$lib/utils/api-error';
 
 	// State
 	let step = $state(1);
@@ -191,14 +192,7 @@
 
 			goto('/map');
 		} catch (err) {
-			if (err instanceof ApiError && err.data) {
-				const data = err.data as Record<string, string[]>;
-				const firstKey = Object.keys(data)[0];
-				const messages = data[firstKey];
-				error = Array.isArray(messages) ? messages[0] : String(messages);
-			} else {
-				error = 'Something went wrong. Please try again.';
-			}
+			error = extractFirstDrfError(err);
 		} finally {
 			submitting = false;
 		}

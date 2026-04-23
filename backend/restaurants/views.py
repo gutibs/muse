@@ -1,8 +1,11 @@
+import requests
+from django.conf import settings
 from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.geos import Point
 from django.db.models import Avg, Count
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
 from restaurants.models import Cuisine, Restaurant, Tag
@@ -67,6 +70,22 @@ class RestaurantViewSet(viewsets.ModelViewSet):
 		serializer.save()
 		return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+	def _check_owner_or_staff(self, instance, request):
+		if instance.created_by_id != request.user.id and not (
+			request.user.is_staff or request.user.is_superuser
+		):
+			raise PermissionDenied("You cannot modify restaurants you did not create.")
+
+	def update(self, request, *args, **kwargs):
+		instance = self.get_object()
+		self._check_owner_or_staff(instance, request)
+		return super().update(request, *args, **kwargs)
+
+	def partial_update(self, request, *args, **kwargs):
+		instance = self.get_object()
+		self._check_owner_or_staff(instance, request)
+		return super().partial_update(request, *args, **kwargs)
+
 	def retrieve(self, request, *args, **kwargs):
 		"""Allow retrieving a specific restaurant even if pending (for the user who created it)."""
 		instance = self._base_queryset().filter(pk=self.kwargs["pk"]).first()
@@ -106,15 +125,13 @@ class RestaurantViewSet(viewsets.ModelViewSet):
 
 	@action(detail=False, methods=["post"])
 	def from_google(self, request):
-		"""Find or create a Restaurant from a Google Place payload.
+		"""Find or create a Restaurant from a Google placeId.
 
-		If a restaurant with the same google_place_id already exists, return it.
-		Otherwise create a new one (auto-approved since data comes from Google).
+		Only `placeId` is trusted from the client. All restaurant fields are
+		re-fetched from Google Places API before creating the record so the
+		client cannot spoof name/address/coords and bypass admin approval.
 		"""
-		from django.contrib.gis.geos import Point
-
-		data = request.data
-		place_id = data.get("placeId") or data.get("place_id")
+		place_id = request.data.get("placeId") or request.data.get("place_id")
 		if not place_id:
 			return Response({"detail": "placeId is required."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -123,40 +140,89 @@ class RestaurantViewSet(viewsets.ModelViewSet):
 			serializer = self.get_serializer(self._base_queryset().get(pk=existing.pk))
 			return Response(serializer.data)
 
-		lat = data.get("lat")
-		lng = data.get("lng")
+		key = settings.GOOGLE_PLACES_API_KEY
+		if not key:
+			return Response(
+				{"detail": "Google Places API is not configured."},
+				status=status.HTTP_503_SERVICE_UNAVAILABLE,
+			)
+
+		fields = ",".join([
+			"id",
+			"displayName",
+			"formattedAddress",
+			"addressComponents",
+			"location",
+			"websiteUri",
+			"internationalPhoneNumber",
+			"regularOpeningHours",
+			"photos",
+		])
+		try:
+			r = requests.get(
+				f"https://places.googleapis.com/v1/places/{place_id}",
+				headers={
+					"X-Goog-Api-Key": key,
+					"X-Goog-FieldMask": fields,
+				},
+				timeout=5,
+			)
+			r.raise_for_status()
+			p = r.json()
+		except requests.RequestException:
+			return Response(
+				{"detail": "Could not verify place with Google."},
+				status=status.HTTP_502_BAD_GATEWAY,
+			)
+
+		if p.get("id") != place_id:
+			return Response({"detail": "Invalid placeId."}, status=status.HTTP_400_BAD_REQUEST)
+
+		location = p.get("location") or {}
+		lat = location.get("latitude")
+		lng = location.get("longitude")
 		if lat is None or lng is None:
-			return Response({"detail": "lat/lng required."}, status=status.HTTP_400_BAD_REQUEST)
+			return Response(
+				{"detail": "Place has no location."},
+				status=status.HTTP_400_BAD_REQUEST,
+			)
+
+		city = ""
+		country = ""
+		for comp in p.get("addressComponents", []):
+			types = comp.get("types", [])
+			if "locality" in types and not city:
+				city = comp.get("longText", "")
+			elif "administrative_area_level_1" in types and not city:
+				city = comp.get("longText", "")
+			elif "country" in types:
+				country = comp.get("longText", "")
+
+		photo_url = ""
+		photos = p.get("photos") or []
+		if photos:
+			photo_name = photos[0].get("name")
+			if photo_name:
+				photo_url = f"/api/v1/places/photo/?ref={photo_name}"
+
+		hours = p.get("regularOpeningHours") or {}
 
 		restaurant = Restaurant.objects.create(
-			name=data.get("name", "") or "Unknown",
+			name=(p.get("displayName") or {}).get("text", "") or "Unknown",
 			location=Point(float(lng), float(lat), srid=4326),
-			address=data.get("address", ""),
-			city=data.get("city", ""),
-			country=data.get("country", ""),
-			website=data.get("website", ""),
-			phone=data.get("phone", ""),
-			image_url=data.get("imageUrl") or data.get("image_url") or "",
-			opening_hours=data.get("openingHours") or data.get("opening_hours") or [],
+			address=p.get("formattedAddress", ""),
+			city=city,
+			country=country,
+			website=p.get("websiteUri", ""),
+			phone=p.get("internationalPhoneNumber", ""),
+			image_url=photo_url,
+			opening_hours=hours.get("weekdayDescriptions", []),
 			google_place_id=place_id,
 			created_by=request.user,
-			# Google-sourced data is trusted, auto-approve
 			approval_status=Restaurant.ApprovalStatus.APPROVED,
 		)
 		serializer = self.get_serializer(self._base_queryset().get(pk=restaurant.pk))
 		return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-	@action(detail=False, methods=["get"])
-	def my_suggestions(self, request):
-		"""List restaurants the current user has suggested (pending/rejected)."""
-		qs = (
-			self._base_queryset()
-			.filter(created_by=request.user)
-			.exclude(approval_status=Restaurant.ApprovalStatus.APPROVED)
-		)
-		serializer = self.get_serializer(qs, many=True)
-		return Response(serializer.data)
-
 
 class CuisineViewSet(viewsets.ReadOnlyModelViewSet):
 	queryset = Cuisine.objects.all()

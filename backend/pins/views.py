@@ -22,12 +22,12 @@ class PinViewSet(viewsets.ModelViewSet):
 
 	def list(self, request, *args, **kwargs):
 		qs = self.get_queryset()
-		status = request.query_params.get("status")
+		status_filter = request.query_params.get("status")
 		persona = request.query_params.get("persona")
 		city = request.query_params.get("city")
 
-		if status:
-			qs = qs.filter(status=status)
+		if status_filter:
+			qs = qs.filter(status=status_filter)
 		if persona:
 			qs = qs.filter(personas__slug=persona)
 		if city:

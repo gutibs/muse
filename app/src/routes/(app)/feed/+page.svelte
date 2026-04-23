@@ -3,6 +3,7 @@
 	import { feedService } from '$lib/services/feed.service';
 	import { t } from '$lib/i18n/index.svelte';
 	import type { Activity } from '$lib/types';
+	import { timeAgo } from '$lib/utils/time';
 
 	let activities = $state<Activity[]>([]);
 	let loading = $state(true);
@@ -29,18 +30,6 @@
 
 	$effect(() => { load(1); });
 
-	function timeAgo(dateStr: string): string {
-		const diff = Date.now() - new Date(dateStr).getTime();
-		const mins = Math.floor(diff / 60000);
-		if (mins < 1) return 'just now';
-		if (mins < 60) return `${mins}m ago`;
-		const hours = Math.floor(mins / 60);
-		if (hours < 24) return `${hours}h ago`;
-		const days = Math.floor(hours / 24);
-		if (days < 7) return `${days}d ago`;
-		return new Date(dateStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
-	}
-
 	function verbLabel(a: Activity): string {
 		switch (a.verb) {
 			case 'pinned': return t('feed.wantsToVisit');
@@ -48,6 +37,7 @@
 			case 'updated': return t('feed.updated');
 			case 'friendship': return t('feed.becameFriends');
 			case 'joined': return t('feed.joinedMuse');
+			default: return '';
 		}
 	}
 

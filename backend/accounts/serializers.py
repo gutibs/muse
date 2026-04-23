@@ -57,9 +57,10 @@ class RegisterSerializer(serializers.Serializer):
 	display_name = serializers.CharField(max_length=100, required=False, default="")
 
 	def validate_email(self, value):
-		if User.objects.filter(email=value).exists():
+		value = value.lower()
+		if User.objects.filter(email__iexact=value).exists():
 			raise serializers.ValidationError("A user with this email already exists.")
-		return value.lower()
+		return value
 
 	def create(self, validated_data):
 		user = User.objects.create_user(
@@ -71,11 +72,8 @@ class RegisterSerializer(serializers.Serializer):
 			user.profile.display_name = validated_data["display_name"]
 			user.profile.save(update_fields=["display_name"])
 
-		# Check for pending email invitations
-		from accounts.models import EmailInvitation, Friendship
-
 		invitations = EmailInvitation.objects.filter(
-			email=validated_data["email"],
+			email__iexact=validated_data["email"],
 			accepted=False,
 		)
 		for invitation in invitations:
@@ -142,20 +140,35 @@ class EmailInvitationSerializer(serializers.ModelSerializer):
 		read_only_fields = ("id", "accepted", "created_at")
 
 	def validate_email(self, value):
-		request = self.context["request"]
 		value = value.lower()
+		request = self.context["request"]
 		if User.objects.filter(email__iexact=value).exists():
 			raise serializers.ValidationError(
 				"This user is already on Muse. Search for them by email instead."
 			)
-		if EmailInvitation.objects.filter(
+		existing = EmailInvitation.objects.filter(
 			from_user=request.user, email__iexact=value
-		).exists():
-			raise serializers.ValidationError("You already invited this email.")
+		).first()
+		if existing and existing.accepted:
+			raise serializers.ValidationError(
+				"This person already accepted your invitation."
+			)
 		return value
 
 	def create(self, validated_data):
-		validated_data["from_user"] = self.context["request"].user
+		request = self.context["request"]
+		email = validated_data["email"]
+		# Re-send support: if an unaccepted invitation already exists, reuse it
+		# (touch updated_at) so the view can trigger a fresh email.
+		from django.utils import timezone
+		existing = EmailInvitation.objects.filter(
+			from_user=request.user, email__iexact=email, accepted=False
+		).first()
+		if existing:
+			existing.created_at = timezone.now()
+			existing.save(update_fields=["created_at"])
+			return existing
+		validated_data["from_user"] = request.user
 		return super().create(validated_data)
 
 

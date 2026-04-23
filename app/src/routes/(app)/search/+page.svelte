@@ -7,7 +7,10 @@
 	import { placesService, type PlaceSuggestion } from '$lib/services/places.service';
 	import { restaurantsService } from '$lib/services/restaurants.service';
 	import type { Cuisine, Restaurant } from '$lib/types';
+	import { ApiError } from '$lib/types';
+	import { extractFirstDrfError } from '$lib/utils/api-error';
 	import { dietaryBadgesHtml } from '$lib/utils/dietary-badges';
+	import { createPinIcon, PIN_COLORS } from '$lib/utils/map';
 	import type L from 'leaflet';
 
 	function viewRestaurant(r: Restaurant) {
@@ -101,8 +104,13 @@
 		nearbyMode = false;
 		googleResults = [];
 		try {
-			// Search our DB + Google Places in parallel when there's a name query
-			const googleQuery = [query.trim(), cityFilter.trim()].filter(Boolean).join(' ');
+			// Only ask Google for suggestions when the user is actually typing a
+			// restaurant name. Searching Google with just a city returns places
+			// *named* after that city, which is confusing (see Jess feedback).
+			const hasNameQuery = query.trim().length > 0;
+			const googleQuery = hasNameQuery
+				? [query.trim(), cityFilter.trim()].filter(Boolean).join(' ')
+				: '';
 			const [dbRes, placesRes] = await Promise.allSettled([
 				restaurantsService.list(params),
 				googleQuery ? placesService.autocomplete(googleQuery) : Promise.resolve({ results: [] }),
@@ -135,8 +143,20 @@
 				openingHours: details.openingHours,
 			});
 			goto(`/restaurant/${restaurant.id}`);
-		} catch {
-			error = 'Could not import this place.';
+		} catch (err) {
+			if (err instanceof ApiError) {
+				if (err.status === 503) {
+					error = 'Google Places is not configured on the server. Contact the admin.';
+				} else if (err.status === 502) {
+					error = 'Google Places is temporarily unavailable. Try again shortly.';
+				} else if (err.status === 429) {
+					error = 'Too many requests. Try again in a minute.';
+				} else {
+					error = extractFirstDrfError(err, 'Could not import this place.');
+				}
+			} else {
+				error = 'Network error. Check your connection and try again.';
+			}
 		} finally {
 			importingPlaceId = null;
 		}
@@ -175,12 +195,7 @@
 		const bounds: [number, number][] = [];
 
 		for (const r of validResults) {
-			const icon = L.divIcon({
-				className: '',
-				html: `<div style="width:28px;height:28px;background:#5D4E3F;border:3px solid white;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.2);"></div>`,
-				iconSize: [28, 28],
-				iconAnchor: [14, 14],
-			});
+			const icon = createPinIcon(PIN_COLORS.visited);
 
 			L.marker([r.lat, r.lng], { icon })
 				.addTo(map)

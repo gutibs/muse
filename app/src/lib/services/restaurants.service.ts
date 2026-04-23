@@ -35,8 +35,4 @@ export const restaurantsService = {
 	tags(): Promise<Tag[]> {
 		return api.get('/tags/');
 	},
-
-	mySuggestions(): Promise<Restaurant[]> {
-		return api.get('/restaurants/my_suggestions/');
-	},
 };

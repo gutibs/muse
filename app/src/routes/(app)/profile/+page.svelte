@@ -1,11 +1,12 @@
 <script lang="ts">
 	import Avatar from '$lib/components/Avatar.svelte';
+	import CityAutocomplete from '$lib/components/CityAutocomplete.svelte';
 	import { pinsService } from '$lib/services/pins.service';
 	import { restaurantsService } from '$lib/services/restaurants.service';
 	import { t } from '$lib/i18n/index.svelte';
 	import { authStore } from '$lib/stores/auth.store.svelte';
-	import { ApiError } from '$lib/types';
 	import type { Cuisine, Pin, SharedList } from '$lib/types';
+	import { extractFirstDrfError } from '$lib/utils/api-error';
 
 	let editing = $state(false);
 
@@ -135,14 +136,7 @@
 			success = 'Profile updated';
 			setTimeout(() => (success = ''), 3000);
 		} catch (err) {
-			if (err instanceof ApiError && err.data) {
-				const data = err.data as Record<string, string[]>;
-				const firstKey = Object.keys(data)[0];
-				const messages = data[firstKey];
-				error = Array.isArray(messages) ? messages[0] : String(messages);
-			} else {
-				error = 'Could not update profile.';
-			}
+			error = extractFirstDrfError(err, 'Could not update profile.');
 		} finally {
 			saving = false;
 		}
@@ -437,7 +431,7 @@
 
 				<div>
 					<label for="editCity" class="mb-1 block text-sm font-medium text-ink-light">{t('profile.cityLabel')}</label>
-					<input id="editCity" type="text" bind:value={editCity} class="w-full rounded-input border border-cream-dark bg-white px-4 py-3 text-base text-ink outline-none focus:border-jade" placeholder="Where are you based?" />
+					<CityAutocomplete bind:value={editCity} placeholder={t('profile.cityPlaceholder')} id="editCity" />
 				</div>
 
 				<div class="grid grid-cols-2 gap-3">

@@ -9,7 +9,9 @@
 	import { restaurantsService } from '$lib/services/restaurants.service';
 	import { usersService } from '$lib/services/users.service';
 	import { authStore } from '$lib/stores/auth.store.svelte';
-	import type { Friendship, Pin, PublicUser, Restaurant } from '$lib/types';
+	import type { Pin } from '$lib/types';
+	import { getOtherUser } from '$lib/utils/friendship';
+	import { createPinIcon, PIN_COLORS } from '$lib/utils/map';
 	import type L from 'leaflet';
 
 	let hasFocus = $derived(Boolean(page.url.searchParams.get('focus')));
@@ -39,16 +41,16 @@
 		if (!mapRef) return;
 		const cuisineFilter = cuisineSearch;
 		for (const entry of allMarkers) {
-			// Friend pins also respect the showFriendPins toggle handled elsewhere;
-			// only filter by cuisine here.
 			const matches = !cuisineFilter || entry.cuisineSlug === cuisineFilter;
-			if (matches) {
-				// Add to map only if it's not already and (if friend) toggle is on
-				if (!mapRef.hasLayer(entry.marker)) {
-					if (!entry.isFriend || showFriendPins) entry.marker.addTo(mapRef);
-				}
-			} else {
-				if (mapRef.hasLayer(entry.marker)) entry.marker.removeFrom(mapRef);
+			const shouldShow = matches && (!entry.isFriend || showFriendPins);
+			// Friend markers live inside friendLayers (a LayerGroup); own markers live on the map.
+			const container: L.Map | L.LayerGroup | null = entry.isFriend ? friendLayers : mapRef;
+			if (!container) continue;
+			const isPresent = container.hasLayer(entry.marker);
+			if (shouldShow && !isPresent) {
+				container.addLayer(entry.marker);
+			} else if (!shouldShow && isPresent) {
+				container.removeLayer(entry.marker);
 			}
 		}
 	}
@@ -95,10 +97,6 @@
 		}
 	}
 
-	function getOtherUser(f: Friendship, myId: number): PublicUser {
-		return f.fromUser.id === myId ? f.toUser : f.fromUser;
-	}
-
 	async function loadFriendPins(map: L.Map, Leaflet: typeof L, markersById?: Map<number, L.Marker>) {
 		try {
 			const friendships = await friendsService.list();
@@ -115,12 +113,7 @@
 						const r = pin.restaurantDetail;
 						if (!r?.lat || !r?.lng) continue;
 
-						const icon = Leaflet.divIcon({
-							className: '',
-							html: `<div style="width:28px;height:28px;background:#C9A678;border:3px solid white;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.2);"></div>`,
-							iconSize: [28, 28],
-							iconAnchor: [14, 14],
-						});
+						const icon = createPinIcon(PIN_COLORS.friend);
 
 						const marker = Leaflet.marker([r.lat, r.lng], { icon })
 							.addTo(group)
@@ -180,13 +173,8 @@
 			const r = pin.restaurantDetail;
 			if (!r?.lat || !r?.lng) continue;
 
-			const color = pin.status === 'visited' ? '#5D4E3F' : '#9A8E7E';
-			const icon = L.divIcon({
-				className: '',
-				html: `<div style="width:28px;height:28px;background:${color};border:3px solid white;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.2);"></div>`,
-				iconSize: [28, 28],
-				iconAnchor: [14, 14],
-			});
+			const color = pin.status === 'visited' ? PIN_COLORS.visited : PIN_COLORS.toVisit;
+			const icon = createPinIcon(color);
 
 			const marker = L.marker([r.lat, r.lng], { icon })
 				.addTo(map)

@@ -59,9 +59,9 @@ apk:
 apk-prod:
 	cd app && npm run build:apk-prod && npx cap sync
 
-# Carga datos iniciales (cuisines + personas)
+# Carga datos iniciales (cuisines + personas + tags + restaurantes de ejemplo)
 seed:
-	docker compose -f docker-compose.dev.yml exec backend python manage.py loaddata /app/fixtures/cuisines.json /app/fixtures/personas.json /app/fixtures/tags.json
+	docker compose -f docker-compose.dev.yml exec backend python manage.py loaddata /app/fixtures/cuisines.json /app/fixtures/personas.json /app/fixtures/tags.json /app/fixtures/seed_restaurants.json
 
 # Tests Django
 test:

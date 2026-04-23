@@ -21,6 +21,12 @@ export interface PlaceDetails {
 	type: string;
 }
 
+export interface CitySuggestion {
+	placeId: string;
+	name: string;
+	display: string;
+}
+
 export const placesService = {
 	autocomplete(query: string, lat?: number, lng?: number): Promise<{ results: PlaceSuggestion[] }> {
 		const qs = new URLSearchParams({ q: query });
@@ -31,5 +37,9 @@ export const placesService = {
 
 	details(placeId: string): Promise<PlaceDetails> {
 		return api.get(`/places/details/${placeId}/`);
+	},
+
+	cityAutocomplete(query: string): Promise<{ results: CitySuggestion[] }> {
+		return api.get(`/places/cities/autocomplete/?q=${encodeURIComponent(query)}`);
 	},
 };

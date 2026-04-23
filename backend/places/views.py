@@ -3,14 +3,34 @@
 Frontend never sees the API key — all requests go through here.
 We only forward the fields we actually need.
 """
+import logging
+from urllib.parse import urlparse
+
 import requests
 from django.conf import settings
 from django.http import HttpResponseRedirect
 from rest_framework import status
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, throttle_classes
 from rest_framework.response import Response
+from rest_framework.throttling import UserRateThrottle
+
+logger = logging.getLogger(__name__)
 
 PLACES_API_BASE = "https://places.googleapis.com/v1"
+
+_ALLOWED_PHOTO_HOSTS = {
+	"places.googleapis.com",
+	"lh3.googleusercontent.com",
+	"lh4.googleusercontent.com",
+	"lh5.googleusercontent.com",
+	"lh6.googleusercontent.com",
+	"maps.googleapis.com",
+	"maps.gstatic.com",
+}
+
+
+class PlacesThrottle(UserRateThrottle):
+	scope = "places"
 
 
 def _not_configured():
@@ -21,6 +41,7 @@ def _not_configured():
 
 
 @api_view(["GET"])
+@throttle_classes([PlacesThrottle])
 def autocomplete(request):
 	"""Autocomplete restaurant names as the user types."""
 	key = settings.GOOGLE_PLACES_API_KEY
@@ -61,7 +82,8 @@ def autocomplete(request):
 		)
 		r.raise_for_status()
 		data = r.json()
-	except requests.RequestException:
+	except requests.RequestException as exc:
+		logger.exception("Google Places API call failed: %s", exc)
 		return Response({"detail": "Places API error."}, status=502)
 
 	results = []
@@ -78,6 +100,57 @@ def autocomplete(request):
 
 
 @api_view(["GET"])
+@throttle_classes([PlacesThrottle])
+def city_autocomplete(request):
+	"""Autocomplete city names."""
+	key = settings.GOOGLE_PLACES_API_KEY
+	if not key:
+		return _not_configured()
+
+	query = request.query_params.get("q", "").strip()
+	if not query or len(query) < 2:
+		return Response({"results": []})
+
+	body = {
+		"input": query,
+		"includedPrimaryTypes": ["locality", "administrative_area_level_3"],
+	}
+
+	try:
+		r = requests.post(
+			f"{PLACES_API_BASE}/places:autocomplete",
+			json=body,
+			headers={
+				"Content-Type": "application/json",
+				"X-Goog-Api-Key": key,
+			},
+			timeout=5,
+		)
+		r.raise_for_status()
+		data = r.json()
+	except requests.RequestException as exc:
+		logger.exception("Google Places API call failed: %s", exc)
+		return Response({"detail": "Places API error."}, status=502)
+
+	results = []
+	for s in data.get("suggestions", []):
+		p = s.get("placePrediction")
+		if not p:
+			continue
+		main = p.get("structuredFormat", {}).get("mainText", {}).get("text", "")
+		secondary = p.get("structuredFormat", {}).get("secondaryText", {}).get("text", "")
+		# Build "City, Country" or just name if no secondary
+		display = f"{main}, {secondary}" if secondary else main
+		results.append({
+			"place_id": p.get("placeId"),
+			"name": main,
+			"display": display,
+		})
+	return Response({"results": results})
+
+
+@api_view(["GET"])
+@throttle_classes([PlacesThrottle])
 def place_details(request, place_id: str):
 	"""Fetch full details for a place. Returns normalized data ready to create a Restaurant."""
 	key = settings.GOOGLE_PLACES_API_KEY
@@ -108,7 +181,8 @@ def place_details(request, place_id: str):
 		)
 		r.raise_for_status()
 		p = r.json()
-	except requests.RequestException:
+	except requests.RequestException as exc:
+		logger.exception("Google Places API call failed: %s", exc)
 		return Response({"detail": "Places API error."}, status=502)
 
 	city = ""
@@ -149,6 +223,7 @@ def place_details(request, place_id: str):
 
 
 @api_view(["GET"])
+@throttle_classes([PlacesThrottle])
 def place_photo(request):
 	"""Redirect to the signed Google URL for a place photo.
 
@@ -159,8 +234,8 @@ def place_photo(request):
 		return _not_configured()
 
 	photo_ref = request.query_params.get("ref", "").strip()
-	if not photo_ref:
-		return Response({"detail": "Missing ref."}, status=400)
+	if not photo_ref or not photo_ref.startswith("places/"):
+		return Response({"detail": "Invalid ref."}, status=400)
 
 	try:
 		r = requests.get(
@@ -171,7 +246,17 @@ def place_photo(request):
 		)
 		r.raise_for_status()
 		data = r.json()
-	except requests.RequestException:
+	except requests.RequestException as exc:
+		logger.exception("Google Places API call failed: %s", exc)
 		return Response({"detail": "Places API error."}, status=502)
 
-	return HttpResponseRedirect(data.get("photoUri", ""))
+	photo_uri = (data.get("photoUri") or "").strip()
+	if not photo_uri.startswith("https://"):
+		return Response({"detail": "Invalid photo URL."}, status=502)
+
+	parsed = urlparse(photo_uri)
+	host = (parsed.hostname or "").lower()
+	if host not in _ALLOWED_PHOTO_HOSTS and not host.endswith(".googleusercontent.com"):
+		return Response({"detail": "Untrusted photo host."}, status=502)
+
+	return HttpResponseRedirect(photo_uri)

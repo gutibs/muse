@@ -3,7 +3,7 @@
 	import { t } from '$lib/i18n/index.svelte';
 	import { authStore } from '$lib/stores/auth.store.svelte';
 	import { authService } from '$lib/services/auth.service';
-	import { ApiError } from '$lib/types';
+	import { extractFirstDrfError } from '$lib/utils/api-error';
 
 	// Change password
 	let changingPassword = $state(false);
@@ -40,14 +40,7 @@
 			confirmPassword = '';
 			setTimeout(() => (pwSuccess = ''), 3000);
 		} catch (err) {
-			if (err instanceof ApiError && err.data) {
-				const data = err.data as Record<string, string[]>;
-				const firstKey = Object.keys(data)[0];
-				const messages = data[firstKey];
-				pwError = Array.isArray(messages) ? messages[0] : String(messages);
-			} else {
-				pwError = 'Could not change password.';
-			}
+			pwError = extractFirstDrfError(err, 'Could not change password.');
 		} finally {
 			pwSaving = false;
 		}

@@ -7,10 +7,11 @@
 	import { friendsService } from '$lib/services/friends.service';
 	import { authStore } from '$lib/stores/auth.store.svelte';
 	import type { Activity } from '$lib/types';
+	import { timeAgo } from '$lib/utils/time';
 
 	let pendingRestaurant = $derived(page.url.searchParams.get('pending'));
 
-	const greeting = $derived(() => {
+	const greeting = $derived.by(() => {
 		const hour = new Date().getHours();
 		if (hour < 12) return t('home.goodMorning');
 		if (hour < 18) return t('home.goodAfternoon');
@@ -32,18 +33,6 @@
 			.catch(() => {});
 	});
 
-	function timeAgo(dateStr: string): string {
-		const diff = Date.now() - new Date(dateStr).getTime();
-		const mins = Math.floor(diff / 60000);
-		if (mins < 1) return 'just now';
-		if (mins < 60) return `${mins}m`;
-		const hours = Math.floor(mins / 60);
-		if (hours < 24) return `${hours}h`;
-		const days = Math.floor(hours / 24);
-		if (days < 7) return `${days}d`;
-		return new Date(dateStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
-	}
-
 	function activityText(a: Activity): string {
 		if (a.verb === 'joined') return t('feed.joinedMuse');
 		if (a.verb === 'friendship' && a.targetUser) return `${t('feed.becameFriends')} ${a.targetUser.displayName || a.targetUser.email}`;
@@ -64,7 +53,7 @@
 					size={48}
 				/>
 				<div>
-					<p class="text-sm text-ink-muted">{greeting()}</p>
+					<p class="text-sm text-ink-muted">{greeting}</p>
 					<h1 class="text-xl font-semibold text-ink">
 						{authStore.user?.displayName || 'Welcome'}
 					</h1>
