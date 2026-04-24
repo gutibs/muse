@@ -104,7 +104,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Email — real SMTP in prod, console backend in dev so invitations still log output.
 APP_PUBLIC_URL = os.environ.get("APP_PUBLIC_URL", "http://localhost:5174")
-DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "Muse <no-reply@muse.dothecode.com>")
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "Muse <no-reply@lovemuse.app>")
 EMAIL_BACKEND = os.environ.get(
     "EMAIL_BACKEND",
     "django.core.mail.backends.smtp.EmailBackend"
