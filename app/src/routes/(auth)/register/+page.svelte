@@ -35,10 +35,7 @@
 		{ value: 'Omnivore', label: 'Omnivore', icon: '🥩' },
 		{ value: 'Vegetarian', label: 'Vegetarian', icon: '🥬' },
 		{ value: 'Vegan', label: 'Vegan', icon: '🌱' },
-		{ value: 'Pescatarian', label: 'Pescatarian', icon: '🐟' },
-		{ value: 'Halal', label: 'Halal', icon: '🍖' },
 		{ value: 'Kosher', label: 'Kosher', icon: '✡' },
-		{ value: 'Sin TACC', label: 'Sin TACC', icon: '🌾' },
 		{ value: 'Gluten-free', label: 'Gluten-free', icon: '🚫' },
 	];
 
@@ -70,7 +67,7 @@
 			const dietaryValue = [
 				dietary,
 				showKosherOnly && dietary !== 'Kosher' ? 'Kosher' : '',
-				showGlutenFreeOnly && dietary !== 'Sin TACC' && dietary !== 'Gluten-free' ? 'Sin TACC' : '',
+				showGlutenFreeOnly && dietary !== 'Gluten-free' ? 'Gluten-free' : '',
 			].filter(Boolean).join(', ');
 
 			await authStore.updateProfile({

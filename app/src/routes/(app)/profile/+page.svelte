@@ -39,7 +39,7 @@
 	let editDietary = $state('');
 	let editCuisine = $state<number | ''>('');
 
-	const dietaryOptions = ['', 'Omnivore', 'Vegetarian', 'Vegan', 'Pescatarian', 'Halal', 'Kosher', 'Sin TACC', 'Gluten-free'];
+	const dietaryOptions = ['', 'Omnivore', 'Vegetarian', 'Vegan', 'Kosher', 'Gluten-free'];
 
 	async function loadSharedLists() {
 		try { sharedLists = await pinsService.sharedLists(); } catch { sharedLists = []; }
