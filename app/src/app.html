@@ -11,5 +11,14 @@
 	</head>
 	<body>
 		<div id="app" style="display: contents">%sveltekit.body%</div>
+		<script>
+			// Android WebView doesn't expose env(safe-area-inset-*) without
+			// edge-to-edge native config. Force a 24px minimum on Android to
+			// cover the gesture navigation bar.
+			if (/Android/.test(navigator.userAgent)) {
+				document.documentElement.style.setProperty('--sab', 'max(env(safe-area-inset-bottom, 0px), 24px)');
+				document.documentElement.style.setProperty('--sat', 'max(env(safe-area-inset-top, 0px), 28px)');
+			}
+		</script>
 	</body>
 </html>

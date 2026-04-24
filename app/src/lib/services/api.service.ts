@@ -58,10 +58,19 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 		...(token ? { Authorization: `Bearer ${token}` } : {}),
 	};
 
-	const response = await fetch(`${API_BASE}${path}`, {
-		...options,
-		headers: { ...headers, ...(options?.headers as Record<string, string>) },
-	});
+	const url = `${API_BASE}${path}`;
+	console.log('[api] request:', options?.method ?? 'GET', url);
+	let response: Response;
+	try {
+		response = await fetch(url, {
+			...options,
+			headers: { ...headers, ...(options?.headers as Record<string, string>) },
+		});
+	} catch (fetchErr) {
+		console.error('[api] fetch failed:', fetchErr);
+		throw fetchErr;
+	}
+	console.log('[api] response:', response.status, url);
 
 	if (response.status === 401 && token) {
 		const refreshed = await refreshAccessToken();
