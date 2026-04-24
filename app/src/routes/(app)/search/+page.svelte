@@ -195,7 +195,7 @@
 		const bounds: [number, number][] = [];
 
 		for (const r of validResults) {
-			const icon = createPinIcon(PIN_COLORS.visited);
+			const icon = createPinIcon(L, PIN_COLORS.visited);
 
 			L.marker([r.lat, r.lng], { icon })
 				.addTo(map)

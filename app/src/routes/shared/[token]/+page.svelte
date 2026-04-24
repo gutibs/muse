@@ -51,7 +51,7 @@
 			if (!r?.lat || !r?.lng) continue;
 
 			const color = pin.status === 'visited' ? PIN_COLORS.visited : PIN_COLORS.toVisit;
-			const icon = createPinIcon(color);
+			const icon = createPinIcon(L, color);
 
 			L.marker([r.lat, r.lng], { icon })
 				.addTo(map)
