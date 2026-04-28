@@ -17,6 +17,6 @@ COPY backend/ .
 RUN DJANGO_SECRET_KEY=build python manage.py collectstatic --noinput
 
 FROM nginx:alpine
-COPY nginx/default.conf /etc/nginx/conf.d/default.conf
+COPY nginx/default-aws.conf /etc/nginx/conf.d/default.conf
 COPY --from=frontend /app/build /usr/share/nginx/html
 COPY --from=backend /app/staticfiles /usr/share/nginx/static
