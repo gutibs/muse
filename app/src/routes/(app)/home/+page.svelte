@@ -24,13 +24,20 @@
 
 	$effect(() => {
 		if (!authStore.isAuthenticated) return;
-		feedService.list()
-			.then((res) => { recentActivity = res.results.slice(0, 5); })
-			.catch(() => {})
-			.finally(() => { loadingActivity = false; });
-		friendsService.requests()
-			.then((r) => { pendingRequests = r.length; })
-			.catch(() => {});
+		let cancelled = false;
+		Promise.all([feedService.list(), friendsService.requests()])
+			.then(([feed, reqs]) => {
+				if (cancelled) return;
+				recentActivity = feed.results.slice(0, 5);
+				pendingRequests = reqs.length;
+			})
+			.catch((err) => {
+				if (!cancelled) console.error('[home] load failed:', err);
+			})
+			.finally(() => {
+				if (!cancelled) loadingActivity = false;
+			});
+		return () => { cancelled = true; };
 	});
 
 	function activityText(a: Activity): string {

@@ -58,9 +58,11 @@
 				reverseGeocode(lat!, lng!);
 				geolocating = false;
 			},
-			() => {
+			(err) => {
+				console.warn('[geolocation]', err.message);
 				geolocating = false;
 			},
+			{ enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 },
 		);
 	}
 

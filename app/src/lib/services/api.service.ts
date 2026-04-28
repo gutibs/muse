@@ -29,27 +29,37 @@ async function refreshAccessToken(): Promise<boolean> {
 		const refresh = getRefreshToken();
 		if (!refresh) return false;
 
+		const controller = new AbortController();
+		const timeoutId = setTimeout(() => controller.abort(), 10000);
 		try {
 			const response = await fetch(`${API_BASE}/auth/token/refresh/`, {
 				method: 'POST',
+				signal: controller.signal,
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ refresh }),
 			});
 
-			if (!response.ok) return false;
+			if (!response.ok) {
+				console.warn('[api] refresh failed:', response.status);
+				return false;
+			}
 
 			const data = await response.json();
 			setTokens(data.access, data.refresh ?? refresh);
 			return true;
-		} catch {
+		} catch (err) {
+			console.warn('[api] refresh error:', err);
 			return false;
 		} finally {
+			clearTimeout(timeoutId);
 			refreshPromise = null;
 		}
 	})();
 
 	return refreshPromise;
 }
+
+const REQUEST_TIMEOUT_MS = 15000;
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
 	const token = getAccessToken();
@@ -60,15 +70,22 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 
 	const url = `${API_BASE}${path}`;
 	console.log('[api] request:', options?.method ?? 'GET', url);
+
+	const controller = new AbortController();
+	const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
 	let response: Response;
 	try {
 		response = await fetch(url, {
 			...options,
+			signal: controller.signal,
 			headers: { ...headers, ...(options?.headers as Record<string, string>) },
 		});
 	} catch (fetchErr) {
 		console.error('[api] fetch failed:', fetchErr);
 		throw fetchErr;
+	} finally {
+		clearTimeout(timeoutId);
 	}
 	console.log('[api] response:', response.status, url);
 

@@ -17,6 +17,12 @@
 	let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 	let container: HTMLDivElement;
 
+	$effect(() => {
+		return () => {
+			if (debounceTimer) clearTimeout(debounceTimer);
+		};
+	});
+
 	function onInput() {
 		showDropdown = true;
 		if (debounceTimer) clearTimeout(debounceTimer);
