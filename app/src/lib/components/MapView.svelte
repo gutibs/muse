@@ -60,11 +60,20 @@
 
 				instance.once('locationfound', (e: L.LocationEvent) => {
 					if (!userInteracted && instance) {
-						instance.setView(e.latlng, 14);
+						instance.setView(e.latlng, 16);
 					}
 				});
 
-				instance.locate({ setView: false, maxZoom: 14 });
+				instance.once('locationerror', (e: L.ErrorEvent) => {
+					console.warn('[map] geolocation failed:', e.message, '(code', (e as L.ErrorEvent & { code?: number }).code, ')');
+				});
+
+				instance.locate({
+					setView: false,
+					enableHighAccuracy: true,
+					timeout: 10000,
+					maximumAge: 60000,
+				});
 			}
 
 			map = instance;

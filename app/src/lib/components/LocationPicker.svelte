@@ -21,6 +21,7 @@
 	let marker: L.Marker | null = null;
 	let geocoding = $state(false);
 	let geolocating = $state(false);
+	let geoError = $state('');
 
 	async function reverseGeocode(latitude: number, longitude: number) {
 		geocoding = true;
@@ -44,8 +45,12 @@
 	}
 
 	function geolocate() {
-		if (!navigator.geolocation) return;
+		if (!navigator.geolocation) {
+			geoError = 'Location is not available on this device.';
+			return;
+		}
 		geolocating = true;
+		geoError = '';
 		navigator.geolocation.getCurrentPosition(
 			(pos) => {
 				lat = pos.coords.latitude;
@@ -59,10 +64,19 @@
 				geolocating = false;
 			},
 			(err) => {
-				console.warn('[geolocation]', err.message);
+				console.warn('[geolocation]', err.code, err.message);
 				geolocating = false;
+				if (err.code === err.PERMISSION_DENIED) {
+					geoError = 'Location permission denied. Enable it in Settings to use this.';
+				} else if (err.code === err.TIMEOUT) {
+					geoError = 'Could not get your location in time. Try again outdoors.';
+				} else if (err.code === err.POSITION_UNAVAILABLE) {
+					geoError = 'Your device could not determine your location.';
+				} else {
+					geoError = 'Could not get your location.';
+				}
 			},
-			{ enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 },
+			{ enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
 		);
 	}
 
@@ -137,6 +151,9 @@
 			{geolocating ? 'Locating...' : 'Use my location'}
 		</button>
 	</div>
+	{#if geoError}
+		<p class="text-xs text-blush">{geoError}</p>
+	{/if}
 
 	<div
 		bind:this={mapContainer}

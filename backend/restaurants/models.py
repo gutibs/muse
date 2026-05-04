@@ -63,7 +63,7 @@ class Restaurant(models.Model):
 		blank=True,
 		validators=[MinValueValidator(1), MaxValueValidator(5)],
 	)
-	image_url = models.URLField(max_length=500, blank=True)
+	image_url = models.URLField(max_length=2000, blank=True)
 	website = models.URLField(max_length=500, blank=True)
 	phone = models.CharField(max_length=30, blank=True)
 	google_place_id = models.CharField(max_length=255, blank=True, unique=True, null=True)
@@ -105,7 +105,7 @@ class MenuItem(models.Model):
 	is_recommended = models.BooleanField(default=False)
 	is_vegetarian = models.BooleanField(default=False)
 	is_gluten_free = models.BooleanField(default=False)
-	image_url = models.URLField(max_length=500, blank=True)
+	image_url = models.URLField(max_length=2000, blank=True)
 
 	class Meta:
 		db_table = "restaurants_menu_item"
