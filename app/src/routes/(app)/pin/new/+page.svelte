@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import Dropdown from '$lib/components/Dropdown.svelte';
 	import LevelSelector from '$lib/components/LevelSelector.svelte';
 	import LocationPicker from '$lib/components/LocationPicker.svelte';
 	import PersonaChips from '$lib/components/PersonaChips.svelte';
@@ -34,7 +33,7 @@
 	let newAddress = $state('');
 	let newCity = $state('');
 	let newCountry = $state('');
-	let newCuisine = $state<number | undefined>(undefined);
+	let newCuisineIds = $state<number[]>([]);
 	let newLat = $state<number | null>(null);
 	let newLng = $state<number | null>(null);
 	let newPriceLevel = $state(0);
@@ -51,8 +50,6 @@
 	let cuisines = $state<Cuisine[]>([]);
 	let personas = $state<Persona[]>([]);
 	let tags = $state<Tag[]>([]);
-
-	let cuisineOptions = $derived(cuisines.map((c) => ({ value: c.id, label: c.name })));
 
 	// Load reference data
 	$effect(() => {
@@ -168,7 +165,7 @@
 					address: newAddress,
 					city: newCity,
 					country: newCountry,
-					cuisine: newCuisine,
+					cuisines: newCuisineIds.length > 0 ? newCuisineIds : undefined,
 					tagIds: newTagIds.length > 0 ? newTagIds : undefined,
 					priceLevel: newPriceLevel || undefined,
 					qualityLevel: newQualityLevel || undefined,
@@ -370,13 +367,13 @@
 					/>
 				</div>
 
-				<!-- Cuisine dropdown (styled) -->
-				<Dropdown
-					label={t('pin.cuisine')}
-					placeholder={t('pin.cuisineSelect')}
-					options={cuisineOptions}
-					bind:value={newCuisine}
-				/>
+				<!-- Cuisines (multi-select) -->
+				{#if cuisines.length > 0}
+					<div>
+						<span class="mb-2 block text-sm font-medium text-ink-light">{t('pin.cuisine')}</span>
+						<TagCheckboxes tags={cuisines} bind:selected={newCuisineIds} />
+					</div>
+				{/if}
 
 				<!-- Quality (forks) -->
 				<LevelSelector label={t('pin.quality')} variant="quality" bind:value={newQualityLevel} />

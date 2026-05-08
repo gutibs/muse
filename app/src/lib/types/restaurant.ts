@@ -19,8 +19,8 @@ export interface Restaurant {
 	city: string;
 	country: string;
 	imageUrl: string;
-	cuisine: number | null;
-	cuisineDetail: Cuisine | null;
+	cuisines: number[];
+	cuisinesDetail: Cuisine[];
 	tagsDetail: Tag[];
 	priceLevel: number | null;
 	qualityLevel: number | null;
@@ -74,7 +74,7 @@ export interface RestaurantCreate {
 	address?: string;
 	city?: string;
 	country?: string;
-	cuisine?: number;
+	cuisines?: number[];
 	tagIds?: number[];
 	priceLevel?: number;
 	qualityLevel?: number;

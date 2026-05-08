@@ -17,8 +17,8 @@ class PinViewSet(viewsets.ModelViewSet):
 	def get_queryset(self):
 		return (
 			Pin.objects.filter(user=self.request.user)
-			.select_related("restaurant", "restaurant__cuisine")
-			.prefetch_related("personas")
+			.select_related("restaurant")
+			.prefetch_related("personas", "restaurant__cuisines")
 		)
 
 	def create(self, request, *args, **kwargs):

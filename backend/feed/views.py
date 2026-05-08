@@ -29,7 +29,7 @@ class FeedView(generics.ListAPIView):
 			.select_related(
 				"actor__profile",
 				"target_user__profile",
-				"pin__restaurant__cuisine",
+				"pin__restaurant",
 			)
-			.prefetch_related("pin__personas")
+			.prefetch_related("pin__personas", "pin__restaurant__cuisines")
 		)

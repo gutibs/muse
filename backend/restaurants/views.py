@@ -33,8 +33,8 @@ class RestaurantViewSet(viewsets.ModelViewSet):
 	def _base_queryset(self):
 		return Restaurant.objects.annotate(
 			average_rating=Avg("pins__rating"),
-			pin_count=Count("pins"),
-		).select_related("cuisine").prefetch_related("tags")
+			pin_count=Count("pins", distinct=True),
+		).prefetch_related("cuisines", "tags")
 
 	def get_queryset(self):
 		qs = self._base_queryset()
@@ -54,7 +54,10 @@ class RestaurantViewSet(viewsets.ModelViewSet):
 		if city:
 			qs = qs.filter(city__icontains=city)
 		if cuisine:
-			qs = qs.filter(cuisine__slug=cuisine)
+			# Comma-separated slugs → match restaurants with ANY of them.
+			slugs = [s.strip() for s in cuisine.split(",") if s.strip()]
+			if slugs:
+				qs = qs.filter(cuisines__slug__in=slugs).distinct()
 
 		return qs
 

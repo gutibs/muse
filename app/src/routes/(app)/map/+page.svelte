@@ -2,10 +2,12 @@
 	import { browser } from '$app/environment';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
+	import CityAutocomplete from '$lib/components/CityAutocomplete.svelte';
 	import MapView from '$lib/components/MapView.svelte';
 	import { t } from '$lib/i18n/index.svelte';
 	import { friendsService } from '$lib/services/friends.service';
 	import { pinsService } from '$lib/services/pins.service';
+	import { placesService } from '$lib/services/places.service';
 	import { restaurantsService } from '$lib/services/restaurants.service';
 	import { usersService } from '$lib/services/users.service';
 	import { authStore } from '$lib/stores/auth.store.svelte';
@@ -25,8 +27,8 @@
 	let mapRef = $state<L.Map | null>(null);
 	let friendCount = $state(0);
 
-	// Track markers with their cuisine slug for filtering
-	type MarkerEntry = { marker: L.Marker; cuisineSlug: string; isFriend: boolean };
+	// Track markers with their cuisine slugs for filtering
+	type MarkerEntry = { marker: L.Marker; cuisineSlugs: string[]; isFriend: boolean };
 	let allMarkers = $state<MarkerEntry[]>([]);
 
 	// Map search
@@ -57,7 +59,7 @@
 		if (!mapRef) return;
 		const cuisineFilter = cuisineSearch;
 		for (const entry of allMarkers) {
-			const matches = !cuisineFilter || entry.cuisineSlug === cuisineFilter;
+			const matches = !cuisineFilter || entry.cuisineSlugs.includes(cuisineFilter);
 			const shouldShow = matches && (!entry.isFriend || showFriendPins);
 			// Friend markers live inside friendLayers (a LayerGroup); own markers live on the map.
 			const container: L.Map | L.LayerGroup | null = entry.isFriend ? friendLayers : mapRef;
@@ -80,14 +82,19 @@
 
 		searching = true;
 		try {
-			// If city query, fly to that city
+			// If city query, ask the backend for matching cities (filtered by
+			// type=city) and fly to the first hit. Avoids the previous bug where
+			// Nominatim returned random places (streets, monuments) for any text.
 			if (hasCityQuery) {
-				const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(citySearch.trim())}&format=json&limit=1`);
-				const data = await res.json();
-				if (data.length > 0) {
-					const { lat, lon } = data[0];
-					// Zoom to a city-level view that shows streets/neighborhoods
-					mapRef.setView([parseFloat(lat), parseFloat(lon)], 13, { animate: true });
+				try {
+					const res = await placesService.cityAutocomplete(citySearch.trim());
+					const first = res.results?.[0];
+					if (first) {
+						const details = await placesService.details(first.placeId);
+						mapRef.setView([details.lat, details.lng], 13, { animate: true });
+					}
+				} catch {
+					// silent fail — search bar stays open for retry
 				}
 			}
 
@@ -98,7 +105,7 @@
 			if (hasCuisineQuery && !hasCityQuery) {
 				const bounds: [number, number][] = [];
 				for (const entry of allMarkers) {
-					if (entry.cuisineSlug === cuisineSearch && mapRef.hasLayer(entry.marker)) {
+					if (entry.cuisineSlugs.includes(cuisineSearch) && mapRef.hasLayer(entry.marker)) {
 						bounds.push([entry.marker.getLatLng().lat, entry.marker.getLatLng().lng]);
 					}
 				}
@@ -147,7 +154,7 @@
 						}
 						allMarkers.push({
 							marker,
-							cuisineSlug: r.cuisineDetail?.slug || '',
+							cuisineSlugs: (r.cuisinesDetail ?? []).map((c) => c.slug),
 							isFriend: true,
 						});
 					}
@@ -205,7 +212,7 @@
 			markersById.set(r.id, marker);
 			allMarkers.push({
 				marker,
-				cuisineSlug: r.cuisineDetail?.slug || '',
+				cuisineSlugs: (r.cuisinesDetail ?? []).map((c) => c.slug),
 				isFriend: false,
 			});
 		}
@@ -225,6 +232,24 @@
 		// Try focusing on user's own pins first
 		const focused = tryFocus();
 
+		// Fallback: if no focus param and geolocation hasn't kicked in within 3s,
+		// fit the view to the user's own pins (or all pins after friends load).
+		// This prevents the map from sitting on the default world view when the
+		// user denies location or the device fails to determine it.
+		// Only locationfound counts as "decided" — on error we still want to fit to pins.
+		let geolocationFound = false;
+		map.once('locationfound', () => { geolocationFound = true; });
+
+		const fitToOwnPins = () => {
+			if (focused || geolocationFound || hasFocus) return;
+			const own = allMarkers.filter((m) => !m.isFriend).map((m) => m.marker.getLatLng());
+			if (own.length === 0) return;
+			const bounds = L.latLngBounds(own);
+			map.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 });
+		};
+
+		setTimeout(fitToOwnPins, 3000);
+
 		// Load friend pins and retry focus if not yet found
 		loadFriendPins(map, L, markersById).then(() => {
 			if (!focused) tryFocus();
@@ -240,13 +265,13 @@
 		{#if showSearch}
 			<div class="rounded-card bg-white p-2 shadow-elevated">
 				<div class="flex gap-2">
-					<input
-						type="text"
-						bind:value={citySearch}
-						onkeydown={(e) => e.key === 'Enter' && mapSearch()}
-						placeholder={t('search.city') + '...'}
-						class="min-w-0 flex-1 rounded-input border border-cream-dark bg-white px-3 py-2 text-base text-ink outline-none focus:border-jade"
-					/>
+					<div class="min-w-0 flex-1">
+						<CityAutocomplete
+							bind:value={citySearch}
+							placeholder={t('search.city')}
+							onPick={() => mapSearch()}
+						/>
+					</div>
 					<button
 						onclick={mapSearch}
 						disabled={searching || (!citySearch.trim() && !cuisineSearch)}

@@ -103,8 +103,8 @@ class SharedListPublicSerializer(serializers.ModelSerializer):
 	def get_pins(self, obj):
 		qs = (
 			Pin.objects.filter(user=obj.user)
-			.select_related("restaurant", "restaurant__cuisine")
-			.prefetch_related("personas")
+			.select_related("restaurant")
+			.prefetch_related("personas", "restaurant__cuisines")
 		)
 		if obj.status_filter != "all":
 			qs = qs.filter(status=obj.status_filter)

@@ -31,7 +31,12 @@ class RestaurantSerializer(serializers.ModelSerializer):
 	longitude = serializers.FloatField(write_only=True, required=False)
 	lat = serializers.SerializerMethodField()
 	lng = serializers.SerializerMethodField()
-	cuisine_detail = CuisineSerializer(source="cuisine", read_only=True)
+	cuisines = serializers.PrimaryKeyRelatedField(
+		queryset=Cuisine.objects.all(),
+		many=True,
+		required=False,
+	)
+	cuisines_detail = CuisineSerializer(source="cuisines", many=True, read_only=True)
 	tag_ids = serializers.PrimaryKeyRelatedField(
 		queryset=Tag.objects.all(),
 		many=True,
@@ -56,8 +61,8 @@ class RestaurantSerializer(serializers.ModelSerializer):
 			"city",
 			"country",
 			"image_url",
-			"cuisine",
-			"cuisine_detail",
+			"cuisines",
+			"cuisines_detail",
 			"tag_ids",
 			"tags_detail",
 			"price_level",
@@ -101,6 +106,7 @@ class RestaurantSerializer(serializers.ModelSerializer):
 
 	def create(self, validated_data):
 		tags = validated_data.pop("tags", [])
+		cuisines = validated_data.pop("cuisines", [])
 		validated_data["created_by"] = self.context["request"].user
 		# Force pending unless admin
 		user = self.context["request"].user
@@ -111,15 +117,20 @@ class RestaurantSerializer(serializers.ModelSerializer):
 		restaurant = Restaurant.objects.create(**validated_data)
 		if tags:
 			restaurant.tags.set(tags)
+		if cuisines:
+			restaurant.cuisines.set(cuisines)
 		return restaurant
 
 	def update(self, instance, validated_data):
 		tags = validated_data.pop("tags", None)
+		cuisines = validated_data.pop("cuisines", None)
 		for attr, value in validated_data.items():
 			setattr(instance, attr, value)
 		instance.save()
 		if tags is not None:
 			instance.tags.set(tags)
+		if cuisines is not None:
+			instance.cuisines.set(cuisines)
 		return instance
 
 

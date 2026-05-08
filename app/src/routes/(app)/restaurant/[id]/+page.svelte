@@ -61,7 +61,7 @@
 					<h1 class="text-xl font-bold text-white drop-shadow">{restaurant.name}</h1>
 					<p class="text-sm text-white/80">
 						{#if restaurant.city}{restaurant.city}{/if}
-						{#if restaurant.cuisineDetail} · {restaurant.cuisineDetail.name}{/if}
+						{#if restaurant.cuisinesDetail?.length} · {restaurant.cuisinesDetail.map((c) => c.name).join(' · ')}{/if}
 						{#if restaurant.priceLevel} · {'$'.repeat(restaurant.priceLevel)}{/if}
 					</p>
 				</div>

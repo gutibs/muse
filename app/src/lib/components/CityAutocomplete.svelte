@@ -5,10 +5,12 @@
 		value = $bindable(''),
 		placeholder = 'City',
 		id = 'city-autocomplete',
+		onPick,
 	}: {
 		value?: string;
 		placeholder?: string;
 		id?: string;
+		onPick?: (suggestion: CitySuggestion) => void;
 	} = $props();
 
 	let suggestions = $state<CitySuggestion[]>([]);
@@ -47,6 +49,7 @@
 		value = s.name;
 		suggestions = [];
 		showDropdown = false;
+		onPick?.(s);
 	}
 
 	function onBlur() {

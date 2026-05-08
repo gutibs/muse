@@ -1,11 +1,11 @@
 <script lang="ts">
-	import type { Tag } from '$lib/types';
+	type Item = { id: number; name: string };
 
 	let {
 		tags = [],
 		selected = $bindable([]),
 	}: {
-		tags: Tag[];
+		tags: Item[];
 		selected: number[];
 	} = $props();
 

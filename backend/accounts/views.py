@@ -242,8 +242,8 @@ class UserPinsView(generics.ListAPIView):
 
 		qs = (
 			Pin.objects.filter(user=user)
-			.select_related("restaurant", "restaurant__cuisine")
-			.prefetch_related("personas")
+			.select_related("restaurant")
+			.prefetch_related("personas", "restaurant__cuisines")
 		)
 		status_param = self.request.query_params.get("status")
 		if status_param:

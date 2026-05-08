@@ -212,7 +212,7 @@
 					<div style="font-family:Inter,sans-serif;min-width:140px;">
 						<strong style="font-size:14px;color:#2B221A;">${escapeHtml(r.name)}</strong>
 						${r.city ? `<br><span style="color:#9A8E7E;font-size:12px;">${escapeHtml(r.city)}</span>` : ''}
-						${r.cuisineDetail ? `<br><span style="color:#9A8E7E;font-size:11px;">${escapeHtml(r.cuisineDetail.name)}</span>` : ''}
+						${r.cuisinesDetail?.length ? `<br><span style="color:#9A8E7E;font-size:11px;">${escapeHtml(r.cuisinesDetail.map((c) => c.name).join(', '))}</span>` : ''}
 						${r.averageRating ? `<br><span style="color:#8A7363;font-size:13px;">♥ ${r.averageRating.toFixed(1)}</span>` : ''}
 						${dietaryBadgesHtml(r.tagsDetail)}
 					</div>
@@ -391,9 +391,9 @@
 								<p class="truncate text-sm font-semibold text-ink">{r.name}</p>
 								<p class="flex flex-wrap items-center gap-1 text-xs text-ink-muted">
 									{#if r.city}<span>{r.city}</span>{/if}
-									{#if r.cuisineDetail}
+									{#if r.cuisinesDetail?.length}
 										<span>·</span>
-										<span>{r.cuisineDetail.name}</span>
+										<span>{r.cuisinesDetail.map((c) => c.name).join(', ')}</span>
 									{/if}
 									{#if r.priceLevel}
 										<span>·</span>
