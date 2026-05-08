@@ -3,6 +3,7 @@
 	import { page } from '$app/state';
 	import Avatar from '$lib/components/Avatar.svelte';
 	import MapView from '$lib/components/MapView.svelte';
+	import { t } from '$lib/i18n/index.svelte';
 	import type { SharedListPublic } from '$lib/types';
 	import { createPinIcon, PIN_COLORS } from '$lib/utils/map';
 	import type L from 'leaflet';
@@ -21,13 +22,13 @@
 			const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 			const res = await fetch(`${API_BASE}/shared/${token}/`);
 			if (!res.ok) {
-				if (res.status === 404) error = 'This list does not exist or has been removed.';
-				else error = 'Could not load list.';
+				if (res.status === 404) error = t('shared.notExist');
+				else error = t('shared.cantLoad');
 				return;
 			}
 			data = await res.json();
 		} catch {
-			error = 'Could not load list.';
+			error = t('shared.cantLoad');
 		} finally {
 			loading = false;
 		}
@@ -37,7 +38,9 @@
 		if (token) load();
 	});
 
-
+	function escapeHtml(s: string): string {
+		return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
+	}
 
 	async function onMapReady(map: L.Map) {
 		if (!browser || !data?.pins.length) return;
@@ -57,9 +60,9 @@
 				.addTo(map)
 				.bindPopup(`
 					<div style="font-family:Inter,sans-serif;min-width:140px;">
-						<strong style="font-size:14px;">${r.name}</strong>
-						${r.city ? `<br><span style="color:#9A8E7E;font-size:12px;">${r.city}</span>` : ''}
-						${pin.rating ? `<br><span style="color:#5D4E3F;font-size:13px;">♥ ${pin.rating}/5</span>` : ''}
+						<strong style="font-size:14px;color:#2B221A;">${escapeHtml(r.name)}</strong>
+						${r.city ? `<br><span style="color:#9A8E7E;font-size:12px;">${escapeHtml(r.city)}</span>` : ''}
+						${pin.rating ? `<br><span style="color:#8A7363;font-size:13px;">♥ ${pin.rating}/5</span>` : ''}
 					</div>
 				`);
 			bounds.push([r.lat, r.lng]);
@@ -80,7 +83,7 @@
 	{:else if error}
 		<div class="flex flex-1 flex-col items-center justify-center px-6 text-center">
 			<p class="text-sm text-blush">{error}</p>
-			<a href="/" class="mt-4 text-sm font-medium text-jade active:opacity-70">Go to Muse</a>
+			<a href="/" class="mt-4 text-sm font-medium text-jade active:opacity-70">{t('shared.goToMuse')}</a>
 		</div>
 
 	{:else if data}
@@ -88,9 +91,9 @@
 			<div class="flex items-center gap-3">
 				<Avatar name={data.owner.displayName} src={data.owner.avatar} size={44} />
 				<div class="min-w-0 flex-1">
-					<h1 class="truncate text-lg font-semibold text-ink">{data.title || `${data.owner.displayName}'s List`}</h1>
+					<h1 class="truncate text-lg font-semibold text-ink">{data.title || t('shared.someoneList').replace('{name}', data.owner.displayName || '')}</h1>
 					<p class="text-xs text-ink-muted">
-						{data.pins.length} restaurant{data.pins.length === 1 ? '' : 's'}
+						{(data.pins.length === 1 ? t('shared.restaurants') : t('shared.restaurantsPlural')).replace('{count}', String(data.pins.length))}
 						{#if data.owner.city} · {data.owner.city}{/if}
 					</p>
 				</div>
@@ -102,14 +105,14 @@
 					class="flex-1 rounded-button py-2 text-sm font-medium active:scale-[0.98]
 						{view === 'list' ? 'bg-white text-ink shadow-card' : 'text-ink-muted'}"
 				>
-					List
+					{t('common.list')}
 				</button>
 				<button
 					onclick={() => (view = 'map')}
 					class="flex-1 rounded-button py-2 text-sm font-medium active:scale-[0.98]
 						{view === 'map' ? 'bg-white text-ink shadow-card' : 'text-ink-muted'}"
 				>
-					Map
+					{t('common.map')}
 				</button>
 			</div>
 		</header>
@@ -118,7 +121,7 @@
 			{#if view === 'list'}
 				{#if data.pins.length === 0}
 					<div class="flex h-full items-center justify-center px-6 text-center">
-						<p class="text-sm text-ink-muted">This list is empty</p>
+						<p class="text-sm text-ink-muted">{t('shared.empty')}</p>
 					</div>
 				{:else}
 					<ul class="h-full space-y-2 overflow-y-auto px-5 pb-6">
@@ -131,7 +134,7 @@
 									<div class="flex items-start justify-between gap-2">
 										<p class="truncate text-sm font-semibold text-ink">{pin.restaurantDetail.name}</p>
 										<span class="shrink-0 rounded-full px-2 py-0.5 text-xs font-medium
-											{pin.status === 'visited' ? 'bg-jade/10 text-jade' : 'bg-cream-dark text-ink-muted'}">{pin.status === 'visited' ? 'Rated' : 'On the List'}</span>
+											{pin.status === 'visited' ? 'bg-jade/10 text-jade' : 'bg-cream-dark text-ink-muted'}">{pin.status === 'visited' ? t('users.rated') : t('users.onTheList')}</span>
 									</div>
 									{#if pin.restaurantDetail.city}
 										<p class="text-xs text-ink-muted">{pin.restaurantDetail.city}</p>
@@ -177,7 +180,7 @@
 				href="/register"
 				class="inline-flex min-h-11 items-center gap-2 rounded-button bg-jade px-5 text-sm font-semibold text-white active:scale-[0.98]"
 			>
-				Join Muse
+				{t('shared.joinMuse')}
 			</a>
 		</div>
 	{/if}

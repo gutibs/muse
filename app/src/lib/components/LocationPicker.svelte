@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
+	import { t } from '$lib/i18n/index.svelte';
 	import type L from 'leaflet';
 
 	let {
@@ -46,7 +47,7 @@
 
 	function geolocate() {
 		if (!navigator.geolocation) {
-			geoError = 'Location is not available on this device.';
+			geoError = t('location.notAvailable');
 			return;
 		}
 		geolocating = true;
@@ -67,13 +68,13 @@
 				console.warn('[geolocation]', err.code, err.message);
 				geolocating = false;
 				if (err.code === err.PERMISSION_DENIED) {
-					geoError = 'Location permission denied. Enable it in Settings to use this.';
+					geoError = t('location.permissionDenied');
 				} else if (err.code === err.TIMEOUT) {
-					geoError = 'Could not get your location in time. Try again outdoors.';
+					geoError = t('location.timeout');
 				} else if (err.code === err.POSITION_UNAVAILABLE) {
-					geoError = 'Your device could not determine your location.';
+					geoError = t('location.unavailable');
 				} else {
-					geoError = 'Could not get your location.';
+					geoError = t('location.cantGet');
 				}
 			},
 			{ enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
@@ -103,7 +104,7 @@
 
 			const icon = Leaflet.divIcon({
 				className: '',
-				html: '<div style="width:32px;height:32px;background:#5D4E3F;border:3px solid white;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.3);cursor:grab;"></div>',
+				html: '<div style="width:32px;height:32px;background:#8A7363;border:3px solid white;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.3);cursor:grab;"></div>',
 				iconSize: [32, 32],
 				iconAnchor: [16, 16],
 			});
@@ -141,14 +142,14 @@
 
 <div class="space-y-3">
 	<div class="flex items-center justify-between">
-		<span class="text-sm font-medium text-ink-light">Location</span>
+		<span class="text-sm font-medium text-ink-light">{t('location.title')}</span>
 		<button
 			type="button"
 			onclick={geolocate}
 			disabled={geolocating}
 			class="text-xs font-medium text-jade active:opacity-70"
 		>
-			{geolocating ? 'Locating...' : 'Use my location'}
+			{geolocating ? t('location.locating') : t('location.useMyLocation')}
 		</button>
 	</div>
 	{#if geoError}
@@ -161,8 +162,8 @@
 	></div>
 
 	{#if geocoding}
-		<p class="text-xs text-ink-muted">Looking up address...</p>
+		<p class="text-xs text-ink-muted">{t('location.lookingUp')}</p>
 	{/if}
 
-	<p class="text-xs text-ink-muted">Tap the map or drag the pin to set location</p>
+	<p class="text-xs text-ink-muted">{t('location.tapMap')}</p>
 </div>

@@ -12,6 +12,17 @@ class I18n {
 			const saved = localStorage.getItem(LOCALE_KEY) as Locale | null;
 			if (saved && translations[saved]) {
 				this.locale = saved;
+				return;
+			}
+		}
+		if (typeof navigator !== 'undefined') {
+			const langs = navigator.languages?.length ? navigator.languages : [navigator.language];
+			for (const raw of langs) {
+				const code = raw?.toLowerCase().split('-')[0] as Locale;
+				if (code && translations[code]) {
+					this.locale = code;
+					return;
+				}
 			}
 		}
 	}

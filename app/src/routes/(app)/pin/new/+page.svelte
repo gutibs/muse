@@ -7,6 +7,7 @@
 	import RatingStars from '$lib/components/RatingStars.svelte';
 	import StatusToggle from '$lib/components/StatusToggle.svelte';
 	import TagCheckboxes from '$lib/components/TagCheckboxes.svelte';
+	import { t } from '$lib/i18n/index.svelte';
 	import { pinsService } from '$lib/services/pins.service';
 	import { placesService, type PlaceSuggestion } from '$lib/services/places.service';
 	import { restaurantsService } from '$lib/services/restaurants.service';
@@ -111,14 +112,14 @@
 		} catch (err) {
 			if (err instanceof ApiError) {
 				if (err.status === 503) {
-					error = 'Google Places integration is not configured on the server. Contact the admin.';
+					error = t('pin.googleNotConfigured');
 				} else if (err.status === 502) {
-					error = 'Google Places is temporarily unavailable. Try again shortly.';
+					error = t('pin.googleUnavailable');
 				} else {
-					error = 'Could not import this place. Try adding it manually below.';
+					error = t('pin.cantImport');
 				}
 			} else {
-				error = 'Network error. Check your connection and try again.';
+				error = t('common.networkError');
 			}
 		} finally {
 			importingPlaceId = null;
@@ -192,7 +193,11 @@
 
 			goto('/map');
 		} catch (err) {
-			error = extractFirstDrfError(err);
+			if (err instanceof ApiError && err.status === 409) {
+				error = t('pin.alreadyPinned');
+			} else {
+				error = extractFirstDrfError(err);
+			}
 		} finally {
 			submitting = false;
 		}
@@ -205,14 +210,14 @@
 		<button
 			onclick={goBack}
 			class="flex min-h-11 min-w-11 items-center justify-center rounded-lg active:scale-95"
-			aria-label="Go back"
+			aria-label={t('common.back')}
 		>
 			<svg class="h-6 w-6 text-ink" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 				<polyline points="15 18 9 12 15 6" />
 			</svg>
 		</button>
 		<h1 class="text-lg font-semibold text-ink">
-			{step === 1 && !creatingNew ? 'Add Pin' : step === 1 && creatingNew ? 'New Restaurant' : 'Pin Details'}
+			{step === 1 && !creatingNew ? t('pin.addPin') : step === 1 && creatingNew ? t('pin.newRestaurant') : t('pin.pinDetails')}
 		</h1>
 	</header>
 
@@ -228,24 +233,24 @@
 		{#if step === 1 && !creatingNew}
 			<div class="space-y-4">
 				<div>
-					<label for="search" class="mb-1 block text-sm font-medium text-ink-light">Search restaurant</label>
+					<label for="search" class="mb-1 block text-sm font-medium text-ink-light">{t('pin.searchRestaurant')}</label>
 					<input
 						id="search"
 						type="text"
 						bind:value={searchQuery}
 						oninput={handleSearch}
 						class="w-full rounded-input border border-cream-dark bg-white px-4 py-3 text-base text-ink outline-none focus:border-jade"
-						placeholder="Restaurant name..."
+						placeholder={t('search.placeholder')}
 					/>
 				</div>
 
 				{#if searching}
-					<p class="text-center text-sm text-ink-muted">Searching...</p>
+					<p class="text-center text-sm text-ink-muted">{t('pin.searching')}</p>
 				{/if}
 
 				{#if searchResults.length > 0}
 					<div>
-						<p class="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-muted">Already on Muse</p>
+						<p class="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-muted">{t('pin.alreadyOnMuse')}</p>
 						<div class="space-y-2">
 							{#each searchResults as restaurant}
 								<button
@@ -275,7 +280,7 @@
 
 				{#if googleResults.length > 0}
 					<div>
-						<p class="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-muted">From Google</p>
+						<p class="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-muted">{t('pin.fromGoogle')}</p>
 						<div class="space-y-2">
 							{#each googleResults as place (place.placeId)}
 								<button
@@ -304,7 +309,7 @@
 				{/if}
 
 				{#if searchQuery.length >= 2 && !searching && searchResults.length === 0 && googleResults.length === 0}
-					<p class="py-4 text-center text-sm text-ink-muted">No results found</p>
+					<p class="py-4 text-center text-sm text-ink-muted">{t('pin.noResults')}</p>
 				{/if}
 
 				<button
@@ -318,8 +323,8 @@
 						</svg>
 					</div>
 					<div>
-						<div class="text-sm font-semibold text-jade">Add manually</div>
-						<div class="text-xs text-ink-muted">If you can't find it above</div>
+						<div class="text-sm font-semibold text-jade">{t('pin.addManually')}</div>
+						<div class="text-xs text-ink-muted">{t('pin.cantFindIt')}</div>
 					</div>
 				</button>
 			</div>
@@ -328,14 +333,14 @@
 		{:else if step === 1 && creatingNew}
 			<div class="space-y-5">
 				<div>
-					<label for="name" class="mb-1 block text-sm font-medium text-ink-light">Name</label>
+					<label for="name" class="mb-1 block text-sm font-medium text-ink-light">{t('pin.name')}</label>
 					<input
 						id="name"
 						type="text"
 						bind:value={newName}
 						required
 						class="w-full rounded-input border border-cream-dark bg-white px-4 py-3 text-base text-ink outline-none focus:border-jade"
-						placeholder="Restaurant name"
+						placeholder={t('pin.restaurantNamePlaceholder')}
 					/>
 				</div>
 
@@ -344,45 +349,45 @@
 
 				<!-- Address (editable, pre-filled by geocoding) -->
 				<div>
-					<label for="address" class="mb-1 block text-sm font-medium text-ink-light">Address</label>
+					<label for="address" class="mb-1 block text-sm font-medium text-ink-light">{t('pin.address')}</label>
 					<input
 						id="address"
 						type="text"
 						bind:value={newAddress}
 						class="w-full rounded-input border border-cream-dark bg-white px-4 py-3 text-base text-ink outline-none focus:border-jade"
-						placeholder="Street address"
+						placeholder={t('pin.address')}
 					/>
 				</div>
 
 				<div>
-					<label for="city" class="mb-1 block text-sm font-medium text-ink-light">City</label>
+					<label for="city" class="mb-1 block text-sm font-medium text-ink-light">{t('pin.city')}</label>
 					<input
 						id="city"
 						type="text"
 						bind:value={newCity}
 						class="w-full rounded-input border border-cream-dark bg-white px-4 py-3 text-base text-ink outline-none focus:border-jade"
-						placeholder="City"
+						placeholder={t('pin.city')}
 					/>
 				</div>
 
 				<!-- Cuisine dropdown (styled) -->
 				<Dropdown
-					label="Cuisine"
-					placeholder="Select cuisine (optional)"
+					label={t('pin.cuisine')}
+					placeholder={t('pin.cuisineSelect')}
 					options={cuisineOptions}
 					bind:value={newCuisine}
 				/>
 
 				<!-- Quality (forks) -->
-				<LevelSelector label="Quality" variant="quality" bind:value={newQualityLevel} />
+				<LevelSelector label={t('pin.quality')} variant="quality" bind:value={newQualityLevel} />
 
 				<!-- Price ($) -->
-				<LevelSelector label="Price" variant="price" bind:value={newPriceLevel} />
+				<LevelSelector label={t('pin.price')} variant="price" bind:value={newPriceLevel} />
 
 				<!-- Tags -->
 				{#if tags.length > 0}
 					<div>
-						<span class="mb-2 block text-sm font-medium text-ink-light">Vibe</span>
+						<span class="mb-2 block text-sm font-medium text-ink-light">{t('pin.vibe')}</span>
 						<TagCheckboxes {tags} bind:selected={newTagIds} />
 					</div>
 				{/if}
@@ -392,7 +397,7 @@
 					disabled={!newName || !newLat || !newLng}
 					class="flex min-h-12 w-full items-center justify-center rounded-button bg-jade text-base font-semibold text-white active:scale-[0.98] disabled:opacity-50"
 				>
-					Continue
+					{t('pin.continue')}
 				</button>
 			</div>
 
@@ -413,34 +418,34 @@
 
 				<!-- Status -->
 				<div>
-					<span class="mb-2 block text-sm font-medium text-ink-light">Status</span>
+					<span class="mb-2 block text-sm font-medium text-ink-light">{t('pin.status')}</span>
 					<StatusToggle bind:value={status} />
 				</div>
 
 				<!-- Rating (only if visited) -->
 				{#if status === 'visited'}
 					<div>
-						<span class="mb-2 block text-sm font-medium text-ink-light">Rating</span>
+						<span class="mb-2 block text-sm font-medium text-ink-light">{t('pin.rating')}</span>
 						<RatingStars bind:value={rating} />
 					</div>
 				{/if}
 
 				<!-- My Notes -->
 				<div>
-					<label for="comment" class="mb-1 block text-sm font-medium text-ink-light">My Notes</label>
+					<label for="comment" class="mb-1 block text-sm font-medium text-ink-light">{t('pin.myNotes')}</label>
 					<textarea
 						id="comment"
 						bind:value={comment}
 						rows="3"
 						class="w-full rounded-input border border-cream-dark bg-white px-4 py-3 text-base text-ink outline-none focus:border-jade"
-						placeholder="Share your experience..."
+						placeholder={status === 'visited' ? t('pin.shareExperience') : t('pin.whyVisit')}
 					></textarea>
 				</div>
 
 				<!-- Personas -->
 				{#if personas.length > 0}
 					<div>
-						<span class="mb-2 block text-sm font-medium text-ink-light">Occasion</span>
+						<span class="mb-2 block text-sm font-medium text-ink-light">{t('pin.occasion')}</span>
 						<PersonaChips {personas} bind:selected={selectedPersonas} />
 					</div>
 				{/if}
@@ -451,7 +456,7 @@
 					disabled={submitting || (status === 'visited' && rating === 0)}
 					class="flex min-h-12 w-full items-center justify-center rounded-button bg-jade text-base font-semibold text-white active:scale-[0.98] disabled:opacity-50"
 				>
-					{submitting ? 'Saving...' : 'Save Pin'}
+					{submitting ? t('pin.saving') : t('pin.savePin')}
 				</button>
 			</div>
 		{/if}

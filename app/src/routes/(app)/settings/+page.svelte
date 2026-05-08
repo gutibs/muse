@@ -26,21 +26,21 @@
 		pwError = '';
 
 		if (newPassword !== confirmPassword) {
-			pwError = 'Passwords do not match.';
+			pwError = t('auth.passwordsMismatch');
 			return;
 		}
 
 		pwSaving = true;
 		try {
 			await authService.changePassword(currentPassword, newPassword);
-			pwSuccess = 'Password updated';
+			pwSuccess = t('settings.passwordUpdated');
 			changingPassword = false;
 			currentPassword = '';
 			newPassword = '';
 			confirmPassword = '';
 			setTimeout(() => (pwSuccess = ''), 3000);
 		} catch (err) {
-			pwError = extractFirstDrfError(err, 'Could not change password.');
+			pwError = extractFirstDrfError(err, t('settings.cantChangePassword'));
 		} finally {
 			pwSaving = false;
 		}
@@ -52,7 +52,7 @@
 		<a
 			href="/profile"
 			class="flex min-h-11 min-w-11 items-center justify-center rounded-lg active:scale-95"
-			aria-label="Go back"
+			aria-label={t('common.back')}
 		>
 			<svg class="h-6 w-6 text-ink" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 				<polyline points="15 18 9 12 15 6" />
@@ -73,7 +73,7 @@
 			<h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-ink-muted">{t('settings.account')}</h2>
 			<div class="space-y-2">
 				<div class="rounded-card bg-white p-4 shadow-card">
-					<div class="text-xs text-ink-muted">Email</div>
+					<div class="text-xs text-ink-muted">{t('settings.email')}</div>
 					<div class="text-sm font-medium text-ink">{authStore.user?.email}</div>
 				</div>
 
@@ -94,7 +94,7 @@
 						{/if}
 
 						<div>
-							<label for="currentPw" class="mb-1 block text-xs font-medium text-ink-light">Current Password</label>
+							<label for="currentPw" class="mb-1 block text-xs font-medium text-ink-light">{t('settings.currentPassword')}</label>
 							<input
 								id="currentPw"
 								type="password"
@@ -104,7 +104,7 @@
 							/>
 						</div>
 						<div>
-							<label for="newPw" class="mb-1 block text-xs font-medium text-ink-light">New Password</label>
+							<label for="newPw" class="mb-1 block text-xs font-medium text-ink-light">{t('settings.newPassword')}</label>
 							<input
 								id="newPw"
 								type="password"
@@ -114,7 +114,7 @@
 							/>
 						</div>
 						<div>
-							<label for="confirmPw" class="mb-1 block text-xs font-medium text-ink-light">Confirm Password</label>
+							<label for="confirmPw" class="mb-1 block text-xs font-medium text-ink-light">{t('settings.confirmPassword')}</label>
 							<input
 								id="confirmPw"
 								type="password"
@@ -128,7 +128,7 @@
 							disabled={pwSaving || !currentPassword || !newPassword || !confirmPassword}
 							class="flex min-h-11 w-full items-center justify-center rounded-button bg-jade text-sm font-semibold text-white active:scale-[0.98] disabled:opacity-50"
 						>
-							{pwSaving ? 'Updating...' : 'Update Password'}
+							{pwSaving ? t('settings.updating') : t('settings.updatePassword')}
 						</button>
 					</div>
 				{/if}
@@ -146,8 +146,8 @@
 			<h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-ink-muted">{t('settings.about')}</h2>
 			<div class="space-y-2">
 				<div class="rounded-card bg-white p-4 shadow-card">
-					<div class="text-sm font-medium text-ink">Muse</div>
-					<div class="text-xs text-ink-muted">Version 0.1.0 (MVP)</div>
+					<div class="text-sm font-medium text-ink">{t('settings.appName')}</div>
+					<div class="text-xs text-ink-muted">{t('settings.appVersion')}</div>
 				</div>
 			</div>
 		</section>

@@ -14,9 +14,11 @@ export function createPinIcon(Leaflet: typeof L, color: string, size = 28): L.Di
 	});
 }
 
-/** Standard Muse pin colors used across map views. */
+/** Standard Muse pin colors used across map views.
+ * Picked for high contrast on small Android screens — taupe palette was
+ * indistinguishable on amoled displays per Jess feedback (Apr 2026). */
 export const PIN_COLORS = {
-	visited: '#5D4E3F',
-	toVisit: '#9A8E7E',
-	friend: '#C9A678',
+	visited: '#16A34A',  // green — rated
+	toVisit: '#F97316',  // orange — on the list
+	friend: '#6366F1',   // indigo — distinct from rated/unrated
 } as const;

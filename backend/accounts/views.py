@@ -168,16 +168,43 @@ class EmailInvitationView(generics.CreateAPIView):
 		sender_name = (
 			getattr(from_user.profile, "display_name", "") or from_user.email.split("@")[0]
 		)
-		invite_url = getattr(settings, "APP_PUBLIC_URL", "https://muse.dothecode.com")
-		subject = f"{sender_name} te invitó a Muse"
-		message = (
-			f"Hola,\n\n"
-			f"{sender_name} te invitó a Muse, una app para descubrir y compartir "
-			f"restaurantes con amigos.\n\n"
-			f"Registrate acá: {invite_url}/register\n\n"
-			f"Cuando te registres con este email, se creará la amistad automáticamente.\n\n"
-			f"— El equipo de Muse"
-		)
+		invite_url = getattr(settings, "APP_PUBLIC_URL", "https://lovemuse.app")
+		# Email body in English by default. Most testers are English-speaking and
+		# the previous Spanish wording was confusing. Tagged with the sender's
+		# language ("language" field in request) when present.
+		lang = (self.request.data.get("language") or "en").lower()[:2]
+		if lang == "es":
+			subject = f"{sender_name} te invitó a Muse"
+			message = (
+				f"Hola,\n\n"
+				f"{sender_name} te invitó a Muse, una app para descubrir y compartir "
+				f"restaurantes con amigos.\n\n"
+				f"Registrate acá: {invite_url}/register\n\n"
+				f"Cuando te registres con este email, se creará la amistad automáticamente.\n\n"
+				f"— El equipo de Muse"
+			)
+		elif lang == "it":
+			subject = f"{sender_name} ti ha invitato su Muse"
+			message = (
+				f"Ciao,\n\n"
+				f"{sender_name} ti ha invitato su Muse, un'app per scoprire e "
+				f"condividere ristoranti con gli amici.\n\n"
+				f"Registrati qui: {invite_url}/register\n\n"
+				f"Quando ti registri con questa email, l'amicizia sarà creata "
+				f"automaticamente.\n\n"
+				f"— Il team di Muse"
+			)
+		else:
+			subject = f"{sender_name} invited you to Muse"
+			message = (
+				f"Hi,\n\n"
+				f"{sender_name} invited you to Muse, an app to discover and share "
+				f"restaurants with friends.\n\n"
+				f"Sign up here: {invite_url}/register\n\n"
+				f"When you sign up with this email, the friendship will be created "
+				f"automatically.\n\n"
+				f"— The Muse team"
+			)
 		from_email = getattr(settings, "DEFAULT_FROM_EMAIL", None)
 		try:
 			send_mail(

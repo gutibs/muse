@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import MuseLogo from '$lib/components/MuseLogo.svelte';
+	import { t } from '$lib/i18n/index.svelte';
 	import { authStore } from '$lib/stores/auth.store.svelte';
 	import { ApiError } from '$lib/types';
 
@@ -10,6 +11,8 @@
 	let error = $state('');
 	let submitting = $state(false);
 	let showForgotModal = $state(false);
+
+	const SUPPORT_EMAIL = 'support@lovemuse.app';
 
 	async function handleSubmit(e: Event) {
 		e.preventDefault();
@@ -22,10 +25,10 @@
 		} catch (err) {
 			if (err instanceof ApiError) {
 				error = err.status === 401
-					? 'Invalid email or password'
-					: 'Something went wrong. Please try again.';
+					? t('auth.invalidCredentials')
+					: t('common.error');
 			} else {
-				error = 'Connection error. Please check your network.';
+				error = t('auth.connectionError');
 			}
 		} finally {
 			submitting = false;
@@ -39,7 +42,7 @@
 			<MuseLogo width={120} />
 		</div>
 		<h1 class="mb-1 text-center font-serif text-3xl font-bold text-jade-dark">Muse</h1>
-		<p class="mb-8 text-center text-sm text-ink-muted">Where friends eat well</p>
+		<p class="mb-8 text-center text-sm text-ink-muted">{t('login.subtitle')}</p>
 
 		<form onsubmit={handleSubmit} class="space-y-4">
 			{#if error}
@@ -49,7 +52,7 @@
 			{/if}
 
 			<div>
-				<label for="email" class="mb-1 block text-sm font-medium text-ink-light">Email</label>
+				<label for="email" class="mb-1 block text-sm font-medium text-ink-light">{t('auth.email')}</label>
 				<input
 					id="email"
 					type="email"
@@ -63,13 +66,13 @@
 
 			<div>
 				<div class="mb-1 flex items-center justify-between">
-					<label for="password" class="block text-sm font-medium text-ink-light">Password</label>
+					<label for="password" class="block text-sm font-medium text-ink-light">{t('auth.password')}</label>
 					<button
 						type="button"
 						onclick={() => (showForgotModal = true)}
 						class="text-xs font-medium text-jade active:opacity-70"
 					>
-						Forgot your password?
+						{t('login.forgotPassword')}
 					</button>
 				</div>
 				<div class="relative">
@@ -80,12 +83,12 @@
 						required
 						autocomplete="current-password"
 						class="w-full rounded-input border border-cream-dark bg-white px-4 py-3 pr-12 text-base text-ink outline-none transition-colors focus:border-jade"
-						placeholder="Enter your password"
+						placeholder={t('login.passwordPlaceholder')}
 					/>
 					<button
 						type="button"
 						onclick={() => (showPassword = !showPassword)}
-						aria-label={showPassword ? 'Hide password' : 'Show password'}
+						aria-label={showPassword ? t('login.hidePassword') : t('login.showPassword')}
 						class="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-lg text-ink-muted active:scale-90"
 					>
 						{#if showPassword}
@@ -107,13 +110,13 @@
 				disabled={submitting || !email || !password}
 				class="flex min-h-12 w-full items-center justify-center rounded-button bg-jade text-base font-semibold text-white transition-opacity active:scale-[0.98] disabled:opacity-50"
 			>
-				{submitting ? 'Signing in...' : 'Sign In'}
+				{submitting ? t('auth.signingIn') : t('auth.signIn')}
 			</button>
 		</form>
 
 		<p class="mt-8 text-center text-sm text-ink-muted">
-			Don't have an account?
-			<a href="/register" class="font-medium text-jade">Create one</a>
+			{t('auth.noAccount')}
+			<a href="/register" class="font-medium text-jade">{t('auth.createOne')}</a>
 		</p>
 	</div>
 </div>
@@ -134,17 +137,15 @@
 					<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
 				</svg>
 			</div>
-			<h2 class="font-serif text-xl font-semibold text-ink">Forgot your password?</h2>
+			<h2 class="font-serif text-xl font-semibold text-ink">{t('login.forgotPassword')}</h2>
 			<p class="mt-2 text-sm text-ink-light">
-				Email password reset is coming soon. For now, please contact
-				<a href="mailto:support@muse.app" class="font-medium text-jade">support@muse.app</a>
-				with your account email and we'll help you reset it.
+				{t('login.forgotBody').split('{email}')[0]}<a href="mailto:{SUPPORT_EMAIL}" class="font-medium text-jade">{SUPPORT_EMAIL}</a>{t('login.forgotBody').split('{email}')[1] || ''}
 			</p>
 			<button
 				onclick={() => (showForgotModal = false)}
 				class="mt-5 flex min-h-11 w-full items-center justify-center rounded-button bg-jade text-sm font-semibold text-white active:scale-[0.98]"
 			>
-				Got it
+				{t('login.gotIt')}
 			</button>
 		</div>
 	</div>

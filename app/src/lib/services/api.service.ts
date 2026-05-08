@@ -61,7 +61,7 @@ async function refreshAccessToken(): Promise<boolean> {
 
 const REQUEST_TIMEOUT_MS = 15000;
 
-async function request<T>(path: string, options?: RequestInit): Promise<T> {
+async function request<T>(path: string, options?: RequestInit, alreadyRetried = false): Promise<T> {
 	const token = getAccessToken();
 	const headers: Record<string, string> = {
 		'Content-Type': 'application/json',
@@ -69,7 +69,6 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 	};
 
 	const url = `${API_BASE}${path}`;
-	console.log('[api] request:', options?.method ?? 'GET', url);
 
 	const controller = new AbortController();
 	const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -87,13 +86,17 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 	} finally {
 		clearTimeout(timeoutId);
 	}
-	console.log('[api] response:', response.status, url);
 
-	if (response.status === 401 && token) {
+	if (response.status === 401 && token && !alreadyRetried) {
 		const refreshed = await refreshAccessToken();
 		if (refreshed) {
-			return request(path, options);
+			return request(path, options, true);
 		}
+		clearAuth();
+		throw new AuthError();
+	}
+
+	if (response.status === 401 && alreadyRetried) {
 		clearAuth();
 		throw new AuthError();
 	}

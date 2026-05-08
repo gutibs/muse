@@ -29,3 +29,7 @@ backend/media/
 
 
 *.md
+
+# Build artifacts
+*.apk
+muse-tester-build.apk

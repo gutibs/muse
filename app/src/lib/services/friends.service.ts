@@ -1,4 +1,5 @@
 import { api } from './api.service';
+import { i18n } from '$lib/i18n/index.svelte';
 import type { Friendship, PaginatedResponse, PublicUser } from '$lib/types';
 
 export const friendsService = {
@@ -23,7 +24,8 @@ export const friendsService = {
 	},
 
 	inviteByEmail(email: string): Promise<void> {
-		return api.post('/auth/invite/', { email });
+		// Pass the sender's UI language so the backend can localise the email.
+		return api.post('/auth/invite/', { email, language: i18n.locale });
 	},
 
 	async search(query: string): Promise<PublicUser[]> {

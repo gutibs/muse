@@ -62,7 +62,7 @@
 				<div>
 					<p class="text-sm text-ink-muted">{greeting}</p>
 					<h1 class="text-xl font-semibold text-ink">
-						{authStore.user?.displayName || 'Welcome'}
+						{authStore.user?.displayName || t('common.welcome')}
 					</h1>
 				</div>
 			</div>
@@ -98,8 +98,8 @@
 					</svg>
 				</div>
 				<div class="min-w-0 flex-1">
-					<div class="text-sm font-semibold text-amber-900">"{pendingRestaurant}" submitted</div>
-					<div class="text-xs text-amber-800">It will appear once approved by an admin.</div>
+					<div class="text-sm font-semibold text-amber-900">{t('home.pendingSubmitted').replace('{name}', pendingRestaurant)}</div>
+					<div class="text-xs text-amber-800">{t('home.pendingDesc')}</div>
 				</div>
 			</div>
 		{/if}

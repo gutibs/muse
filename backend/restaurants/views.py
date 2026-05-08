@@ -138,6 +138,10 @@ class RestaurantViewSet(viewsets.ModelViewSet):
 		place_id = request.data.get("placeId") or request.data.get("place_id")
 		if not place_id:
 			return Response({"detail": "placeId is required."}, status=status.HTTP_400_BAD_REQUEST)
+		# Places API (New) sometimes returns IDs as "places/ChIJ..."; the bare ID
+		# is what we store, so normalise on input.
+		if place_id.startswith("places/"):
+			place_id = place_id.split("/", 1)[1]
 
 		existing = Restaurant.objects.filter(google_place_id=place_id).first()
 		if existing:
@@ -179,7 +183,11 @@ class RestaurantViewSet(viewsets.ModelViewSet):
 				status=status.HTTP_502_BAD_GATEWAY,
 			)
 
-		if p.get("id") != place_id:
+		# Google may echo the id as "places/ChIJ..." or bare; accept both.
+		returned_id = p.get("id") or ""
+		if returned_id.startswith("places/"):
+			returned_id = returned_id.split("/", 1)[1]
+		if returned_id and returned_id != place_id:
 			return Response({"detail": "Invalid placeId."}, status=status.HTTP_400_BAD_REQUEST)
 
 		location = p.get("location") or {}
@@ -214,21 +222,36 @@ class RestaurantViewSet(viewsets.ModelViewSet):
 
 		hours = p.get("regularOpeningHours") or {}
 
+		from django.db import IntegrityError
+		# Truncate to model max_lengths defensively — Google occasionally returns
+		# strings longer than our columns (e.g. very long formatted addresses).
+		name = ((p.get("displayName") or {}).get("text", "") or "Unknown")[:200]
+		address = (p.get("formattedAddress", "") or "")[:300]
+		website = (p.get("websiteUri", "") or "")[:500]
 		try:
 			restaurant = Restaurant.objects.create(
-				name=(p.get("displayName") or {}).get("text", "") or "Unknown",
+				name=name,
 				location=Point(float(lng), float(lat), srid=4326),
-				address=p.get("formattedAddress", "") or "",
-				city=city,
-				country=country,
-				website=p.get("websiteUri", "") or "",
+				address=address,
+				city=city[:100],
+				country=country[:100],
+				website=website,
 				phone=(p.get("internationalPhoneNumber", "") or "")[:30],
-				image_url=photo_url,
+				image_url=photo_url[:2000],
 				opening_hours=hours.get("weekdayDescriptions", []) or [],
 				google_place_id=place_id,
 				created_by=request.user,
 				approval_status=Restaurant.ApprovalStatus.APPROVED,
 			)
+		except IntegrityError:
+			# Race: another request created the same place_id between our SELECT
+			# above and the INSERT here. Fetch and return the existing row.
+			existing = Restaurant.objects.filter(google_place_id=place_id).first()
+			if existing:
+				serializer = self.get_serializer(self._base_queryset().get(pk=existing.pk))
+				return Response(serializer.data)
+			logger.exception("from_google integrity error for place_id=%s payload=%r", place_id, p)
+			return Response({"detail": "Could not save this place."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 		except Exception:
 			logger.exception(
 				"from_google failed to create restaurant for place_id=%s payload=%r",

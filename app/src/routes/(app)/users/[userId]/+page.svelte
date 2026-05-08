@@ -3,6 +3,7 @@
 	import { page } from '$app/state';
 	import Avatar from '$lib/components/Avatar.svelte';
 	import MapView from '$lib/components/MapView.svelte';
+	import { t } from '$lib/i18n/index.svelte';
 	import { usersService } from '$lib/services/users.service';
 	import type { Pin, Profile } from '$lib/types';
 	import { ApiError } from '$lib/types';
@@ -30,11 +31,11 @@
 			pins = pinList;
 		} catch (err) {
 			if (err instanceof ApiError && err.status === 403) {
-				error = 'You need to be friends with this user to see their pins.';
+				error = t('users.notFriends');
 			} else if (err instanceof ApiError && err.status === 404) {
-				error = 'User not found.';
+				error = t('users.notFound');
 			} else {
-				error = 'Could not load user.';
+				error = t('users.cantLoad');
 			}
 		} finally {
 			loading = false;
@@ -48,6 +49,10 @@
 	const filteredPins = $derived(
 		statusFilter === 'all' ? pins : pins.filter((p) => p.status === statusFilter)
 	);
+
+	function escapeHtml(s: string): string {
+		return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
+	}
 
 	async function onMapReady(map: L.Map) {
 		if (!browser || filteredPins.length === 0) return;
@@ -68,9 +73,9 @@
 				.addTo(map)
 				.bindPopup(`
 					<div style="font-family:Inter,sans-serif;min-width:140px;">
-						<strong style="font-size:14px;">${r.name}</strong>
-						${r.city ? `<br><span style="color:#9A8E7E;font-size:12px;">${r.city}</span>` : ''}
-						${pin.rating ? `<br><span style="color:#5D4E3F;font-size:13px;">♥ ${pin.rating}/5</span>` : ''}
+						<strong style="font-size:14px;color:#2B221A;">${escapeHtml(r.name)}</strong>
+						${r.city ? `<br><span style="color:#9A8E7E;font-size:12px;">${escapeHtml(r.city)}</span>` : ''}
+						${pin.rating ? `<br><span style="color:#8A7363;font-size:13px;">♥ ${pin.rating}/5</span>` : ''}
 					</div>
 				`);
 
@@ -88,13 +93,13 @@
 <div class="flex h-full flex-col">
 	<!-- Header -->
 	<header class="flex shrink-0 items-center gap-3 px-5 py-3">
-		<button onclick={() => history.back()} class="flex min-h-11 min-w-11 items-center justify-center text-ink active:opacity-70" aria-label="Back">
+		<button onclick={() => history.back()} class="flex min-h-11 min-w-11 items-center justify-center text-ink active:opacity-70" aria-label={t('common.back')}>
 			<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 				<polyline points="15 18 9 12 15 6" />
 			</svg>
 		</button>
 		<h1 class="flex-1 text-lg font-semibold text-ink">
-			{profile?.displayName || 'Profile'}
+			{profile?.displayName || t('common.profile')}
 		</h1>
 	</header>
 
@@ -107,7 +112,7 @@
 		<div class="flex flex-1 flex-col items-center justify-center px-6 text-center">
 			<p class="text-sm text-blush">{error}</p>
 			<a href="/friends" class="mt-4 rounded-button bg-jade px-5 py-2.5 text-sm font-semibold text-white active:scale-[0.98]">
-				Back to Friends
+				{t('users.backToFriends')}
 			</a>
 		</div>
 
@@ -132,15 +137,15 @@
 				<div class="mt-3 flex gap-3">
 					<div class="flex-1 rounded-card bg-white p-3 text-center shadow-card">
 						<div class="text-xl font-bold text-jade">{profile.stats.pinCount}</div>
-						<div class="text-xs text-ink-muted">Pins</div>
+						<div class="text-xs text-ink-muted">{t('home.pins')}</div>
 					</div>
 					<div class="flex-1 rounded-card bg-white p-3 text-center shadow-card">
 						<div class="text-xl font-bold text-jade">{profile.stats.visitedCount}</div>
-						<div class="text-xs text-ink-muted">Rated</div>
+						<div class="text-xs text-ink-muted">{t('users.rated')}</div>
 					</div>
 					<div class="flex-1 rounded-card bg-white p-3 text-center shadow-card">
 						<div class="text-xl font-bold text-jade">{profile.stats.toVisitCount}</div>
-						<div class="text-xs text-ink-muted">On the List</div>
+						<div class="text-xs text-ink-muted">{t('users.onTheList')}</div>
 					</div>
 				</div>
 			</div>
@@ -153,14 +158,14 @@
 						class="flex-1 rounded-button py-2 text-sm font-medium active:scale-[0.98]
 							{view === 'list' ? 'bg-white text-ink shadow-card' : 'text-ink-muted'}"
 					>
-						List
+						{t('common.list')}
 					</button>
 					<button
 						onclick={() => (view = 'map')}
 						class="flex-1 rounded-button py-2 text-sm font-medium active:scale-[0.98]
 							{view === 'map' ? 'bg-white text-ink shadow-card' : 'text-ink-muted'}"
 					>
-						Map
+						{t('common.map')}
 					</button>
 				</div>
 
@@ -171,7 +176,7 @@
 							class="shrink-0 rounded-full px-3 py-1.5 text-xs font-medium active:scale-95
 								{statusFilter === f ? 'bg-jade text-white' : 'bg-white text-ink-muted shadow-card'}"
 						>
-							{f === 'all' ? 'All' : f === 'visited' ? 'Rated' : 'On the List'}
+							{f === 'all' ? t('common.all') : f === 'visited' ? t('users.rated') : t('users.onTheList')}
 						</button>
 					{/each}
 				</div>
@@ -182,7 +187,7 @@
 				{#if view === 'list'}
 					{#if filteredPins.length === 0}
 						<div class="flex h-full items-center justify-center px-6 text-center">
-							<p class="text-sm text-ink-muted">No pins to show</p>
+							<p class="text-sm text-ink-muted">{t('users.noPins')}</p>
 						</div>
 					{:else}
 						<ul class="h-full space-y-2 overflow-y-auto px-5 pb-6">
@@ -196,7 +201,7 @@
 											<p class="truncate text-sm font-semibold text-ink">{pin.restaurantDetail.name}</p>
 											<span class="shrink-0 rounded-full px-2 py-0.5 text-xs font-medium
 												{pin.status === 'visited' ? 'bg-jade/10 text-jade' : 'bg-cream-dark text-ink-muted'}">
-												{pin.status === 'visited' ? 'Rated' : 'On the List'}
+												{pin.status === 'visited' ? t('users.rated') : t('users.onTheList')}
 											</span>
 										</div>
 										{#if pin.restaurantDetail.city}

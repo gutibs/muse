@@ -80,7 +80,12 @@ class SharedListSerializer(serializers.ModelSerializer):
 		read_only_fields = ("id", "token", "url", "created_at")
 
 	def get_url(self, obj):
-		return f"/shared/{obj.token}"
+		# Absolute URL so the link is shareable from the mobile app, where
+		# window.location.origin is "http://localhost" (Capacitor scheme) and
+		# would otherwise produce a useless link.
+		from django.conf import settings
+		base = getattr(settings, "APP_PUBLIC_URL", "https://lovemuse.app").rstrip("/")
+		return f"{base}/shared/{obj.token}"
 
 	def create(self, validated_data):
 		validated_data["user"] = self.context["request"].user

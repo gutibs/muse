@@ -42,7 +42,7 @@
 		try {
 			friends = await friendsService.list();
 		} catch {
-			listError = 'Could not load your friends. Pull to retry.';
+			listError = t('friends.cantLoadFriends');
 		} finally {
 			loadingFriends = false;
 		}
@@ -54,7 +54,7 @@
 		try {
 			requests = await friendsService.requests();
 		} catch {
-			listError = 'Could not load friend requests.';
+			listError = t('friends.cantLoadRequests');
 		} finally {
 			loadingRequests = false;
 		}
@@ -78,7 +78,7 @@
 			await friendsService.sendRequest(user.id);
 			searchResults = searchResults.filter((u) => u.id !== user.id);
 		} catch (err) {
-			searchError = extractFirstDrfError(err, 'Could not send request.');
+			searchError = extractFirstDrfError(err, t('friends.cantSendRequest'));
 		} finally {
 			sending[user.id] = false;
 		}
@@ -104,7 +104,7 @@
 		if (!email) return;
 
 		if (email === (authStore.user?.email ?? '').toLowerCase()) {
-			inviteError = "That's your own email.";
+			inviteError = t('friends.ownEmail');
 			return;
 		}
 
@@ -113,13 +113,30 @@
 		inviteError = '';
 		try {
 			await friendsService.inviteByEmail(email);
-			inviteMessage = `Invitation sent to ${email}`;
+			inviteMessage = t('friends.invitationSent').replace('{email}', email);
 			inviteEmail = '';
 		} catch (err) {
-			inviteError = extractFirstDrfError(err, 'Could not send invite.');
+			inviteError = extractFirstDrfError(err, t('friends.cantSendInvite'));
 		} finally {
 			inviting = false;
 		}
+	}
+
+	async function shareMuse() {
+		const subject = t('friends.shareSubject');
+		const body = t('friends.shareBody');
+		// Prefer the OS share sheet (Android/iOS) so the user can pick any app.
+		// Falls back to mailto: when navigator.share is unavailable.
+		if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+			try {
+				await navigator.share({ title: subject, text: body });
+				return;
+			} catch {
+				// User cancelled or share failed — fall through to mailto.
+			}
+		}
+		const href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+		if (typeof window !== 'undefined') window.location.href = href;
 	}
 
 	function switchTab(t: Tab) {
@@ -339,7 +356,7 @@
 							type="email"
 							bind:value={inviteEmail}
 							onkeydown={(e) => e.key === 'Enter' && sendInvite()}
-							placeholder="friend@example.com"
+							placeholder={t('friends.emailPlaceholder')}
 							class="flex-1 rounded-input border border-cream-dark bg-white px-4 py-3 text-base text-ink outline-none focus:border-jade"
 						/>
 						<button
@@ -351,6 +368,19 @@
 						</button>
 					</div>
 				</div>
+
+				<div class="border-t border-cream-dark"></div>
+
+				<!-- Share Muse via system share / mailto -->
+				<button
+					onclick={shareMuse}
+					class="flex min-h-12 w-full items-center justify-center gap-2 rounded-button border border-jade text-base font-semibold text-jade active:scale-[0.98]"
+				>
+					<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
+					</svg>
+					{t('friends.shareApp')}
+				</button>
 			</div>
 		{/if}
 

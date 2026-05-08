@@ -14,6 +14,10 @@
 	import { createPinIcon, PIN_COLORS } from '$lib/utils/map';
 	import type L from 'leaflet';
 
+	function escapeHtml(s: string): string {
+		return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
+	}
+
 	let hasFocus = $derived(Boolean(page.url.searchParams.get('focus')));
 	let showFriendPins = $state(true);
 	let showSearch = $state(false);
@@ -33,9 +37,21 @@
 
 	$effect(() => {
 		if (authStore.isAuthenticated && cuisinesList.length === 0) {
-			restaurantsService.cuisines().then((c) => (cuisinesList = c)).catch(() => {});
+			loadCuisines();
 		}
 	});
+
+	// Cuisines fetch silently failing leaves the search dropdown empty (only
+	// "Any cuisine" visible), which is a confusing UX. Log the failure and
+	// retry once after a short delay so transient errors don't kill the flow.
+	async function loadCuisines(retry = true) {
+		try {
+			cuisinesList = await restaurantsService.cuisines();
+		} catch (err) {
+			console.warn('[map] cuisines fetch failed', err);
+			if (retry) setTimeout(() => loadCuisines(false), 1500);
+		}
+	}
 
 	function applyMarkerFilter() {
 		if (!mapRef) return;
@@ -119,10 +135,10 @@
 							.addTo(group)
 							.bindPopup(`
 								<div style="font-family:Inter,sans-serif;min-width:140px;">
-									<span style="color:#C9A678;font-size:11px;font-weight:600;">${other.displayName || other.email}</span>
-									<br><a href="/restaurant/${r.id}" style="font-size:14px;font-weight:700;color:#1A1A1A;text-decoration:none;">${r.name}</a>
-									${r.city ? `<br><span style="color:#9A8E7E;font-size:12px;">${r.city}</span>` : ''}
-									${pin.rating ? `<br><span style="color:#5D4E3F;font-size:13px;">♥ ${pin.rating}/5</span>` : ''}
+									<span style="color:#AF9483;font-size:11px;font-weight:600;">${escapeHtml(other.displayName || other.email)}</span>
+									<br><a href="/restaurant/${r.id}" style="font-size:14px;font-weight:700;color:#2B221A;text-decoration:none;">${escapeHtml(r.name)}</a>
+									${r.city ? `<br><span style="color:#9A8E7E;font-size:12px;">${escapeHtml(r.city)}</span>` : ''}
+									${pin.rating ? `<br><span style="color:#8A7363;font-size:13px;">♥ ${pin.rating}/5</span>` : ''}
 								</div>
 							`);
 						// Only register if not already present (own pins take priority)
@@ -180,10 +196,10 @@
 				.addTo(map)
 				.bindPopup(`
 					<div style="font-family:Inter,sans-serif;min-width:140px;">
-						<a href="/restaurant/${r.id}" style="font-size:14px;font-weight:700;color:#1A1A1A;text-decoration:none;">${r.name}</a>
-						${r.city ? `<br><span style="color:#9A8E7E;font-size:12px;">${r.city}</span>` : ''}
-						${pin.rating ? `<br><span style="color:#5D4E3F;font-size:13px;">♥ ${pin.rating}/5</span>` : ''}
-						<br><span style="color:#9A8E7E;font-size:11px;">${pin.status === 'visited' ? 'Rated' : 'On the List'}</span>
+						<a href="/restaurant/${r.id}" style="font-size:14px;font-weight:700;color:#2B221A;text-decoration:none;">${escapeHtml(r.name)}</a>
+						${r.city ? `<br><span style="color:#9A8E7E;font-size:12px;">${escapeHtml(r.city)}</span>` : ''}
+						${pin.rating ? `<br><span style="color:#8A7363;font-size:13px;">♥ ${pin.rating}/5</span>` : ''}
+						<br><span style="color:#9A8E7E;font-size:11px;">${pin.status === 'visited' ? t('map.popupRated') : t('map.popupOnList')}</span>
 					</div>
 				`);
 			markersById.set(r.id, marker);
@@ -246,7 +262,7 @@
 					</button>
 					<button
 						onclick={() => { showSearch = false; citySearch = ''; cuisineSearch = ''; }}
-						aria-label="Close search"
+						aria-label={t('search.clear')}
 						class="flex min-h-10 items-center justify-center rounded-button bg-cream-dark px-2 text-ink-muted active:scale-95"
 					>
 						<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -297,21 +313,21 @@
 	<!-- Legend — inline chips, always visible -->
 	<div class="absolute left-4 z-1000 flex flex-wrap gap-1.5" style="bottom: calc(var(--sab, 0px) + 1rem);">
 		<span class="flex items-center gap-1 rounded-full bg-white/90 px-2 py-1 text-[10px] font-medium text-ink shadow-card">
-			<span class="inline-block h-2 w-2 rounded-full" style="background:#5D4E3F;"></span>{t('map.yourVisited', { name: authStore.user?.displayName || 'You' })}
+			<span class="inline-block h-2 w-2 rounded-full" style="background:{PIN_COLORS.visited};"></span>{t('map.yourVisited', { name: authStore.user?.displayName || 'You' })}
 		</span>
 		<span class="flex items-center gap-1 rounded-full bg-white/90 px-2 py-1 text-[10px] font-medium text-ink shadow-card">
-			<span class="inline-block h-2 w-2 rounded-full" style="background:#9A8E7E;"></span>{t('map.yourToVisit', { name: authStore.user?.displayName || 'You' })}
+			<span class="inline-block h-2 w-2 rounded-full" style="background:{PIN_COLORS.toVisit};"></span>{t('map.yourToVisit', { name: authStore.user?.displayName || 'You' })}
 		</span>
 		{#if friendCount > 0}
 			<span class="flex items-center gap-1 rounded-full bg-white/90 px-2 py-1 text-[10px] font-medium text-ink shadow-card">
-				<span class="inline-block h-2 w-2 rounded-full" style="background:#C9A678;"></span>{t('map.friendPins')}
+				<span class="inline-block h-2 w-2 rounded-full" style="background:{PIN_COLORS.friend};"></span>{t('map.friendPins')}
 			</span>
 		{/if}
 	</div>
 
 	<!-- FAB: Add Pin -->
 	<button
-		aria-label="Add pin"
+		aria-label={t('home.addPin')}
 		onclick={() => goto('/pin/new')}
 		class="absolute right-4 z-1000 flex h-14 w-14 items-center justify-center rounded-full bg-jade text-white shadow-elevated active:scale-95"
 		style="bottom: calc(var(--sab, 0px) + 6rem);"

@@ -3,13 +3,16 @@
 	import { untrack } from 'svelte';
 	import Avatar from '$lib/components/Avatar.svelte';
 	import DietaryBadges from '$lib/components/DietaryBadges.svelte';
+	import { t } from '$lib/i18n/index.svelte';
+	import { pinsService } from '$lib/services/pins.service';
 	import { restaurantsService } from '$lib/services/restaurants.service';
-	import type { RestaurantDetail } from '$lib/types';
+	import type { Pin, RestaurantDetail } from '$lib/types';
 	import { timeAgo } from '$lib/utils/time';
 
 	let restaurantId = $derived(Number(page.params.id));
 
 	let restaurant = $state<RestaurantDetail | null>(null);
+	let myPin = $state<Pin | null>(null);
 	let loading = $state(true);
 	let error = $state('');
 
@@ -21,8 +24,13 @@
 			error = '';
 			try {
 				restaurant = await restaurantsService.get(id);
+				// Look up the current user's pin for this restaurant (if any) so we
+				// can show an Edit / Add Pin button. The pins list endpoint
+				// already filters to the current user.
+				const res = await pinsService.list();
+				myPin = res.results.find((p) => p.restaurant === id) ?? null;
 			} catch {
-				error = 'Could not load restaurant.';
+				error = t('restaurant.cantLoad');
 			} finally {
 				loading = false;
 			}
@@ -46,7 +54,7 @@
 			<div class="relative shrink-0">
 				<img src={restaurant.imageUrl} alt={restaurant.name} class="h-48 w-full object-cover" />
 				<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-				<button onclick={() => history.back()} class="absolute left-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-black/30 text-white active:scale-95" aria-label="Back">
+				<button onclick={() => history.back()} class="absolute left-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-black/30 text-white active:scale-95" aria-label={t('common.back')}>
 					<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
 				</button>
 				<div class="absolute bottom-4 left-5 right-5">
@@ -60,7 +68,7 @@
 			</div>
 		{:else}
 			<header class="flex shrink-0 items-center gap-3 px-5 py-3">
-				<button onclick={() => history.back()} class="flex min-h-11 min-w-11 items-center justify-center text-ink active:opacity-70" aria-label="Back">
+				<button onclick={() => history.back()} class="flex min-h-11 min-w-11 items-center justify-center text-ink active:opacity-70" aria-label={t('common.back')}>
 					<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
 				</button>
 				<h1 class="flex-1 text-lg font-semibold text-ink">{restaurant.name}</h1>
@@ -82,11 +90,36 @@
 							{/each}
 						</div>
 						<span class="text-sm font-semibold text-ink">{restaurant.averageRating.toFixed(1)}</span>
-						<span class="text-xs text-ink-muted">({restaurant.pinCount} review{restaurant.pinCount === 1 ? '' : 's'})</span>
+						<span class="text-xs text-ink-muted">({(restaurant.pinCount === 1 ? t('restaurant.reviewsCount') : t('restaurant.reviewsCountPlural')).replace('{count}', String(restaurant.pinCount))})</span>
 					</div>
 				{/if}
 				{#if restaurant.tagsDetail?.length}
 					<DietaryBadges tags={restaurant.tagsDetail} />
+				{/if}
+			</div>
+
+			<!-- My pin: edit or add -->
+			<div class="px-5 pb-2">
+				{#if myPin}
+					<a
+						href={`/pin/${myPin.id}/edit`}
+						class="flex min-h-12 w-full items-center justify-center gap-2 rounded-button bg-jade text-base font-semibold text-white active:scale-[0.98]"
+					>
+						<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+						</svg>
+						{t('restaurant.editMyPin')}
+					</a>
+				{:else}
+					<a
+						href={`/pin/new?restaurantId=${restaurant.id}`}
+						class="flex min-h-12 w-full items-center justify-center gap-2 rounded-button bg-jade text-base font-semibold text-white active:scale-[0.98]"
+					>
+						<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+						</svg>
+						{t('restaurant.addToMyPins')}
+					</a>
 				{/if}
 			</div>
 
@@ -129,10 +162,10 @@
 
 			<!-- Friend stats -->
 			<div class="px-5 pb-4">
-				<h2 class="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-muted">From your friends</h2>
+				<h2 class="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-muted">{t('restaurant.fromYourFriends')}</h2>
 				{#if restaurant.friendStats.ratedCount === 0 && restaurant.friendStats.onListCount === 0}
 					<div class="rounded-card bg-white p-4 text-center shadow-card">
-						<p class="text-sm text-ink-muted">No friends have visited yet — be the first!</p>
+						<p class="text-sm text-ink-muted">{t('restaurant.noFriendsVisited')}</p>
 					</div>
 				{:else}
 					<div class="grid grid-cols-3 gap-2">
@@ -146,19 +179,19 @@
 							{:else}
 								<div class="text-base font-bold text-ink-muted">—</div>
 							{/if}
-							<div class="mt-0.5 text-[10px] text-ink-muted">Friends rating</div>
+							<div class="mt-0.5 text-[10px] text-ink-muted">{t('restaurant.friendsRating')}</div>
 						</div>
 
 						<!-- Rated count -->
 						<div class="rounded-card bg-white p-3 text-center shadow-card">
 							<div class="text-base font-bold text-jade">{restaurant.friendStats.ratedCount}</div>
-							<div class="mt-0.5 text-[10px] text-ink-muted">Friends rated</div>
+							<div class="mt-0.5 text-[10px] text-ink-muted">{t('restaurant.friendsRated')}</div>
 						</div>
 
 						<!-- On the list count -->
 						<div class="rounded-card bg-white p-3 text-center shadow-card">
 							<div class="text-base font-bold text-jade">{restaurant.friendStats.onListCount}</div>
-							<div class="mt-0.5 text-[10px] text-ink-muted">On the list</div>
+							<div class="mt-0.5 text-[10px] text-ink-muted">{t('restaurant.onTheList')}</div>
 						</div>
 					</div>
 				{/if}
@@ -167,14 +200,14 @@
 			<!-- Reviews header -->
 			<div class="mx-5 rounded-card bg-cream-dark p-1">
 				<div class="rounded-button bg-white py-2 text-center text-sm font-medium text-ink shadow-card">
-					Your friends' notes{restaurant.reviews?.length ? ` (${restaurant.reviews.length})` : ''}
+					{t('restaurant.friendsNotes')}{restaurant.reviews?.length ? ` (${restaurant.reviews.length})` : ''}
 				</div>
 			</div>
 
 			<!-- Reviews -->
 			<div class="px-5 pb-6 pt-4">
 				{#if !restaurant.reviews?.length}
-					<p class="py-8 text-center text-sm text-ink-muted">Not rated yet — be the first!</p>
+					<p class="py-8 text-center text-sm text-ink-muted">{t('restaurant.notRatedYet')}</p>
 				{:else}
 					<ul class="space-y-3">
 						{#each restaurant.reviews as review (review.id)}
@@ -187,10 +220,10 @@
 										<div class="flex items-center justify-between">
 											<div class="flex items-center gap-1.5">
 												<a href={`/users/${review.user.id}`} class="text-sm font-semibold text-ink active:text-jade">
-													{review.user.displayName || 'Anonymous'}
+													{review.user.displayName || t('restaurant.anonymous')}
 												</a>
 												{#if review.isFriend}
-													<span class="rounded-full bg-jade/10 px-1.5 py-0.5 text-[9px] font-medium uppercase text-jade">Friend</span>
+													<span class="rounded-full bg-jade/10 px-1.5 py-0.5 text-[9px] font-medium uppercase text-jade">{t('restaurant.friendBadge')}</span>
 												{/if}
 											</div>
 											<span class="text-xs text-ink-muted">{timeAgo(review.createdAt)}</span>

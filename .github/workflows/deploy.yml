@@ -21,8 +21,19 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            set -e
             cd /home/ubuntu/muse
             git pull origin main
-            sudo docker-compose -f docker-compose.aws.yml down
-            sudo docker-compose -f docker-compose.aws.yml up --build -d
+
+            # Backup DB before any restart. Keeps last 14 dumps.
+            if sudo docker-compose -f docker-compose.aws.yml ps -q db | grep -q .; then
+              TS=$(date -u +%Y%m%d-%H%M%S)
+              sudo docker-compose -f docker-compose.aws.yml exec -T db \
+                sh -c "pg_dump -U \"$DB_USER\" \"$DB_NAME\" | gzip > /backups/muse-$TS.sql.gz" || true
+              sudo docker-compose -f docker-compose.aws.yml exec -T db \
+                sh -c 'ls -1t /backups/muse-*.sql.gz 2>/dev/null | tail -n +15 | xargs -r rm -f' || true
+            fi
+
+            # Rebuild only what changed; named volumes (muse_pgdata) are preserved.
+            sudo docker-compose -f docker-compose.aws.yml up --build -d --remove-orphans
             sudo docker-compose -f docker-compose.aws.yml exec -T backend python manage.py migrate

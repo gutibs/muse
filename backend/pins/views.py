@@ -1,4 +1,5 @@
-from rest_framework import generics, permissions, viewsets
+from django.db import IntegrityError
+from rest_framework import generics, permissions, status, viewsets
 from rest_framework.response import Response
 
 from pins.models import Persona, Pin, SharedList
@@ -19,6 +20,20 @@ class PinViewSet(viewsets.ModelViewSet):
 			.select_related("restaurant", "restaurant__cuisine")
 			.prefetch_related("personas")
 		)
+
+	def create(self, request, *args, **kwargs):
+		# (user, restaurant) is unique. If a pin already exists, surface that as
+		# 409 with the existing pin id so the client can navigate the user
+		# straight to the edit screen instead of showing a generic 500.
+		try:
+			return super().create(request, *args, **kwargs)
+		except IntegrityError:
+			restaurant_id = request.data.get("restaurant") or request.data.get("restaurantId")
+			existing = Pin.objects.filter(user=request.user, restaurant_id=restaurant_id).first()
+			payload = {"detail": "You already pinned this restaurant."}
+			if existing:
+				payload["pinId"] = existing.id
+			return Response(payload, status=status.HTTP_409_CONFLICT)
 
 	def list(self, request, *args, **kwargs):
 		qs = self.get_queryset()

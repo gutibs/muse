@@ -38,10 +38,19 @@
 	import { authStore } from '$lib/stores/auth.store.svelte';
 
 	$effect(() => {
-		if (authStore.isAuthenticated) {
-			restaurantsService.cuisines().then((c) => (cuisines = c)).catch(() => {});
+		if (authStore.isAuthenticated && cuisines.length === 0) {
+			loadCuisines();
 		}
 	});
+
+	async function loadCuisines(retry = true) {
+		try {
+			cuisines = await restaurantsService.cuisines();
+		} catch (err) {
+			console.warn('[search] cuisines fetch failed', err);
+			if (retry) setTimeout(() => loadCuisines(false), 1500);
+		}
+	}
 
 	function getCurrentPosition(): Promise<GeolocationPosition> {
 		return new Promise((resolve, reject) => {
@@ -76,9 +85,9 @@
 			locating = false;
 			const msg = err instanceof Error ? err.message : '';
 			if (msg.includes('denied') || msg.includes('not available')) {
-				error = 'Location permission denied. Try searching by name or city instead.';
+				error = t('search.locationDenied');
 			} else {
-				error = 'Could not get your location. Try searching manually.';
+				error = t('search.cantGetLocation');
 			}
 			results = [];
 		} finally {
@@ -118,7 +127,7 @@
 			results = dbRes.status === 'fulfilled' ? dbRes.value.results : [];
 			googleResults = placesRes.status === 'fulfilled' ? placesRes.value.results : [];
 		} catch {
-			error = 'Could not load results.';
+			error = t('search.cantLoadResults');
 			results = [];
 		} finally {
 			loading = false;
@@ -146,16 +155,16 @@
 		} catch (err) {
 			if (err instanceof ApiError) {
 				if (err.status === 503) {
-					error = 'Google Places is not configured on the server. Contact the admin.';
+					error = t('pin.googleNotConfigured');
 				} else if (err.status === 502) {
-					error = 'Google Places is temporarily unavailable. Try again shortly.';
+					error = t('pin.googleUnavailable');
 				} else if (err.status === 429) {
-					error = 'Too many requests. Try again in a minute.';
+					error = t('search.tooManyRequests');
 				} else {
-					error = extractFirstDrfError(err, 'Could not import this place.');
+					error = extractFirstDrfError(err, t('search.cantImport'));
 				}
 			} else {
-				error = 'Network error. Check your connection and try again.';
+				error = t('common.networkError');
 			}
 		} finally {
 			importingPlaceId = null;
@@ -201,10 +210,10 @@
 				.addTo(map)
 				.bindPopup(`
 					<div style="font-family:Inter,sans-serif;min-width:140px;">
-						<strong style="font-size:14px;">${r.name}</strong>
-						${r.city ? `<br><span style="color:#9A8E7E;font-size:12px;">${r.city}</span>` : ''}
-						${r.cuisineDetail ? `<br><span style="color:#9A8E7E;font-size:11px;">${r.cuisineDetail.name}</span>` : ''}
-						${r.averageRating ? `<br><span style="color:#5D4E3F;font-size:13px;">♥ ${r.averageRating.toFixed(1)}</span>` : ''}
+						<strong style="font-size:14px;color:#2B221A;">${escapeHtml(r.name)}</strong>
+						${r.city ? `<br><span style="color:#9A8E7E;font-size:12px;">${escapeHtml(r.city)}</span>` : ''}
+						${r.cuisineDetail ? `<br><span style="color:#9A8E7E;font-size:11px;">${escapeHtml(r.cuisineDetail.name)}</span>` : ''}
+						${r.averageRating ? `<br><span style="color:#8A7363;font-size:13px;">♥ ${r.averageRating.toFixed(1)}</span>` : ''}
 						${dietaryBadgesHtml(r.tagsDetail)}
 					</div>
 				`);
@@ -218,6 +227,10 @@
 
 	function priceLabel(level: number | null): string {
 		return level ? '$'.repeat(level) : '';
+	}
+
+	function escapeHtml(s: string): string {
+		return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 	}
 </script>
 
@@ -327,7 +340,7 @@
 			<div class="flex h-full flex-col items-center justify-center px-6 text-center">
 				<p class="text-sm text-blush">{error}</p>
 				<button onclick={runSearch} class="mt-3 text-sm font-medium text-jade active:opacity-70">
-					Try again
+					{t('common.tryAgain')}
 				</button>
 			</div>
 
@@ -339,16 +352,13 @@
 					</svg>
 				</div>
 				<p class="text-sm font-medium text-ink">{t('search.findRestaurants')}</p>
-				<p class="mt-1 text-xs text-ink-muted">
-					Press <span class="font-medium text-ink">Find nearby</span> to see what's around you,<br />
-					or filter by name, city or cuisine.
-				</p>
+				<p class="mt-1 text-xs text-ink-muted">{t('search.findInstructions').split('{button}')[0]}<span class="font-medium text-ink">{t('search.findNearby')}</span>{t('search.findInstructions').split('{button}')[1] || ''}</p>
 			</div>
 
 		{:else if results.length === 0 && googleResults.length === 0}
 			<div class="flex h-full flex-col items-center justify-center px-8 text-center">
-				<p class="text-sm font-medium text-ink">Not on anyone's list yet</p>
-				<p class="mt-1 text-xs text-ink-muted">No one has rated or added this restaurant yet. Try a different search or be the first to add it.</p>
+				<p class="text-sm font-medium text-ink">{t('search.notOnList')}</p>
+				<p class="mt-1 text-xs text-ink-muted">{t('search.notOnListDesc')}</p>
 			</div>
 
 		{:else if view === 'list'}
@@ -405,7 +415,7 @@
 										<span class="text-xs text-ink-muted">({r.pinCount})</span>
 									</div>
 								{:else}
-									<p class="text-xs italic text-ink-muted">Not rated yet — be the first!</p>
+									<p class="text-xs italic text-ink-muted">{t('search.notRatedYet')}</p>
 								{/if}
 								{#if r.address}
 									<p class="truncate text-xs text-ink-muted">{r.address}</p>
@@ -420,7 +430,7 @@
 
 				{#if googleResults.length > 0}
 					<li class="pt-2">
-						<p class="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-muted">From Google — not on Muse yet</p>
+						<p class="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-muted">{t('search.fromGoogleNotOnMuse')}</p>
 					</li>
 					{#each googleResults as place (place.placeId)}
 						<li>

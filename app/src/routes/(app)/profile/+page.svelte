@@ -3,10 +3,13 @@
 	import CityAutocomplete from '$lib/components/CityAutocomplete.svelte';
 	import { pinsService } from '$lib/services/pins.service';
 	import { restaurantsService } from '$lib/services/restaurants.service';
-	import { t } from '$lib/i18n/index.svelte';
+	import { i18n, t } from '$lib/i18n/index.svelte';
 	import { authStore } from '$lib/stores/auth.store.svelte';
 	import type { Cuisine, Pin, SharedList } from '$lib/types';
 	import { extractFirstDrfError } from '$lib/utils/api-error';
+	import { copyToClipboard } from '$lib/utils/clipboard';
+
+	const LOCALE_TO_BCP47: Record<string, string> = { en: 'en-GB', es: 'es-AR', it: 'it-IT' };
 
 	let editing = $state(false);
 
@@ -17,6 +20,19 @@
 
 	const filteredPins = $derived(
 		pinsFilter === 'all' ? myPins : myPins.filter((p) => p.status === pinsFilter)
+	);
+
+	// authStore.user.stats is captured at login and goes stale after the user
+	// adds/edits/deletes pins. Once we've loaded the full pins list, prefer
+	// counts derived from that list so the cards match what's shown below.
+	const liveStats = $derived(
+		myPins.length === 0 && loadingPins
+			? null
+			: {
+					pinCount: myPins.length,
+					visitedCount: myPins.filter((p) => p.status === 'visited').length,
+					toVisitCount: myPins.filter((p) => p.status === 'to_visit').length,
+				}
 	);
 	let saving = $state(false);
 	let error = $state('');
@@ -39,7 +55,14 @@
 	let editDietary = $state('');
 	let editCuisine = $state<number | ''>('');
 
-	const dietaryOptions = ['', 'Omnivore', 'Vegetarian', 'Vegan', 'Kosher', 'Gluten-free'];
+	const dietaryOptions = $derived([
+		{ value: '', label: t('common.none') },
+		{ value: 'Omnivore', label: t('dietary.omnivore') },
+		{ value: 'Vegetarian', label: t('dietary.vegetarian') },
+		{ value: 'Vegan', label: t('dietary.vegan') },
+		{ value: 'Kosher', label: t('dietary.kosher') },
+		{ value: 'Gluten-free', label: t('dietary.glutenFree') },
+	]);
 
 	async function loadSharedLists() {
 		try { sharedLists = await pinsService.sharedLists(); } catch { sharedLists = []; }
@@ -52,13 +75,15 @@
 	async function createShareLink() {
 		sharing = true;
 		try {
-			const list = await pinsService.createSharedList({ title: `${authStore.user?.displayName}'s List` });
+			const title = t('profile.someoneList').replace('{name}', authStore.user?.displayName || '');
+			const list = await pinsService.createSharedList({ title });
 			sharedLists = [...sharedLists, list];
-			await navigator.clipboard.writeText(`${window.location.origin}${list.url}`);
-			success = 'Link copied to clipboard!';
+			const fullUrl = list.url.startsWith('http') ? list.url : `${window.location.origin}${list.url}`;
+			const ok = await copyToClipboard(fullUrl);
+			success = ok ? t('profile.linkCopiedClipboard') : t('profile.linkCopiedClipboard');
 			setTimeout(() => (success = ''), 3000);
 		} catch {
-			error = 'Could not create share link.';
+			error = t('profile.cantCreateLink');
 		} finally {
 			sharing = false;
 		}
@@ -69,13 +94,14 @@
 			await pinsService.deleteSharedList(id);
 			sharedLists = sharedLists.filter((l) => l.id !== id);
 		} catch {
-			error = 'Could not remove link.';
+			error = t('profile.cantRemoveLink');
 		}
 	}
 
-	function copyLink(url: string) {
-		navigator.clipboard.writeText(`${window.location.origin}${url}`);
-		success = 'Link copied!';
+	async function copyLink(url: string) {
+		const fullUrl = url.startsWith('http') ? url : `${window.location.origin}${url}`;
+		await copyToClipboard(fullUrl);
+		success = t('profile.linkCopied');
 		setTimeout(() => (success = ''), 3000);
 	}
 
@@ -133,10 +159,10 @@
 				favouriteCuisine: editCuisine || null,
 			});
 			editing = false;
-			success = 'Profile updated';
+			success = t('profile.profileUpdated');
 			setTimeout(() => (success = ''), 3000);
 		} catch (err) {
-			error = extractFirstDrfError(err, 'Could not update profile.');
+			error = extractFirstDrfError(err, t('profile.cantUpdate'));
 		} finally {
 			saving = false;
 		}
@@ -144,7 +170,7 @@
 
 	let memberSince = $derived(
 		authStore.user?.createdAt
-			? new Date(authStore.user.createdAt).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
+			? new Date(authStore.user.createdAt).toLocaleDateString(LOCALE_TO_BCP47[i18n.locale] || 'en-GB', { month: 'long', year: 'numeric' })
 			: ''
 	);
 </script>
@@ -184,7 +210,7 @@
 						size={88}
 					/>
 					<h2 class="mt-3 font-serif text-2xl font-semibold text-ink">
-						{authStore.user?.displayName || 'Your Name'}
+						{authStore.user?.displayName || t('common.yourName')}
 					</h2>
 					<p class="text-sm text-ink-muted">{authStore.user?.email}</p>
 
@@ -208,7 +234,7 @@
 						{/if}
 						{#if memberSince}
 							<span class="rounded-full bg-cream-dark px-3 py-1 text-xs text-ink-muted">
-								Since {memberSince}
+								{t('profile.since')} {memberSince}
 							</span>
 						{/if}
 					</div>
@@ -241,15 +267,15 @@
 			{#if authStore.user?.stats}
 				<div class="mt-4 flex gap-3">
 					<div class="flex-1 rounded-card bg-white p-3 text-center shadow-card">
-						<div class="text-xl font-bold text-jade">{authStore.user.stats.pinCount}</div>
+						<div class="text-xl font-bold text-jade">{liveStats?.pinCount ?? authStore.user.stats.pinCount}</div>
 						<div class="text-xs text-ink-muted">{t('home.pins')}</div>
 					</div>
 					<div class="flex-1 rounded-card bg-white p-3 text-center shadow-card">
-						<div class="text-xl font-bold text-jade">{authStore.user.stats.visitedCount}</div>
+						<div class="text-xl font-bold text-jade">{liveStats?.visitedCount ?? authStore.user.stats.visitedCount}</div>
 						<div class="text-xs text-ink-muted">{t('common.visited')}</div>
 					</div>
 					<div class="flex-1 rounded-card bg-white p-3 text-center shadow-card">
-						<div class="text-xl font-bold text-jade">{authStore.user.stats.toVisitCount}</div>
+						<div class="text-xl font-bold text-jade">{liveStats?.toVisitCount ?? authStore.user.stats.toVisitCount}</div>
 						<div class="text-xs text-ink-muted">{t('profile.toVisit')}</div>
 					</div>
 					<div class="flex-1 rounded-card bg-white p-3 text-center shadow-card">
@@ -262,7 +288,7 @@
 			<!-- My Restaurant Pins -->
 			<section class="mt-6">
 				<div class="mb-2 flex items-center justify-between">
-					<h3 class="text-sm font-semibold uppercase tracking-wide text-ink-muted">My Restaurant Pins</h3>
+					<h3 class="text-sm font-semibold uppercase tracking-wide text-ink-muted">{t('profile.myPins')}</h3>
 					{#if myPins.length > 0}
 						<span class="text-xs text-ink-muted">{filteredPins.length} / {myPins.length}</span>
 					{/if}
@@ -305,12 +331,12 @@
 					</div>
 				{:else if myPins.length === 0}
 					<div class="rounded-card bg-white p-5 text-center shadow-card">
-						<p class="text-sm text-ink-muted">No restaurants yet</p>
-						<a href="/pin/new" class="mt-2 inline-block text-sm font-medium text-jade active:opacity-70">Add your first</a>
+						<p class="text-sm text-ink-muted">{t('profile.noPinsYet')}</p>
+						<a href="/pin/new" class="mt-2 inline-block text-sm font-medium text-jade active:opacity-70">{t('profile.addFirst')}</a>
 					</div>
 				{:else if filteredPins.length === 0}
 					<div class="rounded-card bg-white p-5 text-center shadow-card">
-						<p class="text-sm text-ink-muted">No pins match this filter</p>
+						<p class="text-sm text-ink-muted">{t('profile.noPinsMatch')}</p>
 					</div>
 				{:else}
 					<ul class="space-y-2">
@@ -349,7 +375,7 @@
 					</ul>
 					{#if filteredPins.length > 5}
 						<a href="/map" class="mt-2 block text-center text-xs font-medium text-jade active:opacity-70">
-							View all {filteredPins.length} on map
+							{t('profile.viewAllOnMap').replace('{count}', String(filteredPins.length))}
 						</a>
 					{/if}
 				{/if}
@@ -364,7 +390,7 @@
 						{#each sharedLists as list (list.id)}
 							<li class="flex items-center gap-3 rounded-card bg-white p-4 shadow-card">
 								<div class="min-w-0 flex-1">
-									<p class="truncate text-sm font-medium text-ink">{list.title || 'My List'}</p>
+									<p class="truncate text-sm font-medium text-ink">{list.title || t('profile.myList')}</p>
 									<p class="truncate text-xs text-ink-muted">{list.url}</p>
 								</div>
 								<button onclick={() => copyLink(list.url)} class="flex min-h-9 items-center rounded-button bg-jade/10 px-3 text-xs font-semibold text-jade active:scale-[0.98]">
@@ -420,12 +446,12 @@
 
 				<div>
 					<label for="editName" class="mb-1 block text-sm font-medium text-ink-light">{t('auth.displayName')}</label>
-					<input id="editName" type="text" bind:value={editName} class="w-full rounded-input border border-cream-dark bg-white px-4 py-3 text-base text-ink outline-none focus:border-jade" placeholder="Your name" />
+					<input id="editName" type="text" bind:value={editName} class="w-full rounded-input border border-cream-dark bg-white px-4 py-3 text-base text-ink outline-none focus:border-jade" placeholder={t('profile.namePlaceholder')} />
 				</div>
 
 				<div>
 					<label for="editBio" class="mb-1 block text-sm font-medium text-ink-light">{t('profile.bio')}</label>
-					<textarea id="editBio" bind:value={editBio} rows="3" maxlength="300" class="w-full rounded-input border border-cream-dark bg-white px-4 py-3 text-base text-ink outline-none focus:border-jade" placeholder="A bit about you..."></textarea>
+					<textarea id="editBio" bind:value={editBio} rows="3" maxlength="300" class="w-full rounded-input border border-cream-dark bg-white px-4 py-3 text-base text-ink outline-none focus:border-jade" placeholder={t('profile.bioPlaceholder')}></textarea>
 					<p class="mt-1 text-right text-xs text-ink-muted">{editBio.length}/300</p>
 				</div>
 
@@ -438,7 +464,7 @@
 					<div>
 						<label for="editCuisine" class="mb-1 block text-sm font-medium text-ink-light">{t('profile.favCuisine')}</label>
 						<select id="editCuisine" bind:value={editCuisine} class="w-full rounded-input border border-cream-dark bg-white px-4 py-3 text-base text-ink outline-none focus:border-jade">
-							<option value="">None</option>
+							<option value="">{t('common.none')}</option>
 							{#each cuisines as c}
 								<option value={c.id}>{c.name}</option>
 							{/each}
@@ -448,7 +474,7 @@
 						<label for="editDietary" class="mb-1 block text-sm font-medium text-ink-light">{t('profile.dietary')}</label>
 						<select id="editDietary" bind:value={editDietary} class="w-full rounded-input border border-cream-dark bg-white px-4 py-3 text-base text-ink outline-none focus:border-jade">
 							{#each dietaryOptions as opt}
-								<option value={opt}>{opt || 'None'}</option>
+								<option value={opt.value}>{opt.label}</option>
 							{/each}
 						</select>
 					</div>
@@ -458,18 +484,18 @@
 					<label for="editInstagram" class="mb-1 block text-sm font-medium text-ink-light">{t('profile.instagram')}</label>
 					<div class="flex items-center rounded-input border border-cream-dark bg-white focus-within:border-jade">
 						<span class="pl-4 text-base text-ink-muted">@</span>
-						<input id="editInstagram" type="text" bind:value={editInstagram} class="flex-1 bg-transparent px-2 py-3 text-base text-ink outline-none" placeholder="username" />
+						<input id="editInstagram" type="text" bind:value={editInstagram} class="flex-1 bg-transparent px-2 py-3 text-base text-ink outline-none" placeholder={t('profile.instagramPlaceholder')} />
 					</div>
 				</div>
 
 				<div>
-					<label for="editPhone" class="mb-1 block text-sm font-medium text-ink-light">Phone</label>
-					<input id="editPhone" type="tel" bind:value={editPhone} class="w-full rounded-input border border-cream-dark bg-white px-4 py-3 text-base text-ink outline-none focus:border-jade" placeholder="+44 7..." />
+					<label for="editPhone" class="mb-1 block text-sm font-medium text-ink-light">{t('profile.phone')}</label>
+					<input id="editPhone" type="tel" bind:value={editPhone} class="w-full rounded-input border border-cream-dark bg-white px-4 py-3 text-base text-ink outline-none focus:border-jade" placeholder={t('profile.phonePlaceholder')} />
 				</div>
 
 				<div>
 					<label for="editWebsite" class="mb-1 block text-sm font-medium text-ink-light">{t('profile.website')}</label>
-					<input id="editWebsite" type="url" bind:value={editWebsite} class="w-full rounded-input border border-cream-dark bg-white px-4 py-3 text-base text-ink outline-none focus:border-jade" placeholder="https://..." />
+					<input id="editWebsite" type="url" bind:value={editWebsite} class="w-full rounded-input border border-cream-dark bg-white px-4 py-3 text-base text-ink outline-none focus:border-jade" placeholder={t('profile.websitePlaceholder')} />
 				</div>
 
 				<div class="flex gap-3 pt-2">

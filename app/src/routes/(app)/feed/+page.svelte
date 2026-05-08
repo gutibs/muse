@@ -21,7 +21,7 @@
 			else activities = [...activities, ...res.results];
 			nextPage = res.next ? page + 1 : null;
 		} catch {
-			error = 'Could not load feed.';
+			error = t('home.cantLoad');
 		} finally {
 			loading = false;
 			loadingMore = false;
