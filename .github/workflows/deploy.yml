@@ -50,4 +50,7 @@ jobs:
               sleep 2
             done
 
-            sudo docker-compose -f docker-compose.aws.yml exec -T backend python manage.py migrate
+            # --fake-initial recovers from partial-schema state left by previous failed
+            # deploys: tables that already exist get marked as migrated; missing ones
+            # are created normally. Safe on clean DBs too.
+            sudo docker-compose -f docker-compose.aws.yml exec -T backend python manage.py migrate --fake-initial
