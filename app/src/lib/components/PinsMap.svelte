@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
 	import type { Pin, Restaurant } from '$lib/types';
+	import { dietaryBadgesHtml } from '$lib/utils/dietary-badges';
 	import { createPinIcon, PIN_COLORS } from '$lib/utils/map';
 	import { buildRestaurantPopup, ownerFromUser, type PopupOwner } from '$lib/utils/map-popup';
 	import type L from 'leaflet';
@@ -67,7 +68,7 @@
 	}
 
 	function popupFor(item: MapItem, restaurant: Restaurant): string {
-		const dietaryHtml = ''; // dietary badges live in dietaryBadgesHtml; opt-in by caller
+		const dietaryHtml = showDietary ? dietaryBadgesHtml(restaurant.tagsDetail) : undefined;
 		const statusLabel = statusLabelFor?.(item);
 		if (item.kind === 'pin') {
 			return buildRestaurantPopup({
@@ -76,7 +77,7 @@
 				owner: item.owner ?? null,
 				link,
 				statusLabel,
-				dietaryHtml: showDietary ? dietaryHtml : undefined,
+				dietaryHtml,
 			});
 		}
 		// restaurant-only items: average rating, no pin context
@@ -85,7 +86,7 @@
 			link,
 			showCuisines: true,
 			statusLabel,
-			dietaryHtml: showDietary ? dietaryHtml : undefined,
+			dietaryHtml,
 		});
 	}
 
