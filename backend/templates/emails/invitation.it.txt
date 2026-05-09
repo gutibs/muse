@@ -1,0 +1,9 @@
+Ciao,
+
+{{ inviter_name }} ti ha invitato su Muse, un'app per scoprire e condividere ristoranti con gli amici.
+
+Registrati qui: {{ invitation_link }}
+
+Quando ti registri con questa email, l'amicizia sarà creata automaticamente.
+
+— Il team di Muse

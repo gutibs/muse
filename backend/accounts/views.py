@@ -2,7 +2,6 @@ import logging
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.core.mail import send_mail
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, permissions, status, viewsets
@@ -21,6 +20,7 @@ from accounts.serializers import (
 	RegisterSerializer,
 	UserPublicSerializer,
 )
+from accounts.services.email import EmailSendError, send_invitation_email
 from pins.models import Pin
 from pins.serializers import PinSerializer
 
@@ -178,53 +178,25 @@ class EmailInvitationView(generics.CreateAPIView):
 			getattr(from_user.profile, "display_name", "") or from_user.email.split("@")[0]
 		)
 		invite_url = getattr(settings, "APP_PUBLIC_URL", "https://lovemuse.app")
-		# Email body in English by default. Most testers are English-speaking and
-		# the previous Spanish wording was confusing. Tagged with the sender's
-		# language ("language" field in request) when present.
-		lang = (self.request.data.get("language") or "en").lower()[:2]
-		if lang == "es":
-			subject = f"{sender_name} te invitó a Muse"
-			message = (
-				f"Hola,\n\n"
-				f"{sender_name} te invitó a Muse, una app para descubrir y compartir "
-				f"restaurantes con amigos.\n\n"
-				f"Registrate acá: {invite_url}/register\n\n"
-				f"Cuando te registres con este email, se creará la amistad automáticamente.\n\n"
-				f"— El equipo de Muse"
-			)
-		elif lang == "it":
-			subject = f"{sender_name} ti ha invitato su Muse"
-			message = (
-				f"Ciao,\n\n"
-				f"{sender_name} ti ha invitato su Muse, un'app per scoprire e "
-				f"condividere ristoranti con gli amici.\n\n"
-				f"Registrati qui: {invite_url}/register\n\n"
-				f"Quando ti registri con questa email, l'amicizia sarà creata "
-				f"automaticamente.\n\n"
-				f"— Il team di Muse"
-			)
-		else:
-			subject = f"{sender_name} invited you to Muse"
-			message = (
-				f"Hi,\n\n"
-				f"{sender_name} invited you to Muse, an app to discover and share "
-				f"restaurants with friends.\n\n"
-				f"Sign up here: {invite_url}/register\n\n"
-				f"When you sign up with this email, the friendship will be created "
-				f"automatically.\n\n"
-				f"— The Muse team"
-			)
-		from_email = getattr(settings, "DEFAULT_FROM_EMAIL", None)
+		language = self.request.data.get("language")
+		# Decision (D-008): if Resend fails, the invitation row stays in DB
+		# and the inviter still gets a 201. Failure is logged with context so
+		# the admin can resend manually. Atomic rollback would lose the row
+		# on transient Resend hiccups.
 		try:
-			send_mail(
-				subject=subject,
-				message=message,
-				from_email=from_email,
-				recipient_list=[invitation.email],
-				fail_silently=False,
+			send_invitation_email(
+				to_email=invitation.email,
+				inviter_name=sender_name,
+				invitation_link=f"{invite_url}/register",
+				language=language,
 			)
-		except Exception:
-			logger.exception("Failed to send invitation email to %s", invitation.email)
+		except EmailSendError as exc:
+			logger.warning(
+				"Invitation email not sent (status=%s) for %s: %s",
+				exc.status_code,
+				invitation.email,
+				exc.message,
+			)
 
 
 class PublicProfileView(generics.RetrieveAPIView):

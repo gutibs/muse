@@ -126,4 +126,98 @@ que considerar enumeración.
 
 ---
 
-[Agregar más decisiones aquí cuando aparezcan]
+## D-008: Resend para email transaccional, falla silenciosa para el caller
+
+**Contexto**: El email de invitación se mandaba con `django.core.mail.send_mail`
+sobre SMTP placeholder (sin SMTP real configurado en prod, las invitaciones
+se logeaban como fallas silenciosas). SES quedó descartado porque la cuenta
+de AWS no tenía aprobación de producción y el proceso de salida del sandbox
+no avanzó. Resend free tier (3.000 emails/mes) cubre el volumen esperado
+con margen.
+
+**Decisión**: Resend como proveedor único de email transaccional. Único
+punto de envío en `accounts/services/email.py::send_invitation_email`.
+**Cuando Resend falla**: la `EmailInvitation` queda creada en DB igual,
+el inviter recibe HTTP 201, y el error se logea con `logger.warning`
+(status_code 502 si Resend no respondió, 503 si `RESEND_API_KEY` está
+vacío). El cliente NO se entera del fallo del email.
+
+**Tradeoff aceptado**: rollback atómico (no crear la invitation si el
+email falla) garantizaría consistencia, pero perdería invitations por
+glitches transitorios de la API y dejaría al inviter sin saber qué pasó.
+Mantener la invitation y logear es mejor: si una persona reporta "no
+recibí el invite", el admin puede ver la fila en DB, identificar el log,
+y reenviar manualmente desde shell. La parte que NO está bien hoy: el
+inviter no se entera del fallo. Si aparece patrón de quejas, considerar
+extender la response con `email_sent: false` + el link copiable.
+
+**Materializa en**:
+- `backend/accounts/services/email.py` (service + `EmailSendError`)
+- `backend/accounts/views.py:EmailInvitationView.perform_create` (call site)
+- `backend/templates/emails/invitation.{es,en,it}.{html,txt}` (6 templates)
+- `backend/config/settings.py:RESEND_API_KEY` (env-driven)
+- `backend/tests/accounts/test_invitation_email.py` (3 críticos + 1 fallback)
+
+**No hagas**: usar `django.core.mail.send_mail` directo desde una view o
+serializer. El service es el único lugar donde se construye el payload,
+se renderizan templates, y se traduce excepción de Resend a `EmailSendError`
+con un status_code útil. Bypassearlo deja al producto sin tracking.
+
+**Estado**: vigente.
+
+---
+
+Tarea: agregar D-007 a PRODUCT_DECISIONS.md sobre la gestión de Cuisines.
+
+Antes de empezar, leé:
+- docs/PRODUCT_DECISIONS.md (estructura existente).
+- AUDIT_CUISINES.md (que armaste en la tarea anterior).
+- backend/restaurants/admin.py (Cuisine admin).
+- backend/restaurants/views.py (CuisineViewSet ReadOnly).
+
+Pasos:
+
+1. Agregar D-007 al final de PRODUCT_DECISIONS.md con esta estructura:
+
+D-007: Cuisine es taxonomía cerrada gestionada por staff
+
+**Contexto**: la lista de cuisines (Italian, Japanese, Chinese, etc.) que
+los usuarios asignan a restaurants viene de un fixture de 25 entries
+seedeado al deploy. La API expone solo GET (ReadOnlyModelViewSet). El
+ABM completo está en Django admin para staff.
+
+**Decisión**: lista cerrada gestionada por staff. Usuarios consumen,
+no contribuyen.
+
+**Justificación**: control de calidad sobre la taxonomía. Evita
+fragmentación tipo "Italian" vs "italian" vs "Italiana" vs "cocina
+italiana", redundancias (Chinese vs Cantonese vs Sichuan dependiendo
+de granularidad deseada), y typos. Costo aceptado: usuarios con cuisine
+no listada no tienen workflow self-service para pedir el alta — si
+aparece patrón de quejas, evaluar feature de "request cuisine" con
+approval workflow (similar a D-002 con Restaurant approval).
+
+**Materializa en**:
+- backend/restaurants/models.py (Cuisine model)
+- backend/restaurants/admin.py:40 (CuisineAdmin)
+- backend/restaurants/views.py:168 (CuisineViewSet ReadOnly)
+- backend/fixtures/cuisines.json (25 entries seedeadas)
+
+**No hagas**: cambiar CuisineViewSet a ModelViewSet completo (ABM
+abierto a usuarios) sin antes implementar approval workflow. Saltar
+la moderación rompe el control de calidad.
+
+**Estado**: vigente.
+
+2. Commit:
+   git add docs/PRODUCT_DECISIONS.md
+   git commit -m "docs: add D-007 cuisine is staff-managed taxonomy
+
+   Documents the implicit decision found during C-005 follow-up:
+   Cuisine model has admin ABM but ReadOnly API. Lock-in until product
+   decides if users should request additions (would require approval
+   workflow per D-002 pattern)."
+
+Stop conditions: ninguna esperada.
+
+Reportame: hash del commit.

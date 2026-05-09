@@ -65,7 +65,7 @@ ROOT_URLCONF = "config.urls"
 TEMPLATES = [
 	{
 		"BACKEND": "django.template.backends.django.DjangoTemplates",
-		"DIRS": [],
+		"DIRS": [BASE_DIR / "templates"],
 		"APP_DIRS": True,
 		"OPTIONS": {
 			"context_processors": [
@@ -125,6 +125,11 @@ EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
 EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
 EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "1") == "1"
+
+# Resend (transactional email API). Used by accounts.services.email.send_invitation_email.
+# Empty string = service raises EmailSendError(503) on send. In dev (DJANGO_DEBUG=1)
+# the EMAIL_BACKEND console fallback above still works for ad-hoc Django mail.
+RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
 
 # Nominatim reverse-geocode proxy. Their usage policy
 # (https://operations.osmfoundation.org/policies/nominatim/) requires a
