@@ -8,32 +8,19 @@
 	import type { Cuisine, Pin, SharedList } from '$lib/types';
 	import { extractFirstDrfError } from '$lib/utils/api-error';
 	import { copyToClipboard } from '$lib/utils/clipboard';
+	import { logSilent } from '$lib/utils/logger';
 
 	const LOCALE_TO_BCP47: Record<string, string> = { en: 'en-GB', es: 'es-AR', it: 'it-IT' };
 
 	let editing = $state(false);
 
-	// My restaurants
+	// My restaurants — server-side filtered (was: read first page then filter
+	// locally, which lied about counts for users with 21+ pins).
 	let myPins = $state<Pin[]>([]);
+	let totalFilteredPins = $state(0);
 	let loadingPins = $state(true);
 	let pinsFilter = $state<'all' | 'visited' | 'to_visit'>('all');
 
-	const filteredPins = $derived(
-		pinsFilter === 'all' ? myPins : myPins.filter((p) => p.status === pinsFilter)
-	);
-
-	// authStore.user.stats is captured at login and goes stale after the user
-	// adds/edits/deletes pins. Once we've loaded the full pins list, prefer
-	// counts derived from that list so the cards match what's shown below.
-	const liveStats = $derived(
-		myPins.length === 0 && loadingPins
-			? null
-			: {
-					pinCount: myPins.length,
-					visitedCount: myPins.filter((p) => p.status === 'visited').length,
-					toVisitCount: myPins.filter((p) => p.status === 'to_visit').length,
-				}
-	);
 	let saving = $state(false);
 	let error = $state('');
 	let success = $state('');
@@ -65,11 +52,21 @@
 	]);
 
 	async function loadSharedLists() {
-		try { sharedLists = await pinsService.sharedLists(); } catch { sharedLists = []; }
+		try {
+			sharedLists = await pinsService.sharedLists();
+		} catch (err) {
+			logSilent('profile.loadSharedLists', err);
+			sharedLists = [];
+		}
 	}
 
 	async function loadCuisines() {
-		try { cuisines = await restaurantsService.cuisines(); } catch { cuisines = []; }
+		try {
+			cuisines = await restaurantsService.cuisines();
+		} catch (err) {
+			logSilent('profile.loadCuisines', err);
+			cuisines = [];
+		}
 	}
 
 	async function createShareLink() {
@@ -82,7 +79,8 @@
 			const ok = await copyToClipboard(fullUrl);
 			success = ok ? t('profile.linkCopiedClipboard') : t('profile.linkCopiedClipboard');
 			setTimeout(() => (success = ''), 3000);
-		} catch {
+		} catch (err) {
+			logSilent('profile.createShareLink', err);
 			error = t('profile.cantCreateLink');
 		} finally {
 			sharing = false;
@@ -93,7 +91,8 @@
 		try {
 			await pinsService.deleteSharedList(id);
 			sharedLists = sharedLists.filter((l) => l.id !== id);
-		} catch {
+		} catch (err) {
+			logSilent('profile.deleteSharedList', err);
 			error = t('profile.cantRemoveLink');
 		}
 	}
@@ -105,23 +104,38 @@
 		setTimeout(() => (success = ''), 3000);
 	}
 
-	async function loadMyPins() {
+	async function loadMyPins(filter: 'all' | 'visited' | 'to_visit' = pinsFilter) {
 		loadingPins = true;
 		try {
-			const res = await pinsService.list();
+			// Server-side filter: backend returns the full filtered count even
+			// when only the first page of results is shown.
+			const res = await pinsService.list(filter === 'all' ? undefined : { status: filter });
 			myPins = res.results;
-		} catch {
+			totalFilteredPins = res.count;
+		} catch (err) {
+			logSilent('profile.loadMyPins', err);
 			myPins = [];
+			totalFilteredPins = 0;
 		} finally {
 			loadingPins = false;
 		}
+	}
+
+	function setPinsFilter(next: 'all' | 'visited' | 'to_visit') {
+		if (pinsFilter === next) return;
+		pinsFilter = next;
+		loadMyPins(next);
 	}
 
 	$effect(() => {
 		if (authStore.isAuthenticated) {
 			loadSharedLists();
 			loadCuisines();
-			loadMyPins();
+			loadMyPins(pinsFilter);
+			// Refresh user so stats cards reflect any pin add/edit/delete that
+			// happened in another route since login. Replaces the local-derived
+			// liveStats hack which depended on having the full pin list.
+			authStore.refreshUser().catch((err) => logSilent('profile.refreshUser', err));
 		}
 	});
 
@@ -263,19 +277,19 @@
 				</div>
 			</div>
 
-			<!-- Stats -->
+			<!-- Stats — server-computed in Profile.get_stats; refreshed on mount -->
 			{#if authStore.user?.stats}
 				<div class="mt-4 flex gap-3">
 					<div class="flex-1 rounded-card bg-white p-3 text-center shadow-card">
-						<div class="text-xl font-bold text-jade">{liveStats?.pinCount ?? authStore.user.stats.pinCount}</div>
+						<div class="text-xl font-bold text-jade">{authStore.user.stats.pinCount}</div>
 						<div class="text-xs text-ink-muted">{t('home.pins')}</div>
 					</div>
 					<div class="flex-1 rounded-card bg-white p-3 text-center shadow-card">
-						<div class="text-xl font-bold text-jade">{liveStats?.visitedCount ?? authStore.user.stats.visitedCount}</div>
+						<div class="text-xl font-bold text-jade">{authStore.user.stats.visitedCount}</div>
 						<div class="text-xs text-ink-muted">{t('common.visited')}</div>
 					</div>
 					<div class="flex-1 rounded-card bg-white p-3 text-center shadow-card">
-						<div class="text-xl font-bold text-jade">{liveStats?.toVisitCount ?? authStore.user.stats.toVisitCount}</div>
+						<div class="text-xl font-bold text-jade">{authStore.user.stats.toVisitCount}</div>
 						<div class="text-xs text-ink-muted">{t('profile.toVisit')}</div>
 					</div>
 					<div class="flex-1 rounded-card bg-white p-3 text-center shadow-card">
@@ -289,29 +303,29 @@
 			<section class="mt-6">
 				<div class="mb-2 flex items-center justify-between">
 					<h3 class="text-sm font-semibold uppercase tracking-wide text-ink-muted">{t('profile.myPins')}</h3>
-					{#if myPins.length > 0}
-						<span class="text-xs text-ink-muted">{filteredPins.length} / {myPins.length}</span>
+					{#if (authStore.user?.stats?.pinCount ?? 0) > 0}
+						<span class="text-xs text-ink-muted">{totalFilteredPins} / {authStore.user?.stats?.pinCount ?? 0}</span>
 					{/if}
 				</div>
 
-				{#if myPins.length > 0}
+				{#if (authStore.user?.stats?.pinCount ?? 0) > 0}
 					<div class="mb-3 flex gap-1 rounded-card bg-cream-dark p-1">
 						<button
-							onclick={() => (pinsFilter = 'all')}
+							onclick={() => setPinsFilter('all')}
 							class="flex-1 rounded-button py-1.5 text-xs font-medium active:scale-[0.98]
 								{pinsFilter === 'all' ? 'bg-white text-ink shadow-card' : 'text-ink-muted'}"
 						>
 							{t('common.all')}
 						</button>
 						<button
-							onclick={() => (pinsFilter = 'visited')}
+							onclick={() => setPinsFilter('visited')}
 							class="flex-1 rounded-button py-1.5 text-xs font-medium active:scale-[0.98]
 								{pinsFilter === 'visited' ? 'bg-white text-ink shadow-card' : 'text-ink-muted'}"
 						>
 							{t('common.visited')}
 						</button>
 						<button
-							onclick={() => (pinsFilter = 'to_visit')}
+							onclick={() => setPinsFilter('to_visit')}
 							class="flex-1 rounded-button py-1.5 text-xs font-medium active:scale-[0.98]
 								{pinsFilter === 'to_visit' ? 'bg-white text-ink shadow-card' : 'text-ink-muted'}"
 						>
@@ -329,18 +343,18 @@
 							</div>
 						{/each}
 					</div>
-				{:else if myPins.length === 0}
+				{:else if (authStore.user?.stats?.pinCount ?? 0) === 0}
 					<div class="rounded-card bg-white p-5 text-center shadow-card">
 						<p class="text-sm text-ink-muted">{t('profile.noPinsYet')}</p>
 						<a href="/pin/new" class="mt-2 inline-block text-sm font-medium text-jade active:opacity-70">{t('profile.addFirst')}</a>
 					</div>
-				{:else if filteredPins.length === 0}
+				{:else if myPins.length === 0}
 					<div class="rounded-card bg-white p-5 text-center shadow-card">
 						<p class="text-sm text-ink-muted">{t('profile.noPinsMatch')}</p>
 					</div>
 				{:else}
 					<ul class="space-y-2">
-						{#each filteredPins.slice(0, 5) as pin (pin.id)}
+						{#each myPins.slice(0, 5) as pin (pin.id)}
 							<li>
 								<a href={`/restaurant/${pin.restaurantDetail.id}`} class="flex overflow-hidden rounded-card bg-white shadow-card active:scale-[0.98]">
 									{#if pin.restaurantDetail.imageUrl}
@@ -373,9 +387,9 @@
 							</li>
 						{/each}
 					</ul>
-					{#if filteredPins.length > 5}
+					{#if totalFilteredPins > 5}
 						<a href="/map" class="mt-2 block text-center text-xs font-medium text-jade active:opacity-70">
-							{t('profile.viewAllOnMap').replace('{count}', String(filteredPins.length))}
+							{t('profile.viewAllOnMap').replace('{count}', String(totalFilteredPins))}
 						</a>
 					{/if}
 				{/if}

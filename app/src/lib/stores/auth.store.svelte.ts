@@ -88,6 +88,17 @@ class AuthStore {
 		this.user = await authService.updateProfile(data);
 	}
 
+	/**
+	 * Refetch the profile (including server-computed stats). Called from
+	 * pages that need fresh stats — e.g. profile/+page.svelte mount, after
+	 * the user added/edited/deleted pins from another route. Stats live
+	 * in `Profile.get_stats` on the backend (accounts/serializers.py).
+	 */
+	async refreshUser() {
+		if (!this.accessToken) return;
+		this.user = await authService.getProfile();
+	}
+
 	logout() {
 		this.clearTokens();
 		goto('/login');

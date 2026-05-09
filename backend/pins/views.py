@@ -15,11 +15,26 @@ class PinViewSet(viewsets.ModelViewSet):
 	serializer_class = PinSerializer
 
 	def get_queryset(self):
-		return (
+		qs = (
 			Pin.objects.filter(user=self.request.user)
 			.select_related("restaurant")
 			.prefetch_related("personas", "restaurant__cuisines")
 		)
+		# Filters are applied for any action (list/retrieve/etc); for retrieve
+		# the per-pk lookup short-circuits these, so there's no behavior change
+		# for non-list calls. `?status=all` is treated as "no filter" so the
+		# frontend can pass it explicitly without a separate code path.
+		status_filter = self.request.query_params.get("status")
+		persona = self.request.query_params.get("persona")
+		city = self.request.query_params.get("city")
+
+		if status_filter and status_filter != "all":
+			qs = qs.filter(status=status_filter)
+		if persona:
+			qs = qs.filter(personas__slug=persona)
+		if city:
+			qs = qs.filter(restaurant__city__icontains=city)
+		return qs
 
 	def create(self, request, *args, **kwargs):
 		# (user, restaurant) is unique. If a pin already exists, surface that as
@@ -34,26 +49,6 @@ class PinViewSet(viewsets.ModelViewSet):
 			if existing:
 				payload["pinId"] = existing.id
 			return Response(payload, status=status.HTTP_409_CONFLICT)
-
-	def list(self, request, *args, **kwargs):
-		qs = self.get_queryset()
-		status_filter = request.query_params.get("status")
-		persona = request.query_params.get("persona")
-		city = request.query_params.get("city")
-
-		if status_filter:
-			qs = qs.filter(status=status_filter)
-		if persona:
-			qs = qs.filter(personas__slug=persona)
-		if city:
-			qs = qs.filter(restaurant__city__icontains=city)
-
-		page = self.paginate_queryset(qs)
-		if page is not None:
-			serializer = self.get_serializer(page, many=True)
-			return self.get_paginated_response(serializer.data)
-		serializer = self.get_serializer(qs, many=True)
-		return Response(serializer.data)
 
 
 class PersonaViewSet(viewsets.ReadOnlyModelViewSet):
