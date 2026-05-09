@@ -35,7 +35,11 @@ class ProfileSerializer(serializers.ModelSerializer):
 
 	def get_favourite_cuisine_detail(self, obj):
 		if obj.favourite_cuisine:
-			return {"id": obj.favourite_cuisine.id, "name": obj.favourite_cuisine.name, "slug": obj.favourite_cuisine.slug}
+			return {
+				"id": obj.favourite_cuisine.id,
+				"name": obj.favourite_cuisine.name,
+				"slug": obj.favourite_cuisine.slug,
+			}
 		return None
 
 	def get_stats(self, obj):
@@ -77,10 +81,13 @@ class RegisterSerializer(serializers.Serializer):
 			accepted=False,
 		)
 		for invitation in invitations:
+			# ACCEPTED, not PENDING. The invite email promises the friendship
+			# is created automatically — registering via the invite link is
+			# the user's consent. See docs/PRODUCT_DECISIONS.md D-005.
 			Friendship.objects.create(
 				from_user=invitation.from_user,
 				to_user=user,
-				status=Friendship.Status.PENDING,
+				status=Friendship.Status.ACCEPTED,
 			)
 			invitation.accepted = True
 			invitation.save(update_fields=["accepted"])
@@ -150,9 +157,7 @@ class EmailInvitationSerializer(serializers.ModelSerializer):
 			from_user=request.user, email__iexact=value
 		).first()
 		if existing and existing.accepted:
-			raise serializers.ValidationError(
-				"This person already accepted your invitation."
-			)
+			raise serializers.ValidationError("This person already accepted your invitation.")
 		return value
 
 	def create(self, validated_data):
@@ -161,6 +166,7 @@ class EmailInvitationSerializer(serializers.ModelSerializer):
 		# Re-send support: if an unaccepted invitation already exists, reuse it
 		# (touch updated_at) so the view can trigger a fresh email.
 		from django.utils import timezone
+
 		existing = EmailInvitation.objects.filter(
 			from_user=request.user, email__iexact=email, accepted=False
 		).first()
