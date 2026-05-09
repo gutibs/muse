@@ -1,13 +1,9 @@
 <script lang="ts">
-	import { browser } from '$app/environment';
 	import { page } from '$app/state';
 	import Avatar from '$lib/components/Avatar.svelte';
-	import MapView from '$lib/components/MapView.svelte';
+	import PinsMap, { type MapItem } from '$lib/components/PinsMap.svelte';
 	import { t } from '$lib/i18n/index.svelte';
 	import type { SharedListPublic } from '$lib/types';
-	import { escapeHtml } from '$lib/utils/escape-html';
-	import { createPinIcon, PIN_COLORS } from '$lib/utils/map';
-	import type L from 'leaflet';
 
 	let token = $derived(page.params.token);
 
@@ -39,35 +35,13 @@
 		if (token) load();
 	});
 
-	async function onMapReady(map: L.Map) {
-		if (!browser || !data?.pins.length) return;
+	const mapItems = $derived<MapItem[]>(
+		(data?.pins ?? []).map((pin) => ({ kind: 'pin' as const, pin }))
+	);
 
-		const leaflet = await import('leaflet');
-		const L = leaflet.default;
-		const bounds: [number, number][] = [];
-
-		for (const pin of data.pins) {
-			const r = pin.restaurantDetail;
-			if (!r?.lat || !r?.lng) continue;
-
-			const color = pin.status === 'visited' ? PIN_COLORS.visited : PIN_COLORS.toVisit;
-			const icon = createPinIcon(L, color);
-
-			L.marker([r.lat, r.lng], { icon })
-				.addTo(map)
-				.bindPopup(`
-					<div style="font-family:Inter,sans-serif;min-width:140px;">
-						<strong style="font-size:14px;color:#2B221A;">${escapeHtml(r.name)}</strong>
-						${r.city ? `<br><span style="color:#9A8E7E;font-size:12px;">${escapeHtml(r.city)}</span>` : ''}
-						${pin.rating ? `<br><span style="color:#8A7363;font-size:13px;">♥ ${pin.rating}/5</span>` : ''}
-					</div>
-				`);
-			bounds.push([r.lat, r.lng]);
-		}
-
-		if (bounds.length > 0) {
-			map.fitBounds(bounds, { padding: [40, 40], maxZoom: 13 });
-		}
+	function pinAccent(item: MapItem): 'visited' | 'toVisit' {
+		if (item.kind !== 'pin') return 'visited';
+		return item.pin.status === 'visited' ? 'visited' : 'toVisit';
 	}
 </script>
 
@@ -165,9 +139,12 @@
 					</ul>
 				{/if}
 			{:else}
-				{#key data.pins.length}
-					<MapView center={[20, 0]} zoom={2} autoLocate={false} {onMapReady} />
-				{/key}
+				<PinsMap
+					items={mapItems}
+					accent={pinAccent}
+					link={false}
+					fitOptions={{ padding: [40, 40], maxZoom: 13 }}
+				/>
 			{/if}
 		</div>
 
