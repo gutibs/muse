@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
 	import { t } from '$lib/i18n/index.svelte';
+	import { placesService } from '$lib/services/places.service';
+	import { logSilent } from '$lib/utils/logger';
 	import type L from 'leaflet';
 
 	let {
@@ -21,28 +23,30 @@
 	let map: L.Map | null = null;
 	let marker: L.Marker | null = null;
 	let geocoding = $state(false);
+	let geocodeError = $state('');
 	let geolocating = $state(false);
 	let geoError = $state('');
 
 	async function reverseGeocode(latitude: number, longitude: number) {
 		geocoding = true;
+		geocodeError = '';
 		try {
-			const res = await fetch(
-				`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&addressdetails=1`,
-				{ headers: { 'Accept-Language': 'en' } },
-			);
-			const data = await res.json();
-			if (data.address) {
-				const a = data.address;
-				const parts = [a.road, a.house_number].filter(Boolean);
-				address = parts.join(' ') || data.display_name?.split(',').slice(0, 2).join(',') || '';
-				city = a.city || a.town || a.village || a.municipality || '';
-				country = a.country || '';
-			}
-		} catch {
-			// silent — user can fill manually
+			// Backend proxy adds Nominatim-mandated User-Agent + email + rate limit.
+			const data = await placesService.reverseGeocode(latitude, longitude);
+			const a = data.address ?? {};
+			const parts = [a.road, a.house_number].filter(Boolean) as string[];
+			address =
+				parts.join(' ') ||
+				data.displayName?.split(',').slice(0, 2).join(',') ||
+				'';
+			city = a.city || a.town || a.village || a.municipality || '';
+			country = a.country || '';
+		} catch (err) {
+			logSilent('LocationPicker.reverseGeocode', err);
+			geocodeError = t('location.lookupFailed');
+		} finally {
+			geocoding = false;
 		}
-		geocoding = false;
 	}
 
 	function geolocate() {
@@ -163,6 +167,8 @@
 
 	{#if geocoding}
 		<p class="text-xs text-ink-muted">{t('location.lookingUp')}</p>
+	{:else if geocodeError}
+		<p class="text-xs text-blush">{geocodeError}</p>
 	{/if}
 
 	<p class="text-xs text-ink-muted">{t('location.tapMap')}</p>

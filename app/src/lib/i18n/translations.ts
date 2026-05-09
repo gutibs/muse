@@ -354,6 +354,7 @@ const translations: Record<Locale, Record<string, string>> = {
 		'location.unavailable': 'Your device could not determine your location.',
 		'location.cantGet': 'Could not get your location.',
 		'location.lookingUp': 'Looking up address...',
+		'location.lookupFailed': 'Could not look up address. You can fill it in manually.',
 		'location.tapMap': 'Tap the map or drag the pin to set location',
 
 		// Map (popups)
@@ -681,6 +682,7 @@ const translations: Record<Locale, Record<string, string>> = {
 		'location.unavailable': 'Tu dispositivo no pudo determinar tu ubicación.',
 		'location.cantGet': 'No se pudo obtener tu ubicación.',
 		'location.lookingUp': 'Buscando dirección...',
+		'location.lookupFailed': 'No pudimos buscar la dirección. Podés completarla a mano.',
 		'location.tapMap': 'Tocá el mapa o arrastrá el pin para fijar la ubicación',
 
 		'map.popupRated': 'Calificado',
@@ -1007,6 +1009,7 @@ const translations: Record<Locale, Record<string, string>> = {
 		'location.unavailable': 'Il dispositivo non ha potuto determinare la tua posizione.',
 		'location.cantGet': 'Impossibile ottenere la tua posizione.',
 		'location.lookingUp': "Ricerca dell'indirizzo...",
+		'location.lookupFailed': "Impossibile cercare l'indirizzo. Puoi inserirlo a mano.",
 		'location.tapMap': 'Tocca la mappa o trascina il pin per impostare la posizione',
 
 		'map.popupRated': 'Valutato',

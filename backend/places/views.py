@@ -3,6 +3,7 @@
 Frontend never sees the API key — all requests go through here.
 We only forward the fields we actually need.
 """
+
 import logging
 from urllib.parse import urlparse
 
@@ -16,9 +17,10 @@ from rest_framework.decorators import (
 	permission_classes,
 	throttle_classes,
 )
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
+from rest_framework.throttling import AnonRateThrottle, ScopedRateThrottle, UserRateThrottle
+from rest_framework.views import APIView
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +80,11 @@ def autocomplete(request):
 				}
 			}
 		except ValueError:
-			pass
+			# Bad client-provided lat/lng — fall back to no bias instead of
+			# 500ing. Worth logging so DevTools / metrics can see it.
+			logger.warning(
+				"autocomplete: ignoring non-numeric locationBias lat=%r lng=%r", lat, lng
+			)
 
 	try:
 		r = requests.post(
@@ -101,11 +107,13 @@ def autocomplete(request):
 		p = s.get("placePrediction")
 		if not p:
 			continue
-		results.append({
-			"place_id": p.get("placeId"),
-			"name": p.get("structuredFormat", {}).get("mainText", {}).get("text", ""),
-			"address": p.get("structuredFormat", {}).get("secondaryText", {}).get("text", ""),
-		})
+		results.append(
+			{
+				"place_id": p.get("placeId"),
+				"name": p.get("structuredFormat", {}).get("mainText", {}).get("text", ""),
+				"address": p.get("structuredFormat", {}).get("secondaryText", {}).get("text", ""),
+			}
+		)
 	return Response({"results": results})
 
 
@@ -151,11 +159,13 @@ def city_autocomplete(request):
 		secondary = p.get("structuredFormat", {}).get("secondaryText", {}).get("text", "")
 		# Build "City, Country" or just name if no secondary
 		display = f"{main}, {secondary}" if secondary else main
-		results.append({
-			"place_id": p.get("placeId"),
-			"name": main,
-			"display": display,
-		})
+		results.append(
+			{
+				"place_id": p.get("placeId"),
+				"name": main,
+				"display": display,
+			}
+		)
 	return Response({"results": results})
 
 
@@ -167,18 +177,20 @@ def place_details(request, place_id: str):
 	if not key:
 		return _not_configured()
 
-	fields = ",".join([
-		"id",
-		"displayName",
-		"formattedAddress",
-		"addressComponents",
-		"location",
-		"websiteUri",
-		"internationalPhoneNumber",
-		"regularOpeningHours",
-		"photos",
-		"primaryTypeDisplayName",
-	])
+	fields = ",".join(
+		[
+			"id",
+			"displayName",
+			"formattedAddress",
+			"addressComponents",
+			"location",
+			"websiteUri",
+			"internationalPhoneNumber",
+			"regularOpeningHours",
+			"photos",
+			"primaryTypeDisplayName",
+		]
+	)
 
 	try:
 		r = requests.get(
@@ -212,27 +224,95 @@ def place_details(request, place_id: str):
 		photo_name = photos[0].get("name")
 		if photo_name:
 			# Absolute URL so it passes URLField validation when persisted.
-			photo_url = request.build_absolute_uri(
-				f"/api/v1/places/photo/?ref={photo_name}"
-			)
+			photo_url = request.build_absolute_uri(f"/api/v1/places/photo/?ref={photo_name}")
 
 	location = p.get("location") or {}
 	hours = p.get("regularOpeningHours") or {}
 
-	return Response({
-		"place_id": p.get("id"),
-		"name": (p.get("displayName") or {}).get("text", ""),
-		"address": p.get("formattedAddress", ""),
-		"city": city,
-		"country": country,
-		"lat": location.get("latitude"),
-		"lng": location.get("longitude"),
-		"website": p.get("websiteUri", ""),
-		"phone": p.get("internationalPhoneNumber", ""),
-		"image_url": photo_url,
-		"opening_hours": hours.get("weekdayDescriptions", []),
-		"type": (p.get("primaryTypeDisplayName") or {}).get("text", ""),
-	})
+	return Response(
+		{
+			"place_id": p.get("id"),
+			"name": (p.get("displayName") or {}).get("text", ""),
+			"address": p.get("formattedAddress", ""),
+			"city": city,
+			"country": country,
+			"lat": location.get("latitude"),
+			"lng": location.get("longitude"),
+			"website": p.get("websiteUri", ""),
+			"phone": p.get("internationalPhoneNumber", ""),
+			"image_url": photo_url,
+			"opening_hours": hours.get("weekdayDescriptions", []),
+			"type": (p.get("primaryTypeDisplayName") or {}).get("text", ""),
+		}
+	)
+
+
+class ReverseGeocodeView(APIView):
+	"""Server-side proxy to Nominatim reverse geocoding.
+
+	Direct browser hits to nominatim.openstreetmap.org violated their usage
+	policy (no User-Agent, no rate limiting, can't be identified). This
+	endpoint:
+	  - Sends a User-Agent identifying the app + a contact email.
+	  - Throttles per-user to 60/hour (Nominatim policy is 1 req/sec; we
+	    stay well below that even with N concurrent users).
+	  - Requires authentication so anonymous abuse can't burn our quota.
+	"""
+
+	permission_classes = [IsAuthenticated]
+	throttle_classes = [ScopedRateThrottle]
+	throttle_scope = "reverse_geocode"
+
+	def get(self, request):
+		try:
+			lat = float(request.query_params.get("lat", ""))
+			lng = float(request.query_params.get("lng", ""))
+		except ValueError:
+			return Response(
+				{"detail": "lat and lng must be numeric"},
+				status=status.HTTP_400_BAD_REQUEST,
+			)
+		if not (-90 <= lat <= 90 and -180 <= lng <= 180):
+			return Response(
+				{"detail": "lat/lng out of range"},
+				status=status.HTTP_400_BAD_REQUEST,
+			)
+
+		try:
+			r = requests.get(
+				"https://nominatim.openstreetmap.org/reverse",
+				params={
+					"format": "json",
+					"lat": lat,
+					"lon": lng,
+					"zoom": 18,
+					"addressdetails": 1,
+					"email": settings.APP_CONTACT_EMAIL,
+				},
+				headers={
+					"User-Agent": settings.NOMINATIM_USER_AGENT,
+					"Accept-Language": "en",
+				},
+				timeout=10,
+			)
+			r.raise_for_status()
+			data = r.json()
+		except requests.RequestException:
+			logger.exception("nominatim reverse-geocode failed for lat=%s lng=%s", lat, lng)
+			return Response(
+				{"detail": "reverse geocode failed"},
+				status=status.HTTP_502_BAD_GATEWAY,
+			)
+
+		# Forward only what the frontend needs. The full nested address
+		# dict is preserved so LocationPicker.svelte can keep its current
+		# parser (road / house_number / city|town|village|municipality / country).
+		return Response(
+			{
+				"display_name": data.get("display_name"),
+				"address": data.get("address", {}),
+			}
+		)
 
 
 @api_view(["GET"])

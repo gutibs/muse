@@ -126,6 +126,12 @@ EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
 EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "1") == "1"
 
+# Nominatim reverse-geocode proxy. Their usage policy
+# (https://operations.osmfoundation.org/policies/nominatim/) requires a
+# descriptive User-Agent identifying the app and a contact email.
+APP_CONTACT_EMAIL = os.environ.get("APP_CONTACT_EMAIL", "contact@lovemuse.app")
+NOMINATIM_USER_AGENT = os.environ.get("NOMINATIM_USER_AGENT", "muse/1.0 (+https://lovemuse.app)")
+
 # DRF
 REST_FRAMEWORK = {
 	"DEFAULT_AUTHENTICATION_CLASSES": (
@@ -157,6 +163,9 @@ REST_FRAMEWORK = {
 		"user_search": "60/hour",
 		"places": "120/hour",
 		"invite": "20/hour",
+		# Nominatim policy is 1 req/sec absolute. We stay well under: a
+		# user can pick a location ~once per minute realistically.
+		"reverse_geocode": "60/hour",
 	},
 }
 
