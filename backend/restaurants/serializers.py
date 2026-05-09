@@ -13,15 +13,30 @@ class CuisineSerializer(serializers.ModelSerializer):
 class TagSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = Tag
-		fields = ("id", "name", "slug")
+		fields = ("id", "name", "slug", "kind")
 
 
 class MenuItemSerializer(serializers.ModelSerializer):
+	tags = TagSerializer(many=True, read_only=True)
+	tag_ids = serializers.PrimaryKeyRelatedField(
+		queryset=Tag.objects.all(),
+		many=True,
+		write_only=True,
+		required=False,
+		source="tags",
+	)
+
 	class Meta:
 		model = MenuItem
 		fields = (
-			"id", "name", "description", "price", "currency",
-			"category", "is_recommended", "is_vegetarian", "is_gluten_free",
+			"id",
+			"name",
+			"description",
+			"price",
+			"currency",
+			"category",
+			"tags",
+			"tag_ids",
 			"image_url",
 		)
 
@@ -97,9 +112,7 @@ class RestaurantSerializer(serializers.ModelSerializer):
 		if lat is not None and lng is not None:
 			data["location"] = Point(lng, lat, srid=4326)
 		elif lat is not None or lng is not None:
-			raise serializers.ValidationError(
-				"latitude and longitude must be provided together."
-			)
+			raise serializers.ValidationError("latitude and longitude must be provided together.")
 		elif not self.instance:
 			raise serializers.ValidationError("latitude and longitude are required.")
 		return data
@@ -145,8 +158,10 @@ class RestaurantDetailSerializer(RestaurantSerializer):
 	def _friend_ids(self):
 		if hasattr(self, "_cached_friend_ids"):
 			return self._cached_friend_ids
-		from accounts.models import Friendship
 		from django.db.models import Q
+
+		from accounts.models import Friendship
+
 		user = self.context["request"].user
 		if not user.is_authenticated:
 			self._cached_friend_ids = set()
@@ -165,7 +180,9 @@ class RestaurantDetailSerializer(RestaurantSerializer):
 
 	def get_friend_stats(self, obj):
 		from django.db.models import Avg
+
 		from pins.models import Pin
+
 		friend_ids = self._friend_ids()
 		if not friend_ids:
 			return {"rating_avg": None, "rated_count": 0, "on_list_count": 0}
@@ -183,6 +200,7 @@ class RestaurantDetailSerializer(RestaurantSerializer):
 
 	def get_reviews(self, obj):
 		from pins.models import Pin
+
 		friend_ids = self._friend_ids()
 		pins = list(
 			Pin.objects.filter(restaurant=obj, status="visited", comment__gt="")

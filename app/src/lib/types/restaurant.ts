@@ -4,10 +4,13 @@ export interface Cuisine {
 	slug: string;
 }
 
+export type TagKind = 'dietary' | 'general' | 'highlight';
+
 export interface Tag {
 	id: number;
 	name: string;
 	slug: string;
+	kind: TagKind;
 }
 
 export interface Restaurant {
@@ -39,9 +42,12 @@ export interface MenuItem {
 	price: number | null;
 	currency: string;
 	category: 'starter' | 'main' | 'dessert' | 'drink' | 'side';
-	isRecommended: boolean;
-	isVegetarian: boolean;
-	isGlutenFree: boolean;
+	/**
+	 * Replaces the old isRecommended/isVegetarian/isGlutenFree booleans.
+	 * Filter by `tag.kind === 'dietary'` for dietary badges, `'highlight'`
+	 * for "recommended"-style flair.
+	 */
+	tags: Tag[];
 	imageUrl: string;
 }
 

@@ -107,10 +107,9 @@ class MenuItem(models.Model):
 	price = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
 	currency = models.CharField(max_length=3, default="USD")
 	category = models.CharField(max_length=10, choices=Category.choices, default=Category.MAIN)
-	is_recommended = models.BooleanField(default=False)
-	is_vegetarian = models.BooleanField(default=False)
-	is_gluten_free = models.BooleanField(default=False)
-	# C-005 commit 1: M2M added; flags stay until commit 2 backfills + commit 3 drops them.
+	# Dietary flags / "recommended" are now Tag M2M rows. Seeded slugs:
+	# 'vegetarian', 'gluten-free' (kind=dietary), 'recommended' (kind=highlight).
+	# Adding a new flag = create a Tag, no migration. See migration 0011.
 	tags = models.ManyToManyField(Tag, blank=True, related_name="menu_items")
 	image_url = models.URLField(max_length=2000, blank=True)
 
