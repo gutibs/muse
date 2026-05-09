@@ -12,9 +12,9 @@
 	import { usersService } from '$lib/services/users.service';
 	import { authStore } from '$lib/stores/auth.store.svelte';
 	import type { Pin } from '$lib/types';
-	import { escapeHtml } from '$lib/utils/escape-html';
 	import { getOtherUser } from '$lib/utils/friendship';
 	import { createPinIcon, PIN_COLORS } from '$lib/utils/map';
+	import { buildRestaurantPopup } from '$lib/utils/map-popup';
 	import type L from 'leaflet';
 
 	let hasFocus = $derived(Boolean(page.url.searchParams.get('focus')));
@@ -137,14 +137,14 @@
 
 						const marker = Leaflet.marker([r.lat, r.lng], { icon })
 							.addTo(group)
-							.bindPopup(`
-								<div style="font-family:Inter,sans-serif;min-width:140px;">
-									<span style="color:#AF9483;font-size:11px;font-weight:600;">${escapeHtml(other.displayName || other.email)}</span>
-									<br><a href="/restaurant/${r.id}" style="font-size:14px;font-weight:700;color:#2B221A;text-decoration:none;">${escapeHtml(r.name)}</a>
-									${r.city ? `<br><span style="color:#9A8E7E;font-size:12px;">${escapeHtml(r.city)}</span>` : ''}
-									${pin.rating ? `<br><span style="color:#8A7363;font-size:13px;">♥ ${pin.rating}/5</span>` : ''}
-								</div>
-							`);
+							.bindPopup(
+								buildRestaurantPopup({
+									restaurant: r,
+									pin,
+									owner: { displayName: other.displayName, email: other.email },
+									link: true,
+								})
+							);
 						// Only register if not already present (own pins take priority)
 						if (markersById && !markersById.has(r.id)) {
 							markersById.set(r.id, marker);
@@ -198,14 +198,14 @@
 
 			const marker = L.marker([r.lat, r.lng], { icon })
 				.addTo(map)
-				.bindPopup(`
-					<div style="font-family:Inter,sans-serif;min-width:140px;">
-						<a href="/restaurant/${r.id}" style="font-size:14px;font-weight:700;color:#2B221A;text-decoration:none;">${escapeHtml(r.name)}</a>
-						${r.city ? `<br><span style="color:#9A8E7E;font-size:12px;">${escapeHtml(r.city)}</span>` : ''}
-						${pin.rating ? `<br><span style="color:#8A7363;font-size:13px;">♥ ${pin.rating}/5</span>` : ''}
-						<br><span style="color:#9A8E7E;font-size:11px;">${pin.status === 'visited' ? t('map.popupRated') : t('map.popupOnList')}</span>
-					</div>
-				`);
+				.bindPopup(
+					buildRestaurantPopup({
+						restaurant: r,
+						pin,
+						link: true,
+						statusLabel: pin.status === 'visited' ? t('map.popupRated') : t('map.popupOnList'),
+					})
+				);
 			markersById.set(r.id, marker);
 			allMarkers.push({
 				marker,
