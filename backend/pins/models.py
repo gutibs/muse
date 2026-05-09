@@ -60,10 +60,23 @@ class Pin(models.Model):
 		return f"{self.user} → {self.restaurant} ({self.status})"
 
 	def clean(self):
+		# Canonical source of truth for status<->rating invariant. Also
+		# duplicated in PinSerializer.validate so DRF returns a clean 400
+		# at the API boundary; this guard catches direct ORM writes that
+		# would otherwise persist invalid combos.
+		super().clean()
 		if self.status == self.Status.VISITED and self.rating is None:
-			raise ValidationError("Rating is required for visited restaurants.")
+			raise ValidationError({"rating": "Rating is required for visited restaurants."})
 		if self.status == self.Status.TO_VISIT and self.rating is not None:
-			raise ValidationError("Cannot rate a restaurant you have not visited.")
+			raise ValidationError({"rating": "Cannot rate a restaurant you have not visited."})
+
+	def save(self, *args, **kwargs):
+		# full_clean runs clean_fields + clean + validate_unique. Adds a
+		# uniqueness query per save (cheap on this small table), in
+		# exchange for guaranteeing the status<->rating invariant lands
+		# even when callers go through .objects.create / .save directly.
+		self.full_clean()
+		super().save(*args, **kwargs)
 
 
 class SharedList(models.Model):
