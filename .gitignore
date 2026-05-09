@@ -28,7 +28,11 @@ Thumbs.db
 backend/media/
 
 
+# Audit / scratchpad markdown stays local (AUDIT_*.md, NOTES.md, etc.).
+# Product / dev docs under docs/ and the root CLAUDE.md are tracked.
 *.md
+!CLAUDE.md
+!docs/**/*.md
 
 # Build artifacts
 *.apk
