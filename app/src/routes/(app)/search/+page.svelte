@@ -2,17 +2,13 @@
 	import { browser } from '$app/environment';
 	import { goto } from '$app/navigation';
 	import DietaryBadges from '$lib/components/DietaryBadges.svelte';
-	import MapView from '$lib/components/MapView.svelte';
+	import PinsMap, { type MapItem } from '$lib/components/PinsMap.svelte';
 	import { t } from '$lib/i18n/index.svelte';
 	import { placesService, type PlaceSuggestion } from '$lib/services/places.service';
 	import { restaurantsService } from '$lib/services/restaurants.service';
 	import type { Cuisine, Restaurant } from '$lib/types';
 	import { ApiError } from '$lib/types';
 	import { extractFirstDrfError } from '$lib/utils/api-error';
-	import { dietaryBadgesHtml } from '$lib/utils/dietary-badges';
-	import { escapeHtml } from '$lib/utils/escape-html';
-	import { createPinIcon, PIN_COLORS } from '$lib/utils/map';
-	import type L from 'leaflet';
 
 	function viewRestaurant(r: Restaurant) {
 		goto(`/restaurant/${r.id}`);
@@ -197,34 +193,9 @@
 
 	const validResults = $derived(results.filter((r) => r.lat && r.lng));
 
-	async function onMapReady(map: L.Map) {
-		if (!browser || validResults.length === 0) return;
-
-		const leaflet = await import('leaflet');
-		const L = leaflet.default;
-		const bounds: [number, number][] = [];
-
-		for (const r of validResults) {
-			const icon = createPinIcon(L, PIN_COLORS.visited);
-
-			L.marker([r.lat, r.lng], { icon })
-				.addTo(map)
-				.bindPopup(`
-					<div style="font-family:Inter,sans-serif;min-width:140px;">
-						<strong style="font-size:14px;color:#2B221A;">${escapeHtml(r.name)}</strong>
-						${r.city ? `<br><span style="color:#9A8E7E;font-size:12px;">${escapeHtml(r.city)}</span>` : ''}
-						${r.cuisinesDetail?.length ? `<br><span style="color:#9A8E7E;font-size:11px;">${escapeHtml(r.cuisinesDetail.map((c) => c.name).join(', '))}</span>` : ''}
-						${r.averageRating ? `<br><span style="color:#8A7363;font-size:13px;">♥ ${r.averageRating.toFixed(1)}</span>` : ''}
-						${dietaryBadgesHtml(r.tagsDetail)}
-					</div>
-				`);
-			bounds.push([r.lat, r.lng]);
-		}
-
-		if (bounds.length > 0) {
-			map.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 });
-		}
-	}
+	const mapItems = $derived<MapItem[]>(
+		validResults.map((r) => ({ kind: 'restaurant', restaurant: r }))
+	);
 
 	function priceLabel(level: number | null): string {
 		return level ? '$'.repeat(level) : '';
@@ -458,9 +429,7 @@
 			</ul>
 
 		{:else}
-			{#key validResults.length + '-' + query + '-' + cityFilter + '-' + cuisineFilter}
-				<MapView center={[20, 0]} zoom={2} autoLocate={false} {onMapReady} />
-			{/key}
+			<PinsMap items={mapItems} accent="visited" link={false} showDietary={true} />
 		{/if}
 	</div>
 </div>
