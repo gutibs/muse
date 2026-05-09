@@ -5,6 +5,7 @@
 	import MapView from '$lib/components/MapView.svelte';
 	import { t } from '$lib/i18n/index.svelte';
 	import type { SharedListPublic } from '$lib/types';
+	import { escapeHtml } from '$lib/utils/escape-html';
 	import { createPinIcon, PIN_COLORS } from '$lib/utils/map';
 	import type L from 'leaflet';
 
@@ -37,10 +38,6 @@
 	$effect(() => {
 		if (token) load();
 	});
-
-	function escapeHtml(s: string): string {
-		return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
-	}
 
 	async function onMapReady(map: L.Map) {
 		if (!browser || !data?.pins.length) return;

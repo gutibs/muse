@@ -12,13 +12,10 @@
 	import { usersService } from '$lib/services/users.service';
 	import { authStore } from '$lib/stores/auth.store.svelte';
 	import type { Pin } from '$lib/types';
+	import { escapeHtml } from '$lib/utils/escape-html';
 	import { getOtherUser } from '$lib/utils/friendship';
 	import { createPinIcon, PIN_COLORS } from '$lib/utils/map';
 	import type L from 'leaflet';
-
-	function escapeHtml(s: string): string {
-		return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
-	}
 
 	let hasFocus = $derived(Boolean(page.url.searchParams.get('focus')));
 	let showFriendPins = $state(true);

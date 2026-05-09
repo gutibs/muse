@@ -7,6 +7,7 @@
 	import { usersService } from '$lib/services/users.service';
 	import type { Pin, Profile } from '$lib/types';
 	import { ApiError } from '$lib/types';
+	import { escapeHtml } from '$lib/utils/escape-html';
 	import { createPinIcon, PIN_COLORS } from '$lib/utils/map';
 	import type L from 'leaflet';
 
@@ -49,10 +50,6 @@
 	const filteredPins = $derived(
 		statusFilter === 'all' ? pins : pins.filter((p) => p.status === statusFilter)
 	);
-
-	function escapeHtml(s: string): string {
-		return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
-	}
 
 	async function onMapReady(map: L.Map) {
 		if (!browser || filteredPins.length === 0) return;

@@ -10,6 +10,7 @@
 	import { ApiError } from '$lib/types';
 	import { extractFirstDrfError } from '$lib/utils/api-error';
 	import { dietaryBadgesHtml } from '$lib/utils/dietary-badges';
+	import { escapeHtml } from '$lib/utils/escape-html';
 	import { createPinIcon, PIN_COLORS } from '$lib/utils/map';
 	import type L from 'leaflet';
 
@@ -227,10 +228,6 @@
 
 	function priceLabel(level: number | null): string {
 		return level ? '$'.repeat(level) : '';
-	}
-
-	function escapeHtml(s: string): string {
-		return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 	}
 </script>
 
