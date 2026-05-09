@@ -3,15 +3,29 @@ from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from accounts.models import EmailInvitation, Friendship, Profile
+from accounts.models import DietaryPreference, EmailInvitation, Friendship, Profile
 
 User = get_user_model()
+
+
+class DietaryPreferenceSerializer(serializers.ModelSerializer):
+	class Meta:
+		model = DietaryPreference
+		fields = ("id", "name", "slug")
 
 
 class ProfileSerializer(serializers.ModelSerializer):
 	email = serializers.EmailField(source="user.email", read_only=True)
 	stats = serializers.SerializerMethodField()
 	favourite_cuisine_detail = serializers.SerializerMethodField()
+	dietary_preferences = serializers.PrimaryKeyRelatedField(
+		queryset=DietaryPreference.objects.all(),
+		many=True,
+		required=False,
+	)
+	dietary_preferences_detail = DietaryPreferenceSerializer(
+		source="dietary_preferences", many=True, read_only=True
+	)
 
 	class Meta:
 		model = Profile
@@ -27,11 +41,19 @@ class ProfileSerializer(serializers.ModelSerializer):
 			"phone",
 			"favourite_cuisine",
 			"favourite_cuisine_detail",
-			"dietary",
+			"dietary_preferences",
+			"dietary_preferences_detail",
 			"stats",
 			"created_at",
 		)
-		read_only_fields = ("id", "email", "stats", "favourite_cuisine_detail", "created_at")
+		read_only_fields = (
+			"id",
+			"email",
+			"stats",
+			"favourite_cuisine_detail",
+			"dietary_preferences_detail",
+			"created_at",
+		)
 
 	def get_favourite_cuisine_detail(self, obj):
 		if obj.favourite_cuisine:

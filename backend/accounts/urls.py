@@ -4,6 +4,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from accounts.views import (
 	ChangePasswordView,
+	DietaryPreferenceListView,
 	EmailInvitationView,
 	FriendshipViewSet,
 	LoginAnonThrottle,
@@ -23,6 +24,7 @@ class ThrottledTokenObtainPairView(TokenObtainPairView):
 class ThrottledTokenRefreshView(TokenRefreshView):
 	throttle_classes = (LoginAnonThrottle, LoginUserThrottle)
 
+
 router = DefaultRouter()
 router.register("friendships", FriendshipViewSet, basename="friendship")
 
@@ -31,6 +33,7 @@ urlpatterns = [
 	path("token/", ThrottledTokenObtainPairView.as_view(), name="token_obtain"),
 	path("token/refresh/", ThrottledTokenRefreshView.as_view(), name="token_refresh"),
 	path("profile/", ProfileView.as_view(), name="profile"),
+	path("dietary-preferences/", DietaryPreferenceListView.as_view(), name="dietary_preferences"),
 	path("change-password/", ChangePasswordView.as_view(), name="change_password"),
 	path("search/", UserSearchView.as_view(), name="user_search"),
 	path("invite/", EmailInvitationView.as_view(), name="email_invite"),

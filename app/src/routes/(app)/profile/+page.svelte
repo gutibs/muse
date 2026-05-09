@@ -1,11 +1,12 @@
 <script lang="ts">
 	import Avatar from '$lib/components/Avatar.svelte';
 	import CityAutocomplete from '$lib/components/CityAutocomplete.svelte';
+	import { authService } from '$lib/services/auth.service';
 	import { pinsService } from '$lib/services/pins.service';
 	import { restaurantsService } from '$lib/services/restaurants.service';
 	import { i18n, t } from '$lib/i18n/index.svelte';
 	import { authStore } from '$lib/stores/auth.store.svelte';
-	import type { Cuisine, Pin, SharedList } from '$lib/types';
+	import type { Cuisine, DietaryPreference, Pin, SharedList } from '$lib/types';
 	import { extractFirstDrfError } from '$lib/utils/api-error';
 	import { copyToClipboard } from '$lib/utils/clipboard';
 	import { logSilent } from '$lib/utils/logger';
@@ -32,6 +33,9 @@
 	// Cuisines for dropdown
 	let cuisines = $state<Cuisine[]>([]);
 
+	// Dietary preferences fetched from backend (closed set seeded by migration).
+	let dietaryOptions = $state<DietaryPreference[]>([]);
+
 	// Edit fields
 	let editName = $state('');
 	let editBio = $state('');
@@ -39,17 +43,14 @@
 	let editWebsite = $state('');
 	let editInstagram = $state('');
 	let editPhone = $state('');
-	let editDietary = $state('');
+	let editDietaryIds = $state<number[]>([]);
 	let editCuisine = $state<number | ''>('');
 
-	const dietaryOptions = $derived([
-		{ value: '', label: t('common.none') },
-		{ value: 'Omnivore', label: t('dietary.omnivore') },
-		{ value: 'Vegetarian', label: t('dietary.vegetarian') },
-		{ value: 'Vegan', label: t('dietary.vegan') },
-		{ value: 'Kosher', label: t('dietary.kosher') },
-		{ value: 'Gluten-free', label: t('dietary.glutenFree') },
-	]);
+	function toggleDietary(id: number) {
+		editDietaryIds = editDietaryIds.includes(id)
+			? editDietaryIds.filter((x) => x !== id)
+			: [...editDietaryIds, id];
+	}
 
 	async function loadSharedLists() {
 		try {
@@ -66,6 +67,15 @@
 		} catch (err) {
 			logSilent('profile.loadCuisines', err);
 			cuisines = [];
+		}
+	}
+
+	async function loadDietaryOptions() {
+		try {
+			dietaryOptions = await authService.dietaryPreferences();
+		} catch (err) {
+			logSilent('profile.loadDietaryOptions', err);
+			dietaryOptions = [];
 		}
 	}
 
@@ -131,6 +141,7 @@
 		if (authStore.isAuthenticated) {
 			loadSharedLists();
 			loadCuisines();
+			loadDietaryOptions();
 			loadMyPins(pinsFilter);
 			// Refresh user so stats cards reflect any pin add/edit/delete that
 			// happened in another route since login. Replaces the local-derived
@@ -146,7 +157,7 @@
 		editWebsite = authStore.user?.website || '';
 		editInstagram = authStore.user?.instagram || '';
 		editPhone = authStore.user?.phone || '';
-		editDietary = authStore.user?.dietary || '';
+		editDietaryIds = (authStore.user?.dietaryPreferencesDetail ?? []).map((p) => p.id);
 		editCuisine = authStore.user?.favouriteCuisine || '';
 		error = '';
 		success = '';
@@ -169,7 +180,7 @@
 				website: editWebsite,
 				instagram: editInstagram,
 				phone: editPhone,
-				dietary: editDietary,
+				dietaryPreferences: editDietaryIds,
 				favouriteCuisine: editCuisine || null,
 			});
 			editing = false;
@@ -241,11 +252,11 @@
 								{authStore.user.favouriteCuisineDetail.name}
 							</span>
 						{/if}
-						{#if authStore.user?.dietary}
+						{#each authStore.user?.dietaryPreferencesDetail ?? [] as pref (pref.id)}
 							<span class="rounded-full bg-amber-50 px-3 py-1 text-xs text-amber-700">
-								{authStore.user.dietary}
+								{pref.name}
 							</span>
-						{/if}
+						{/each}
 						{#if memberSince}
 							<span class="rounded-full bg-cream-dark px-3 py-1 text-xs text-ink-muted">
 								{t('profile.since')} {memberSince}
@@ -485,12 +496,25 @@
 						</select>
 					</div>
 					<div>
-						<label for="editDietary" class="mb-1 block text-sm font-medium text-ink-light">{t('profile.dietary')}</label>
-						<select id="editDietary" bind:value={editDietary} class="w-full rounded-input border border-cream-dark bg-white px-4 py-3 text-base text-ink outline-none focus:border-jade">
-							{#each dietaryOptions as opt}
-								<option value={opt.value}>{opt.label}</option>
+						<span class="mb-1 block text-sm font-medium text-ink-light">{t('profile.dietary')}</span>
+						<!-- Multi-select chips. Touch-friendly (min-h-11), no hover-dependent
+							 affordance, no native multiselect (broken UX on mobile). -->
+						<div class="flex flex-wrap gap-2">
+							{#each dietaryOptions as opt (opt.id)}
+								{@const selected = editDietaryIds.includes(opt.id)}
+								<button
+									type="button"
+									onclick={() => toggleDietary(opt.id)}
+									class="min-h-11 rounded-full px-4 text-sm font-medium active:scale-95
+										{selected
+											? 'bg-jade text-white'
+											: 'bg-white text-ink-muted shadow-card'}"
+									aria-pressed={selected}
+								>
+									{opt.name}
+								</button>
 							{/each}
-						</select>
+						</div>
 					</div>
 				</div>
 

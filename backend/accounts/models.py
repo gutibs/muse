@@ -5,6 +5,26 @@ from django.contrib.gis.db import models as gis_models
 from django.db import models
 
 
+class DietaryPreference(models.Model):
+	"""Closed set of dietary preferences a user can have. Replaces the
+	previous comma-separated CharField on Profile (see migration 0005);
+	enables proper FK validation + future joins (e.g. "find friends with
+	the same preferences").
+
+	Rows are seeded by migration; not user-creatable from the app.
+	"""
+
+	name = models.CharField(max_length=40, unique=True)
+	slug = models.SlugField(max_length=40, unique=True)
+
+	class Meta:
+		db_table = "accounts_dietary_preference"
+		ordering = ["name"]
+
+	def __str__(self):
+		return self.name
+
+
 class Profile(models.Model):
 	user = models.OneToOneField(
 		settings.AUTH_USER_MODEL,
@@ -26,7 +46,11 @@ class Profile(models.Model):
 		blank=True,
 		related_name="+",
 	)
-	dietary = models.CharField(max_length=50, blank=True)
+	dietary_preferences = models.ManyToManyField(
+		DietaryPreference,
+		blank=True,
+		related_name="profiles",
+	)
 	created_at = models.DateTimeField(auto_now_add=True)
 	updated_at = models.DateTimeField(auto_now=True)
 

@@ -5,10 +5,23 @@
 	import MuseLogo from '$lib/components/MuseLogo.svelte';
 	import PasswordStrength from '$lib/components/PasswordStrength.svelte';
 	import { t } from '$lib/i18n/index.svelte';
+	import { authService } from '$lib/services/auth.service';
 	import { restaurantsService } from '$lib/services/restaurants.service';
 	import { authStore } from '$lib/stores/auth.store.svelte';
-	import type { Cuisine } from '$lib/types';
+	import type { Cuisine, DietaryPreference } from '$lib/types';
 	import { extractFirstDrfError } from '$lib/utils/api-error';
+	import { logSilent } from '$lib/utils/logger';
+
+	// Frontend-only icon map per dietary preference slug. The backend doesn't
+	// know about icons (DietaryPreference has only name + slug), so this small
+	// presentation-layer table stays here. Slugs are stable (set by migration).
+	const DIETARY_ICONS: Record<string, string> = {
+		omnivore: '🥩',
+		vegetarian: '🥬',
+		vegan: '🌱',
+		kosher: '✡',
+		'gluten-free': '🌾',
+	};
 
 	// Step 1: account
 	let displayName = $state('');
@@ -23,23 +36,19 @@
 	// Step 2: preferences
 	let step = $state(1);
 	let city = $state('');
-	let dietary = $state('');
+	let dietaryIds = $state<number[]>([]);
 	let favouriteCuisine = $state<number | ''>('');
-	let showKosherOnly = $state(false);
-	let showGlutenFreeOnly = $state(false);
 	let cuisines = $state<Cuisine[]>([]);
+	let dietaryOptions = $state<DietaryPreference[]>([]);
 	let savingPrefs = $state(false);
 
 	let passwordsMatch = $derived(password === confirmPassword);
 
-	const dietaryOptions = $derived([
-		{ value: '', label: t('dietary.none'), icon: '🍽' },
-		{ value: 'Omnivore', label: t('dietary.omnivore'), icon: '🥩' },
-		{ value: 'Vegetarian', label: t('dietary.vegetarian'), icon: '🥬' },
-		{ value: 'Vegan', label: t('dietary.vegan'), icon: '🌱' },
-		{ value: 'Kosher', label: t('dietary.kosher'), icon: '✡' },
-		{ value: 'Gluten-free', label: t('dietary.glutenFree'), icon: '🚫' },
-	]);
+	function toggleDietary(id: number) {
+		dietaryIds = dietaryIds.includes(id)
+			? dietaryIds.filter((x) => x !== id)
+			: [...dietaryIds, id];
+	}
 
 	async function handleRegister(e: Event) {
 		e.preventDefault();
@@ -53,7 +62,18 @@
 		submitting = true;
 		try {
 			await authStore.register(email, password, displayName || undefined);
-			try { cuisines = await restaurantsService.cuisines(); } catch {}
+			// Both lookups are non-blocking — the user can finish registration
+			// even if either list fails to load (UI just renders empty grids).
+			try {
+				cuisines = await restaurantsService.cuisines();
+			} catch (err) {
+				logSilent('register.loadCuisines', err);
+			}
+			try {
+				dietaryOptions = await authService.dietaryPreferences();
+			} catch (err) {
+				logSilent('register.loadDietaryOptions', err);
+			}
 			step = 2;
 		} catch (err) {
 			error = extractFirstDrfError(err);
@@ -65,19 +85,13 @@
 	async function savePreferences() {
 		savingPrefs = true;
 		try {
-			const dietaryValue = [
-				dietary,
-				showKosherOnly && dietary !== 'Kosher' ? 'Kosher' : '',
-				showGlutenFreeOnly && dietary !== 'Gluten-free' ? 'Gluten-free' : '',
-			].filter(Boolean).join(', ');
-
 			await authStore.updateProfile({
 				city: city || undefined,
-				dietary: dietaryValue || undefined,
+				dietaryPreferences: dietaryIds,
 				favouriteCuisine: favouriteCuisine || null,
 			});
-		} catch {
-			// non-blocking
+		} catch (err) {
+			logSilent('register.savePreferences', err);
 		} finally {
 			savingPrefs = false;
 			goto('/home');
@@ -225,39 +239,26 @@
 						<CityAutocomplete bind:value={city} placeholder={t('onboarding.cityPlaceholder')} id="city" />
 					</div>
 
-					<!-- Dietary -->
+					<!-- Dietary preferences (multi-select chips). Replaces single
+						 select + 2 checkboxes; the underlying model is a M2M now,
+						 so Kosher/Gluten-free combine naturally with Vegan etc. -->
 					<div>
 						<p class="mb-2 text-sm font-medium text-ink-light">{t('onboarding.howEat')}</p>
 						<div class="grid grid-cols-3 gap-2">
-							{#each dietaryOptions as opt}
+							{#each dietaryOptions as opt (opt.id)}
+								{@const selected = dietaryIds.includes(opt.id)}
 								<button
 									type="button"
-									onclick={() => (dietary = dietary === opt.value ? '' : opt.value)}
+									onclick={() => toggleDietary(opt.id)}
 									class="flex flex-col items-center gap-1 rounded-card p-3 text-center active:scale-95
-										{dietary === opt.value ? 'bg-jade text-white shadow-card' : 'bg-white text-ink shadow-card'}"
+										{selected ? 'bg-jade text-white shadow-card' : 'bg-white text-ink shadow-card'}"
+									aria-pressed={selected}
 								>
-									<span class="text-lg">{opt.icon}</span>
-									<span class="text-xs font-medium">{opt.label}</span>
+									<span class="text-lg">{DIETARY_ICONS[opt.slug] ?? '🍽'}</span>
+									<span class="text-xs font-medium">{opt.name}</span>
 								</button>
 							{/each}
 						</div>
-					</div>
-
-					<!-- Special preferences -->
-					<div class="space-y-3">
-						<p class="text-sm font-medium text-ink-light">{t('onboarding.specialPrefs')}</p>
-
-						<label class="flex items-center gap-3 rounded-card bg-white p-3 shadow-card active:scale-[0.98]">
-							<div class="flex h-8 w-8 items-center justify-center rounded-full bg-blue-50 text-sm">✡</div>
-							<span class="flex-1 text-sm font-medium text-ink">{t('onboarding.showKosher')}</span>
-							<input type="checkbox" bind:checked={showKosherOnly} class="h-5 w-5 accent-jade" />
-						</label>
-
-						<label class="flex items-center gap-3 rounded-card bg-white p-3 shadow-card active:scale-[0.98]">
-							<div class="flex h-8 w-8 items-center justify-center rounded-full bg-amber-50 text-sm">🌾</div>
-							<span class="flex-1 text-sm font-medium text-ink">{t('onboarding.showGlutenFree')}</span>
-							<input type="checkbox" bind:checked={showGlutenFreeOnly} class="h-5 w-5 accent-jade" />
-						</label>
 					</div>
 
 					<!-- Favourite cuisine -->

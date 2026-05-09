@@ -1,11 +1,27 @@
 import { api } from './api.service';
 import type {
 	AuthTokens,
+	DietaryPreference,
 	LoginRequest,
 	Profile,
 	RegisterRequest,
 	RegisterResponse,
 } from '$lib/types';
+
+/** Subset of Profile that is writeable. dietaryPreferences carries IDs. */
+export type ProfileUpdatePayload = Partial<
+	Pick<
+		Profile,
+		| 'displayName'
+		| 'bio'
+		| 'city'
+		| 'website'
+		| 'instagram'
+		| 'phone'
+		| 'favouriteCuisine'
+		| 'dietaryPreferences'
+	>
+>;
 
 export const authService = {
 	register(data: RegisterRequest): Promise<RegisterResponse> {
@@ -20,8 +36,12 @@ export const authService = {
 		return api.get('/auth/profile/');
 	},
 
-	updateProfile(data: Partial<Pick<Profile, 'displayName' | 'bio' | 'city' | 'website' | 'instagram' | 'phone' | 'dietary' | 'favouriteCuisine'>>): Promise<Profile> {
+	updateProfile(data: ProfileUpdatePayload): Promise<Profile> {
 		return api.patch('/auth/profile/', data);
+	},
+
+	dietaryPreferences(): Promise<DietaryPreference[]> {
+		return api.get('/auth/dietary-preferences/');
 	},
 
 	changePassword(currentPassword: string, newPassword: string): Promise<void> {

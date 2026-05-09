@@ -5,6 +5,12 @@ export interface UserStats {
 	friendCount: number;
 }
 
+export interface DietaryPreference {
+	id: number;
+	name: string;
+	slug: string;
+}
+
 export interface Profile {
 	id: number;
 	email: string;
@@ -17,7 +23,10 @@ export interface Profile {
 	phone: string;
 	favouriteCuisine: number | null;
 	favouriteCuisineDetail: { id: number; name: string; slug: string } | null;
-	dietary: string;
+	/** PKs of selected DietaryPreference rows. Used as the write payload. */
+	dietaryPreferences: number[];
+	/** Hydrated detail (read-only); render this in the UI. */
+	dietaryPreferencesDetail: DietaryPreference[];
 	stats: UserStats;
 	createdAt: string;
 }

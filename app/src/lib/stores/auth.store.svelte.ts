@@ -84,7 +84,7 @@ class AuthStore {
 		this.user = result.user;
 	}
 
-	async updateProfile(data: Partial<Pick<Profile, 'displayName' | 'bio' | 'city' | 'website' | 'instagram' | 'phone' | 'dietary' | 'favouriteCuisine'>>) {
+	async updateProfile(data: import('$lib/services/auth.service').ProfileUpdatePayload) {
 		this.user = await authService.updateProfile(data);
 	}
 
