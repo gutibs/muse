@@ -17,8 +17,19 @@ class Cuisine(models.Model):
 
 
 class Tag(models.Model):
+	class Kind(models.TextChoices):
+		DIETARY = "dietary", "Dietary"
+		GENERAL = "general", "General"
+		HIGHLIGHT = "highlight", "Highlight"
+
 	name = models.CharField(max_length=80, unique=True)
 	slug = models.SlugField(max_length=80, unique=True)
+	kind = models.CharField(
+		max_length=20,
+		choices=Kind.choices,
+		default=Kind.GENERAL,
+		db_index=True,
+	)
 
 	class Meta:
 		db_table = "restaurants_tag"
@@ -99,6 +110,8 @@ class MenuItem(models.Model):
 	is_recommended = models.BooleanField(default=False)
 	is_vegetarian = models.BooleanField(default=False)
 	is_gluten_free = models.BooleanField(default=False)
+	# C-005 commit 1: M2M added; flags stay until commit 2 backfills + commit 3 drops them.
+	tags = models.ManyToManyField(Tag, blank=True, related_name="menu_items")
 	image_url = models.URLField(max_length=2000, blank=True)
 
 	class Meta:
