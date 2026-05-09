@@ -5,9 +5,13 @@ flaky against pytest-django's transactional fixtures: each thread needs its
 own DB connection and the test runner has to coordinate teardown carefully.
 We use the functional-equivalent fallback documented in the task spec:
 pre-create a Restaurant, force the initial existence lookup to miss, and
-verify the IntegrityError except-branch (restaurants/views.py:249-257) finds
-the duplicate row and returns it instead of creating a second one.
+verify the IntegrityError except-branch (restaurants/services/google_import.py)
+finds the duplicate row and returns it instead of creating a second one.
+
+Post-B-006 the fetch + race fallback live in the service module, not the
+view, so we patch `restaurants.services.google_import.requests.get`.
 """
+
 from unittest.mock import patch
 
 import pytest
@@ -17,7 +21,6 @@ from rest_framework.test import APIClient
 
 from restaurants.models import Restaurant
 from tests.factories import UserFactory
-
 
 GOOGLE_PAYLOAD = {
 	"id": "ChIJ_test_place_123",
@@ -82,15 +85,20 @@ def test_from_google_race_creates_single_restaurant(settings):
 		# the top of from_google). Subsequent filters (the except branch's
 		# recovery lookup, the _base_queryset annotation, etc.) must work.
 		if call_count["n"] == 1 and kwargs.get("google_place_id") == place_id:
+
 			class _Empty:
 				def first(self):
 					return None
+
 			return _Empty()
 		return original_filter(*args, **kwargs)
 
 	url = reverse("restaurant-from-google")
 	with patch.object(Restaurant.objects, "filter", side_effect=filter_first_call_returns_empty):
-		with patch("restaurants.views.requests.get", return_value=_FakeGoogleResponse()):
+		with patch(
+			"restaurants.services.google_import.requests.get",
+			return_value=_FakeGoogleResponse(),
+		):
 			response = client.post(url, data={"placeId": place_id}, format="json")
 
 	# Recovery path returned the existing restaurant (200) instead of creating

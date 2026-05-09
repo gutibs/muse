@@ -1,7 +1,5 @@
 import logging
 
-import requests
-from django.conf import settings
 from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.geos import Point
 from django.db.models import Avg, Count
@@ -11,14 +9,18 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
 from restaurants.models import Cuisine, Restaurant, Tag
-
-logger = logging.getLogger(__name__)
 from restaurants.serializers import (
 	CuisineSerializer,
 	RestaurantDetailSerializer,
 	RestaurantSerializer,
 	TagSerializer,
 )
+from restaurants.services.google_import import (
+	GoogleImportError,
+	import_from_google_place_id,
+)
+
+logger = logging.getLogger(__name__)
 
 
 class RestaurantViewSet(viewsets.ModelViewSet):
@@ -137,136 +139,31 @@ class RestaurantViewSet(viewsets.ModelViewSet):
 		Only `placeId` is trusted from the client. All restaurant fields are
 		re-fetched from Google Places API before creating the record so the
 		client cannot spoof name/address/coords and bypass admin approval.
+
+		The fetch + parse + race-safe persistence lives in
+		`restaurants.services.google_import` so this view stays a thin
+		HTTP boundary.
 		"""
 		place_id = request.data.get("placeId") or request.data.get("place_id")
 		if not place_id:
 			return Response({"detail": "placeId is required."}, status=status.HTTP_400_BAD_REQUEST)
-		# Places API (New) sometimes returns IDs as "places/ChIJ..."; the bare ID
-		# is what we store, so normalise on input.
-		if place_id.startswith("places/"):
-			place_id = place_id.split("/", 1)[1]
 
-		existing = Restaurant.objects.filter(google_place_id=place_id).first()
-		if existing:
-			serializer = self.get_serializer(self._base_queryset().get(pk=existing.pk))
-			return Response(serializer.data)
+		def photo_url_for(name: str) -> str:
+			# Absolute URL so it passes URLField validation when persisted.
+			# Stays in the view because it depends on the request host.
+			return request.build_absolute_uri(f"/api/v1/places/photo/?ref={name}")
 
-		key = settings.GOOGLE_PLACES_API_KEY
-		if not key:
-			return Response(
-				{"detail": "Google Places API is not configured."},
-				status=status.HTTP_503_SERVICE_UNAVAILABLE,
-			)
-
-		fields = ",".join([
-			"id",
-			"displayName",
-			"formattedAddress",
-			"addressComponents",
-			"location",
-			"websiteUri",
-			"internationalPhoneNumber",
-			"regularOpeningHours",
-			"photos",
-		])
 		try:
-			r = requests.get(
-				f"https://places.googleapis.com/v1/places/{place_id}",
-				headers={
-					"X-Goog-Api-Key": key,
-					"X-Goog-FieldMask": fields,
-				},
-				timeout=5,
+			restaurant, created = import_from_google_place_id(
+				place_id, request.user, photo_url_builder=photo_url_for
 			)
-			r.raise_for_status()
-			p = r.json()
-		except requests.RequestException:
-			return Response(
-				{"detail": "Could not verify place with Google."},
-				status=status.HTTP_502_BAD_GATEWAY,
-			)
+		except GoogleImportError as exc:
+			return Response({"detail": exc.message}, status=exc.status_code)
 
-		# Google may echo the id as "places/ChIJ..." or bare; accept both.
-		returned_id = p.get("id") or ""
-		if returned_id.startswith("places/"):
-			returned_id = returned_id.split("/", 1)[1]
-		if returned_id and returned_id != place_id:
-			return Response({"detail": "Invalid placeId."}, status=status.HTTP_400_BAD_REQUEST)
-
-		location = p.get("location") or {}
-		lat = location.get("latitude")
-		lng = location.get("longitude")
-		if lat is None or lng is None:
-			return Response(
-				{"detail": "Place has no location."},
-				status=status.HTTP_400_BAD_REQUEST,
-			)
-
-		city = ""
-		country = ""
-		for comp in p.get("addressComponents", []):
-			types = comp.get("types", [])
-			if "locality" in types and not city:
-				city = comp.get("longText", "")
-			elif "administrative_area_level_1" in types and not city:
-				city = comp.get("longText", "")
-			elif "country" in types:
-				country = comp.get("longText", "")
-
-		photo_url = ""
-		photos = p.get("photos") or []
-		if photos:
-			photo_name = photos[0].get("name")
-			if photo_name:
-				# Absolute URL so it passes URLField validation when persisted.
-				photo_url = request.build_absolute_uri(
-					f"/api/v1/places/photo/?ref={photo_name}"
-				)
-
-		hours = p.get("regularOpeningHours") or {}
-
-		from django.db import IntegrityError
-		# Truncate to model max_lengths defensively — Google occasionally returns
-		# strings longer than our columns (e.g. very long formatted addresses).
-		name = ((p.get("displayName") or {}).get("text", "") or "Unknown")[:200]
-		address = (p.get("formattedAddress", "") or "")[:300]
-		website = (p.get("websiteUri", "") or "")[:500]
-		try:
-			restaurant = Restaurant.objects.create(
-				name=name,
-				location=Point(float(lng), float(lat), srid=4326),
-				address=address,
-				city=city[:100],
-				country=country[:100],
-				website=website,
-				phone=(p.get("internationalPhoneNumber", "") or "")[:30],
-				image_url=photo_url[:2000],
-				opening_hours=hours.get("weekdayDescriptions", []) or [],
-				google_place_id=place_id,
-				created_by=request.user,
-				approval_status=Restaurant.ApprovalStatus.APPROVED,
-			)
-		except IntegrityError:
-			# Race: another request created the same place_id between our SELECT
-			# above and the INSERT here. Fetch and return the existing row.
-			existing = Restaurant.objects.filter(google_place_id=place_id).first()
-			if existing:
-				serializer = self.get_serializer(self._base_queryset().get(pk=existing.pk))
-				return Response(serializer.data)
-			logger.exception("from_google integrity error for place_id=%s payload=%r", place_id, p)
-			return Response({"detail": "Could not save this place."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-		except Exception:
-			logger.exception(
-				"from_google failed to create restaurant for place_id=%s payload=%r",
-				place_id,
-				p,
-			)
-			return Response(
-				{"detail": "Could not save this place."},
-				status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-			)
 		serializer = self.get_serializer(self._base_queryset().get(pk=restaurant.pk))
-		return Response(serializer.data, status=status.HTTP_201_CREATED)
+		http_status = status.HTTP_201_CREATED if created else status.HTTP_200_OK
+		return Response(serializer.data, status=http_status)
+
 
 class CuisineViewSet(viewsets.ReadOnlyModelViewSet):
 	queryset = Cuisine.objects.all()
