@@ -187,7 +187,7 @@ class EmailInvitationView(generics.CreateAPIView):
 			send_invitation_email(
 				to_email=invitation.email,
 				inviter_name=sender_name,
-				invitation_link=f"{invite_url}/register",
+				invitation_link=f"{invite_url}/",
 				language=language,
 			)
 		except EmailSendError as exc:
