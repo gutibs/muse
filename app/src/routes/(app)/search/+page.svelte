@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { browser } from '$app/environment';
 	import { goto } from '$app/navigation';
 	import DietaryBadges from '$lib/components/DietaryBadges.svelte';
 	import PinsMap, { type MapItem } from '$lib/components/PinsMap.svelte';
@@ -9,6 +8,7 @@
 	import type { Cuisine, Restaurant } from '$lib/types';
 	import { ApiError } from '$lib/types';
 	import { extractFirstDrfError } from '$lib/utils/api-error';
+	import { getCurrentPosition, GeoError } from '$lib/utils/geolocate';
 
 	function viewRestaurant(r: Restaurant) {
 		goto(`/restaurant/${r.id}`);
@@ -49,20 +49,6 @@
 		}
 	}
 
-	function getCurrentPosition(): Promise<GeolocationPosition> {
-		return new Promise((resolve, reject) => {
-			if (!browser || !navigator.geolocation) {
-				reject(new Error('Geolocation not available'));
-				return;
-			}
-			navigator.geolocation.getCurrentPosition(resolve, reject, {
-				enableHighAccuracy: false,
-				timeout: 10000,
-				maximumAge: 60000,
-			});
-		});
-	}
-
 	async function loadNearby() {
 		loading = true;
 		locating = true;
@@ -70,19 +56,22 @@
 		searched = true;
 		nearbyMode = true;
 		try {
-			const pos = await getCurrentPosition();
+			const pos = await getCurrentPosition({
+				enableHighAccuracy: false,
+				timeout: 10000,
+				maximumAge: 60000,
+			});
 			locating = false;
-			const nearby = await restaurantsService.nearby(
-				pos.coords.latitude,
-				pos.coords.longitude,
-				20
-			);
+			const nearby = await restaurantsService.nearby(pos.latitude, pos.longitude, 20);
 			results = nearby;
 		} catch (err: unknown) {
 			locating = false;
-			const msg = err instanceof Error ? err.message : '';
-			if (msg.includes('denied') || msg.includes('not available')) {
-				error = t('search.locationDenied');
+			if (err instanceof GeoError) {
+				if (err.code === 'permission_denied' || err.code === 'not_available') {
+					error = t('search.locationDenied');
+				} else {
+					error = t('search.cantGetLocation');
+				}
 			} else {
 				error = t('search.cantGetLocation');
 			}

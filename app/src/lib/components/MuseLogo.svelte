@@ -3,9 +3,17 @@
 
 	let {
 		width = 120,
+		href = '',
 	}: {
 		width?: number;
+		href?: string;
 	} = $props();
 </script>
 
-<img src={logoSrc} alt="Muse" {width} />
+{#if href}
+	<a {href} class="inline-flex active:opacity-70">
+		<img src={logoSrc} alt="Muse" {width} />
+	</a>
+{:else}
+	<img src={logoSrc} alt="Muse" {width} />
+{/if}

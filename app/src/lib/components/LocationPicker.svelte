@@ -2,6 +2,7 @@
 	import { browser } from '$app/environment';
 	import { t } from '$lib/i18n/index.svelte';
 	import { placesService } from '$lib/services/places.service';
+	import { getCurrentPosition, GeoError } from '$lib/utils/geolocate';
 	import { logSilent } from '$lib/utils/logger';
 	import type L from 'leaflet';
 
@@ -49,40 +50,37 @@
 		}
 	}
 
-	function geolocate() {
-		if (!navigator.geolocation) {
-			geoError = t('location.notAvailable');
-			return;
-		}
+	async function geolocate() {
 		geolocating = true;
 		geoError = '';
-		navigator.geolocation.getCurrentPosition(
-			(pos) => {
-				lat = pos.coords.latitude;
-				lng = pos.coords.longitude;
-				if (map && marker) {
-					const latlng = { lat: lat!, lng: lng! } as L.LatLngExpression;
-					marker.setLatLng(latlng);
-					map.setView(latlng, 16);
-				}
-				reverseGeocode(lat!, lng!);
-				geolocating = false;
-			},
-			(err) => {
-				console.warn('[geolocation]', err.code, err.message);
-				geolocating = false;
-				if (err.code === err.PERMISSION_DENIED) {
-					geoError = t('location.permissionDenied');
-				} else if (err.code === err.TIMEOUT) {
-					geoError = t('location.timeout');
-				} else if (err.code === err.POSITION_UNAVAILABLE) {
-					geoError = t('location.unavailable');
-				} else {
-					geoError = t('location.cantGet');
-				}
-			},
-			{ enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
-		);
+		try {
+			const pos = await getCurrentPosition({
+				enableHighAccuracy: true,
+				timeout: 10000,
+				maximumAge: 60000,
+			});
+			lat = pos.latitude;
+			lng = pos.longitude;
+			if (map && marker) {
+				const latlng = { lat: lat!, lng: lng! } as L.LatLngExpression;
+				marker.setLatLng(latlng);
+				map.setView(latlng, 16);
+			}
+			reverseGeocode(lat!, lng!);
+		} catch (err) {
+			logSilent('LocationPicker.geolocate', err);
+			if (err instanceof GeoError) {
+				if (err.code === 'permission_denied') geoError = t('location.permissionDenied');
+				else if (err.code === 'timeout') geoError = t('location.timeout');
+				else if (err.code === 'position_unavailable') geoError = t('location.unavailable');
+				else if (err.code === 'not_available') geoError = t('location.notAvailable');
+				else geoError = t('location.cantGet');
+			} else {
+				geoError = t('location.cantGet');
+			}
+		} finally {
+			geolocating = false;
+		}
 	}
 
 	$effect(() => {

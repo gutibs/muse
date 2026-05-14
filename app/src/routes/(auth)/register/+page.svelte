@@ -105,10 +105,18 @@
 
 <!-- STEP 1: Account creation -->
 {#if step === 1}
-	<div class="flex h-full flex-col items-center justify-center bg-cream px-6">
+	<div class="relative flex h-full flex-col items-center justify-center bg-cream px-6">
+		<a
+			href="/login"
+			aria-label={t('common.back')}
+			class="absolute left-3 top-3 flex min-h-11 min-w-11 items-center justify-center rounded-full text-ink-light active:bg-cream-dark active:opacity-70"
+			style="top: calc(env(safe-area-inset-top, 0px) + 0.5rem);"
+		>
+			<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+		</a>
 		<div class="w-full max-w-sm">
 			<div class="mb-2 flex justify-center">
-				<MuseLogo width={120} />
+				<MuseLogo width={120} href="/login" />
 			</div>
 			<h1 class="mb-1 text-center font-serif text-3xl font-bold text-jade-dark">Muse</h1>
 			<p class="mb-8 text-center text-sm text-ink-muted">{t('register.subtitle')}</p>
