@@ -1,13 +1,15 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width,initial-scale=1">
-	<meta name="description" content="Muse — descubrí y compartí restaurantes con amigos.">
+	<meta name="description" content="Muse — discover and share restaurants with friends.">
 	<meta name="theme-color" content="#1a4d3e">
-	<title>Muse — Descubrí restaurantes con amigos</title>
+	<title>Muse — Discover restaurants with friends</title>
 	<link rel="icon" type="image/svg+xml"
 		href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext x='50' y='75' font-size='80' text-anchor='middle' fill='%231a4d3e'%3EM%3C/text%3E%3C/svg%3E">
+	<style>html:not(.i18n-ready) body { visibility: hidden; }</style>
+	<noscript><style>html body { visibility: visible !important; }</style></noscript>
 	<style>
 		*, *::before, *::after { box-sizing: border-box; }
 		body {
@@ -86,27 +88,79 @@
 			<!-- Logo source: app/src/lib/assets/logo_muse.png (resize 256px) -->
 			<img class="logo" src="/logo.png" alt="Muse" width="256" height="170">
 			<h1>Muse</h1>
-			<p class="tagline">Descubrí y compartí restaurantes con amigos.</p>
+			<p class="tagline" data-i18n="tagline">Discover and share restaurants with friends.</p>
 		</header>
 
 		<section class="card" aria-labelledby="android-title">
 			<h2 id="android-title">Android</h2>
-			<p>Escaneá el QR o tocá el botón para descargar la app.</p>
-			<img class="qr" src="/qr-android.png" alt="QR para descargar Muse en Android" width="200" height="200">
+			<p data-i18n="androidText">Scan the QR or tap the button to download the app.</p>
+			<img class="qr" src="/qr-android.png" data-i18n-alt="qrAlt" alt="QR code to download Muse on Android" width="200" height="200">
 			<!-- TODO(apk-hosting): cuando se decida dónde se hostea el APK,
 			     reemplazar href="#" por la URL real y regenerar qr-android.png
 			     con `qrencode -o nginx/landing/qr-android.png -s 8 -m 2 -l M "<URL>"`. -->
-			<a class="btn" href="#" id="apk-link" rel="noopener">Descargá para Android</a>
+			<a class="btn" href="#" id="apk-link" rel="noopener" data-i18n="androidBtn">Download for Android</a>
 		</section>
 
 		<section class="card" aria-labelledby="ios-title">
-			<h2 id="ios-title">iOS <span class="soon">Próximamente</span></h2>
-			<div class="ios-placeholder">Estamos trabajando en la versión para iPhone.</div>
+			<h2 id="ios-title">iOS <span class="soon" data-i18n="soon">Coming soon</span></h2>
+			<div class="ios-placeholder" data-i18n="iosText">We're working on the iPhone version.</div>
 		</section>
 
 		<footer>
-			<p>&copy; Muse · <a href="mailto:hola@lovemuse.app">hola@lovemuse.app</a></p>
+			<p>&copy; Muse · <a href="mailto:info@lovemuse.app">info@lovemuse.app</a></p>
 		</footer>
 	</div>
+	<script>
+		(function () {
+			var T = {
+				es: {
+					title: "Muse — Descubrí restaurantes con amigos",
+					description: "Muse — descubrí y compartí restaurantes con amigos.",
+					tagline: "Descubrí y compartí restaurantes con amigos.",
+					androidText: "Escaneá el QR o tocá el botón para descargar la app.",
+					qrAlt: "QR para descargar Muse en Android",
+					androidBtn: "Descargá para Android",
+					soon: "Próximamente",
+					iosText: "Estamos trabajando en la versión para iPhone."
+				},
+				it: {
+					title: "Muse — Scopri ristoranti con gli amici",
+					description: "Muse — scopri e condividi ristoranti con gli amici.",
+					tagline: "Scopri e condividi ristoranti con gli amici.",
+					androidText: "Scansiona il QR o tocca il pulsante per scaricare l'app.",
+					qrAlt: "QR per scaricare Muse su Android",
+					androidBtn: "Scarica per Android",
+					soon: "Prossimamente",
+					iosText: "Stiamo lavorando alla versione per iPhone."
+				},
+				en: {
+					title: "Muse — Discover restaurants with friends",
+					description: "Muse — discover and share restaurants with friends.",
+					tagline: "Discover and share restaurants with friends.",
+					androidText: "Scan the QR or tap the button to download the app.",
+					qrAlt: "QR code to download Muse on Android",
+					androidBtn: "Download for Android",
+					soon: "Coming soon",
+					iosText: "We're working on the iPhone version."
+				}
+			};
+			var lang = (navigator.language || "en").toLowerCase().split("-")[0];
+			var locale = T[lang] ? lang : "en";
+			var t = T[locale];
+			document.documentElement.lang = locale;
+			document.title = t.title;
+			var meta = document.querySelector('meta[name="description"]');
+			if (meta) meta.setAttribute("content", t.description);
+			document.querySelectorAll("[data-i18n]").forEach(function (el) {
+				var k = el.getAttribute("data-i18n");
+				if (t[k]) el.textContent = t[k];
+			});
+			document.querySelectorAll("[data-i18n-alt]").forEach(function (el) {
+				var k = el.getAttribute("data-i18n-alt");
+				if (t[k]) el.setAttribute("alt", t[k]);
+			});
+			document.documentElement.classList.add("i18n-ready");
+		})();
+	</script>
 </body>
 </html>
