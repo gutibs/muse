@@ -216,12 +216,31 @@
 				>
 					{submitting ? t('auth.creatingAccount') : t('auth.createAccount')}
 				</button>
+
+				<p class="text-center text-xs leading-relaxed text-ink-muted">
+					By creating an account you agree to our
+					<a href="/legal/terms" class="font-medium text-jade underline">Terms of Service</a>
+					and acknowledge our
+					<a href="/legal/privacy" class="font-medium text-jade underline">Privacy Policy</a>.
+				</p>
 			</form>
 
 			<p class="mt-8 text-center text-sm text-ink-muted">
 				{t('auth.haveAccount')}
 				<a href="/login" class="font-medium text-jade">{t('register.signInLink')}</a>
 			</p>
+
+			<div class="mt-6 flex flex-wrap justify-center gap-x-3 gap-y-1 text-xs text-ink-muted">
+				<a href="/legal/privacy" class="active:opacity-70">Privacy</a>
+				<span aria-hidden="true">·</span>
+				<a href="/legal/terms" class="active:opacity-70">Terms</a>
+				<span aria-hidden="true">·</span>
+				<a href="/legal/community" class="active:opacity-70">Community</a>
+				<span aria-hidden="true">·</span>
+				<a href="/legal/cookies" class="active:opacity-70">Cookies</a>
+				<span aria-hidden="true">·</span>
+				<a href="/legal/contact" class="active:opacity-70">Contact</a>
+			</div>
 		</div>
 	</div>
 
