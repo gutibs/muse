@@ -8,6 +8,7 @@
 	<title>Muse — Discover restaurants with friends</title>
 	<link rel="icon" type="image/svg+xml"
 		href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext x='50' y='75' font-size='80' text-anchor='middle' fill='%231a4d3e'%3EM%3C/text%3E%3C/svg%3E">
+	<link rel="stylesheet" href="/legal.css">
 	<style>html:not(.i18n-ready) body { visibility: hidden; }</style>
 	<noscript><style>html body { visibility: visible !important; }</style></noscript>
 	<style>
@@ -21,6 +22,7 @@
 			-webkit-font-smoothing: antialiased;
 		}
 		.wrap { max-width: 480px; margin: 0 auto; padding: 32px 24px 48px; }
+		.lang-bar { display: flex; justify-content: flex-end; margin-bottom: 8px; }
 		header { text-align: center; margin-bottom: 32px; }
 		.logo { width: 128px; height: auto; display: block; margin: 0 auto 16px; }
 		h1 { margin: 0 0 8px; font-size: 32px; font-weight: 700; color: #1a4d3e; }
@@ -93,6 +95,13 @@
 </head>
 <body>
 	<div class="wrap">
+		<div class="lang-bar">
+			<div class="lang-picker" role="group" aria-label="Language">
+				<button type="button" data-lang-btn="en" aria-pressed="false" onclick="Muse.i18n.setLocale('en')" aria-label="English"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30'%3E%3CclipPath id='a'%3E%3Crect width='60' height='30'/%3E%3C/clipPath%3E%3Cg clip-path='url(%23a)'%3E%3Crect width='60' height='30' fill='%23012169'/%3E%3Cpath d='M0 0l60 30M60 0L0 30' stroke='%23fff' stroke-width='6'/%3E%3Cpath d='M0 0l60 30M60 0L0 30' stroke='%23C8102E' stroke-width='4' clip-path='url(%23a)'/%3E%3Cpath d='M30 0v30M0 15h60' stroke='%23fff' stroke-width='10'/%3E%3Cpath d='M30 0v30M0 15h60' stroke='%23C8102E' stroke-width='6'/%3E%3C/g%3E%3C/svg%3E" alt="EN"></button>
+				<button type="button" data-lang-btn="es" aria-pressed="false" onclick="Muse.i18n.setLocale('es')" aria-label="Español"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 750 500'%3E%3Crect width='750' height='500' fill='%23c60b1e'/%3E%3Crect width='750' height='250' y='125' fill='%23ffc400'/%3E%3C/svg%3E" alt="ES"></button>
+				<button type="button" data-lang-btn="it" aria-pressed="false" onclick="Muse.i18n.setLocale('it')" aria-label="Italiano"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 3 2'%3E%3Crect width='1' height='2' fill='%23009246'/%3E%3Crect width='1' height='2' x='1' fill='%23fff'/%3E%3Crect width='1' height='2' x='2' fill='%23ce2b37'/%3E%3C/svg%3E" alt="IT"></button>
+			</div>
+		</div>
 		<header>
 			<!-- Logo source: app/src/lib/assets/logo_muse.png (resize 256px) -->
 			<img class="logo" src="/logo.png" alt="Muse" width="256" height="170">
@@ -118,65 +127,14 @@
 		<footer>
 			<p>&copy; Muse · <a href="mailto:info@lovemuse.app">info@lovemuse.app</a></p>
 			<div class="legal-links">
-				<a href="/privacy.html">Privacy</a><span class="sep">·</span>
-				<a href="/terms.html">Terms</a><span class="sep">·</span>
-				<a href="/community.html">Community</a><span class="sep">·</span>
-				<a href="/cookies.html">Cookies</a><span class="sep">·</span>
-				<a href="/contact.html">Contact</a>
+				<a href="/privacy.html" data-i18n="footerPrivacy">Privacy</a><span class="sep">·</span>
+				<a href="/terms.html" data-i18n="footerTerms">Terms</a><span class="sep">·</span>
+				<a href="/community.html" data-i18n="footerCommunity">Community</a><span class="sep">·</span>
+				<a href="/cookies.html" data-i18n="footerCookies">Cookies</a><span class="sep">·</span>
+				<a href="/contact.html" data-i18n="footerContact">Contact</a>
 			</div>
 		</footer>
 	</div>
-	<script>
-		(function () {
-			var T = {
-				es: {
-					title: "Muse — Descubrí restaurantes con amigos",
-					description: "Muse — descubrí y compartí restaurantes con amigos.",
-					tagline: "Descubrí y compartí restaurantes con amigos.",
-					androidText: "Escaneá el QR o tocá el botón para descargar la app.",
-					qrAlt: "QR para descargar Muse en Android",
-					androidBtn: "Descargá para Android",
-					soon: "Próximamente",
-					iosText: "Estamos trabajando en la versión para iPhone."
-				},
-				it: {
-					title: "Muse — Scopri ristoranti con gli amici",
-					description: "Muse — scopri e condividi ristoranti con gli amici.",
-					tagline: "Scopri e condividi ristoranti con gli amici.",
-					androidText: "Scansiona il QR o tocca il pulsante per scaricare l'app.",
-					qrAlt: "QR per scaricare Muse su Android",
-					androidBtn: "Scarica per Android",
-					soon: "Prossimamente",
-					iosText: "Stiamo lavorando alla versione per iPhone."
-				},
-				en: {
-					title: "Muse — Discover restaurants with friends",
-					description: "Muse — discover and share restaurants with friends.",
-					tagline: "Discover and share restaurants with friends.",
-					androidText: "Scan the QR or tap the button to download the app.",
-					qrAlt: "QR code to download Muse on Android",
-					androidBtn: "Download for Android",
-					soon: "Coming soon",
-					iosText: "We're working on the iPhone version."
-				}
-			};
-			var lang = (navigator.language || "en").toLowerCase().split("-")[0];
-			var locale = T[lang] ? lang : "en";
-			var t = T[locale];
-			document.documentElement.lang = locale;
-			document.title = t.title;
-			var meta = document.querySelector('meta[name="description"]');
-			if (meta) meta.setAttribute("content", t.description);
-			document.querySelectorAll("[data-i18n]").forEach(function (el) {
-				var k = el.getAttribute("data-i18n");
-				if (t[k]) el.textContent = t[k];
-			});
-			document.querySelectorAll("[data-i18n-alt]").forEach(function (el) {
-				var k = el.getAttribute("data-i18n-alt");
-				if (t[k]) el.setAttribute("alt", t[k]);
-			});
-			document.documentElement.classList.add("i18n-ready");
-		})();
-	</script>
+	<script src="/i18n.js"></script>
 </body>
 </html>

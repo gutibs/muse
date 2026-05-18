@@ -13,93 +13,257 @@
 <body>
 	<div class="wrap">
 		<header class="top">
-			<a class="back" href="/">← Back to Muse</a>
+			<a class="back" href="/" data-i18n="back">← Back to Muse</a>
+			<div class="lang-picker" role="group" aria-label="Language">
+				<button type="button" data-lang-btn="en" aria-pressed="false" onclick="Muse.i18n.setLocale('en')" aria-label="English"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30'%3E%3CclipPath id='a'%3E%3Crect width='60' height='30'/%3E%3C/clipPath%3E%3Cg clip-path='url(%23a)'%3E%3Crect width='60' height='30' fill='%23012169'/%3E%3Cpath d='M0 0l60 30M60 0L0 30' stroke='%23fff' stroke-width='6'/%3E%3Cpath d='M0 0l60 30M60 0L0 30' stroke='%23C8102E' stroke-width='4' clip-path='url(%23a)'/%3E%3Cpath d='M30 0v30M0 15h60' stroke='%23fff' stroke-width='10'/%3E%3Cpath d='M30 0v30M0 15h60' stroke='%23C8102E' stroke-width='6'/%3E%3C/g%3E%3C/svg%3E" alt="EN"></button>
+				<button type="button" data-lang-btn="es" aria-pressed="false" onclick="Muse.i18n.setLocale('es')" aria-label="Español"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 750 500'%3E%3Crect width='750' height='500' fill='%23c60b1e'/%3E%3Crect width='750' height='250' y='125' fill='%23ffc400'/%3E%3C/svg%3E" alt="ES"></button>
+				<button type="button" data-lang-btn="it" aria-pressed="false" onclick="Muse.i18n.setLocale('it')" aria-label="Italiano"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 3 2'%3E%3Crect width='1' height='2' fill='%23009246'/%3E%3Crect width='1' height='2' x='1' fill='%23fff'/%3E%3Crect width='1' height='2' x='2' fill='%23ce2b37'/%3E%3C/svg%3E" alt="IT"></button>
+			</div>
 		</header>
 
-		<h1>Privacy Policy</h1>
-		<p class="meta">Last updated: 18 May 2026 · Effective for users of Muse (lovemuse.app).</p>
+		<div data-lang="en">
+			<h1>Privacy Policy</h1>
+			<p class="meta">Last updated: 18 May 2026 · Effective for users of Muse (lovemuse.app).</p>
 
-		<p>Muse ("we", "us", "our") respects your privacy. This Privacy Policy explains what personal data we collect, how we use it, who we share it with, and the rights you have. It is written to comply with the <strong>Personal Data (Privacy) Ordinance (Cap. 486)</strong> of Hong Kong ("PDPO") and the six Data Protection Principles ("DPPs") issued by the Office of the Privacy Commissioner for Personal Data, Hong Kong ("PCPD").</p>
+			<p>Muse ("we", "us", "our") respects your privacy. This Privacy Policy explains what personal data we collect, how we use it, who we share it with, and the rights you have. It is written to comply with the <strong>Personal Data (Privacy) Ordinance (Cap. 486)</strong> of Hong Kong ("PDPO") and the six Data Protection Principles ("DPPs") issued by the Office of the Privacy Commissioner for Personal Data, Hong Kong ("PCPD").</p>
 
-		<h2>1. Who we are (Data User)</h2>
-		<p>Muse is operated as an online service available at lovemuse.app and via mobile applications. For the purposes of the PDPO, we act as the <em>Data User</em> in respect of the personal data we collect from you. Contact details for privacy enquiries are set out at the end of this Policy.</p>
+			<h2>1. Who we are (Data User)</h2>
+			<p>Muse is operated as an online service available at lovemuse.app and via mobile applications. For the purposes of the PDPO, we act as the <em>Data User</em> in respect of the personal data we collect from you. Contact details for privacy enquiries are set out at the end of this Policy.</p>
 
-		<h2>2. Personal data we collect</h2>
-		<p>We collect only the data we need to run the service:</p>
-		<ul>
-			<li><strong>Account data:</strong> email address, display name, password (stored hashed), language preference.</li>
-			<li><strong>Profile data (optional):</strong> bio, city, dietary preferences, favourite cuisine, Instagram handle, website, phone, avatar.</li>
-			<li><strong>Content you create:</strong> restaurants you pin as "visited" or "to visit", ratings, comments, shared lists.</li>
-			<li><strong>Social graph:</strong> friend connections and invitations you send or accept.</li>
-			<li><strong>Device & technical data:</strong> IP address, device type, operating system, app version, crash logs, approximate or precise location <em>only</em> when you explicitly grant the permission.</li>
-			<li><strong>Communications:</strong> emails you send to us at <a href="mailto:info@lovemuse.app">info@lovemuse.app</a>.</li>
-		</ul>
-		<p>We do not knowingly collect data from individuals under the age of 13. If you believe a minor has provided us with personal data, contact us and we will delete it.</p>
+			<h2>2. Personal data we collect</h2>
+			<p>We collect only the data we need to run the service:</p>
+			<ul>
+				<li><strong>Account data:</strong> email address, display name, password (stored hashed), language preference.</li>
+				<li><strong>Profile data (optional):</strong> bio, city, dietary preferences, favourite cuisine, Instagram handle, website, phone, avatar.</li>
+				<li><strong>Content you create:</strong> restaurants you pin as "visited" or "to visit", ratings, comments, shared lists.</li>
+				<li><strong>Social graph:</strong> friend connections and invitations you send or accept.</li>
+				<li><strong>Device & technical data:</strong> IP address, device type, operating system, app version, crash logs, approximate or precise location <em>only</em> when you explicitly grant the permission.</li>
+				<li><strong>Communications:</strong> emails you send to us at <a href="mailto:info@lovemuse.app">info@lovemuse.app</a>.</li>
+			</ul>
+			<p>We do not knowingly collect data from individuals under the age of 13. If you believe a minor has provided us with personal data, contact us and we will delete it.</p>
 
-		<h2>3. Purposes of collection (DPP 1 & 3)</h2>
-		<p>We collect and use your personal data for the following purposes:</p>
-		<ul>
-			<li>Creating, maintaining and securing your account.</li>
-			<li>Letting you pin, rate and share restaurants with friends.</li>
-			<li>Showing you your friends' activity in a personalised feed.</li>
-			<li>Sending transactional emails (invitations, password resets, security alerts).</li>
-			<li>Improving the service, debugging, and preventing abuse.</li>
-			<li>Complying with applicable laws and lawful requests from authorities.</li>
-		</ul>
-		<p>We will not use your personal data for a new purpose that is materially different from those listed above without first obtaining your express and voluntary consent, as required by DPP 3.</p>
+			<h2>3. Purposes of collection (DPP 1 & 3)</h2>
+			<p>We collect and use your personal data for the following purposes:</p>
+			<ul>
+				<li>Creating, maintaining and securing your account.</li>
+				<li>Letting you pin, rate and share restaurants with friends.</li>
+				<li>Showing you your friends' activity in a personalised feed.</li>
+				<li>Sending transactional emails (invitations, password resets, security alerts).</li>
+				<li>Improving the service, debugging, and preventing abuse.</li>
+				<li>Complying with applicable laws and lawful requests from authorities.</li>
+			</ul>
+			<p>We will not use your personal data for a new purpose that is materially different from those listed above without first obtaining your express and voluntary consent, as required by DPP 3.</p>
 
-		<h2>4. How we share data (DPP 3)</h2>
-		<p>We do <strong>not</strong> sell your personal data. We share it only in the following circumstances:</p>
-		<ul>
-			<li><strong>With other users:</strong> your display name, avatar, city, pins, ratings and shared lists are visible to friends; shared lists you generate are accessible to anyone with the public link.</li>
-			<li><strong>With service providers (Data Processors):</strong> hosting (AWS, EC2/RDS in the United States), transactional email (Resend), mapping & places data (Google Maps Platform, OpenStreetMap/Nominatim via our backend proxy). They process data on our instructions under contractual safeguards.</li>
-			<li><strong>For legal reasons:</strong> when required by a court order, subpoena or other lawful request, including from Hong Kong authorities under the PDPO or other ordinances.</li>
-		</ul>
+			<h2>4. How we share data (DPP 3)</h2>
+			<p>We do <strong>not</strong> sell your personal data. We share it only in the following circumstances:</p>
+			<ul>
+				<li><strong>With other users:</strong> your display name, avatar, city, pins, ratings and shared lists are visible to friends; shared lists you generate are accessible to anyone with the public link.</li>
+				<li><strong>With service providers (Data Processors):</strong> hosting (AWS, EC2/RDS in the United States), transactional email (Resend), mapping & places data (Google Maps Platform, OpenStreetMap/Nominatim via our backend proxy). They process data on our instructions under contractual safeguards.</li>
+				<li><strong>For legal reasons:</strong> when required by a court order, subpoena or other lawful request, including from Hong Kong authorities under the PDPO or other ordinances.</li>
+			</ul>
 
-		<h2>5. Cross-border transfer</h2>
-		<p>Although Section 33 of the PDPO (regulating transfers of personal data outside Hong Kong) is not yet in force, we apply its spirit voluntarily. Where we transfer data to processors outside Hong Kong (for example, to AWS data centres in the United States or to Resend in the European Union / United States), we ensure that:</p>
-		<ul>
-			<li>the recipient is bound by written contractual terms to protect the data to a standard substantially similar to the PDPO;</li>
-			<li>the data is transmitted using TLS encryption in transit; and</li>
-			<li>the transfer is limited to what is necessary to provide the service.</li>
-		</ul>
+			<h2>5. Cross-border transfer</h2>
+			<p>Although Section 33 of the PDPO (regulating transfers of personal data outside Hong Kong) is not yet in force, we apply its spirit voluntarily. Where we transfer data to processors outside Hong Kong (for example, to AWS data centres in the United States or to Resend in the European Union / United States), we ensure that:</p>
+			<ul>
+				<li>the recipient is bound by written contractual terms to protect the data to a standard substantially similar to the PDPO;</li>
+				<li>the data is transmitted using TLS encryption in transit; and</li>
+				<li>the transfer is limited to what is necessary to provide the service.</li>
+			</ul>
 
-		<h2>6. Retention (DPP 2)</h2>
-		<p>We keep personal data only for as long as is necessary for the purposes set out above. When you delete your account, we delete or anonymise your personal data within 30 days, except where retention is required to comply with a legal obligation, to resolve disputes or to enforce our agreements. Backups containing residual copies are purged on a rolling 90-day cycle.</p>
+			<h2>6. Retention (DPP 2)</h2>
+			<p>We keep personal data only for as long as is necessary for the purposes set out above. When you delete your account, we delete or anonymise your personal data within 30 days, except where retention is required to comply with a legal obligation, to resolve disputes or to enforce our agreements. Backups containing residual copies are purged on a rolling 90-day cycle.</p>
 
-		<h2>7. Security (DPP 4)</h2>
-		<p>We apply reasonable and practicable security measures, including TLS 1.2+ for all traffic, hashed password storage (Django's PBKDF2 default), access controls on our infrastructure, rate-limiting on sensitive endpoints, and logging. No system is perfectly secure; if we become aware of a personal data breach that is likely to result in real risk of significant harm, we will notify affected users and, where appropriate, the PCPD without undue delay.</p>
+			<h2>7. Security (DPP 4)</h2>
+			<p>We apply reasonable and practicable security measures, including TLS 1.2+ for all traffic, hashed password storage (Django's PBKDF2 default), access controls on our infrastructure, rate-limiting on sensitive endpoints, and logging. No system is perfectly secure; if we become aware of a personal data breach that is likely to result in real risk of significant harm, we will notify affected users and, where appropriate, the PCPD without undue delay.</p>
 
-		<h2>8. Accuracy (DPP 2)</h2>
-		<p>You can edit most of your personal data directly from your profile screen. If any data we hold is inaccurate, please correct it in-app or write to us.</p>
+			<h2>8. Accuracy (DPP 2)</h2>
+			<p>You can edit most of your personal data directly from your profile screen. If any data we hold is inaccurate, please correct it in-app or write to us.</p>
 
-		<h2>9. Your rights (DPP 5 & 6)</h2>
-		<p>Under the PDPO, you have the right to:</p>
-		<ul>
-			<li>be informed of our privacy policies and practices (DPP 5);</li>
-			<li>ascertain whether we hold personal data about you and to request a copy of that data (Data Access Request, s.18 PDPO);</li>
-			<li>request correction of inaccurate data (Data Correction Request, s.22 PDPO);</li>
-			<li>opt out of any direct marketing (we currently send no direct marketing).</li>
-		</ul>
-		<p>To exercise any of these rights, email <a href="mailto:info@lovemuse.app">info@lovemuse.app</a> from the address linked to your account. We will respond within 40 days, as required by the PDPO. We may charge a reasonable fee for compliance with a Data Access Request, in line with PCPD guidance.</p>
+			<h2>9. Your rights (DPP 5 & 6)</h2>
+			<p>Under the PDPO, you have the right to:</p>
+			<ul>
+				<li>be informed of our privacy policies and practices (DPP 5);</li>
+				<li>ascertain whether we hold personal data about you and to request a copy of that data (Data Access Request, s.18 PDPO);</li>
+				<li>request correction of inaccurate data (Data Correction Request, s.22 PDPO);</li>
+				<li>opt out of any direct marketing (we currently send no direct marketing).</li>
+			</ul>
+			<p>To exercise any of these rights, email <a href="mailto:info@lovemuse.app">info@lovemuse.app</a> from the address linked to your account. We will respond within 40 days, as required by the PDPO. We may charge a reasonable fee for compliance with a Data Access Request, in line with PCPD guidance.</p>
 
-		<h2>10. Complaints</h2>
-		<p>If you believe we have failed to comply with the PDPO, you may lodge a complaint with the Office of the Privacy Commissioner for Personal Data, Hong Kong (PCPD), 12/F, Sunlight Tower, 248 Queen's Road East, Wanchai, Hong Kong — <a href="https://www.pcpd.org.hk" rel="noopener" target="_blank">www.pcpd.org.hk</a>.</p>
+			<h2>10. Complaints</h2>
+			<p>If you believe we have failed to comply with the PDPO, you may lodge a complaint with the Office of the Privacy Commissioner for Personal Data, Hong Kong (PCPD), 12/F, Sunlight Tower, 248 Queen's Road East, Wanchai, Hong Kong — <a href="https://www.pcpd.org.hk" rel="noopener" target="_blank">www.pcpd.org.hk</a>.</p>
 
-		<h2>11. Changes to this Policy</h2>
-		<p>We may update this Policy. Material changes will be notified in-app or by email at least 14 days before they take effect. Continued use after the effective date constitutes acceptance.</p>
+			<h2>11. Changes to this Policy</h2>
+			<p>We may update this Policy. Material changes will be notified in-app or by email at least 14 days before they take effect. Continued use after the effective date constitutes acceptance.</p>
 
-		<h2>12. Contact</h2>
-		<p>For any privacy-related question or request, contact us at <a href="mailto:info@lovemuse.app">info@lovemuse.app</a>.</p>
+			<h2>12. Contact</h2>
+			<p>For any privacy-related question or request, contact us at <a href="mailto:info@lovemuse.app">info@lovemuse.app</a>.</p>
+		</div>
+
+		<div data-lang="es" hidden>
+			<h1>Política de Privacidad</h1>
+			<p class="meta">Última actualización: 18 de mayo de 2026 · Aplicable a los usuarios de Muse (lovemuse.app).</p>
+
+			<p>Muse ("nosotros") respeta tu privacidad. Esta Política de Privacidad explica qué datos personales recopilamos, cómo los usamos, con quién los compartimos y los derechos que te asisten. Está redactada para cumplir con la <strong>Personal Data (Privacy) Ordinance (Cap. 486)</strong> de Hong Kong ("PDPO") y los seis Principios de Protección de Datos ("DPP") emitidos por la Office of the Privacy Commissioner for Personal Data, Hong Kong ("PCPD").</p>
+
+			<h2>1. Quiénes somos (Data User)</h2>
+			<p>Muse opera como un servicio en línea disponible en lovemuse.app y mediante aplicaciones móviles. A los efectos de la PDPO, actuamos como <em>Data User</em> respecto de los datos personales que recopilamos de vos. Los datos de contacto para consultas de privacidad figuran al final de esta Política.</p>
+
+			<h2>2. Datos personales que recopilamos</h2>
+			<p>Solo recopilamos los datos necesarios para prestar el servicio:</p>
+			<ul>
+				<li><strong>Datos de cuenta:</strong> dirección de email, nombre visible, contraseña (almacenada con hash), preferencia de idioma.</li>
+				<li><strong>Datos de perfil (opcionales):</strong> biografía, ciudad, preferencias dietarias, cocina favorita, usuario de Instagram, sitio web, teléfono, avatar.</li>
+				<li><strong>Contenido que generás:</strong> restaurantes que marcás como "visitado" o "para visitar", calificaciones, comentarios, listas compartidas.</li>
+				<li><strong>Grafo social:</strong> conexiones de amistad e invitaciones que enviás o aceptás.</li>
+				<li><strong>Datos técnicos del dispositivo:</strong> dirección IP, tipo de dispositivo, sistema operativo, versión de la app, registros de fallos, ubicación aproximada o precisa <em>solo</em> cuando otorgás el permiso explícito.</li>
+				<li><strong>Comunicaciones:</strong> emails que nos enviás a <a href="mailto:info@lovemuse.app">info@lovemuse.app</a>.</li>
+			</ul>
+			<p>No recopilamos datos de menores de 13 años de forma consciente. Si creés que un menor nos proporcionó datos personales, contactanos y los eliminaremos.</p>
+
+			<h2>3. Finalidades del tratamiento (DPP 1 y 3)</h2>
+			<p>Tratamos tus datos personales con los siguientes fines:</p>
+			<ul>
+				<li>Crear, mantener y proteger tu cuenta.</li>
+				<li>Permitirte fijar, calificar y compartir restaurantes con tus amigos.</li>
+				<li>Mostrarte la actividad de tus amigos en un feed personalizado.</li>
+				<li>Enviar emails transaccionales (invitaciones, recuperación de contraseña, alertas de seguridad).</li>
+				<li>Mejorar el servicio, depurar fallos y prevenir abusos.</li>
+				<li>Cumplir con las leyes aplicables y con requerimientos legítimos de autoridades.</li>
+			</ul>
+			<p>No usaremos tus datos personales con una finalidad sustancialmente distinta a las anteriores sin obtener antes tu consentimiento expreso y voluntario, conforme al DPP 3.</p>
+
+			<h2>4. Con quién compartimos los datos (DPP 3)</h2>
+			<p><strong>No</strong> vendemos tus datos personales. Solo los compartimos en los siguientes casos:</p>
+			<ul>
+				<li><strong>Con otros usuarios:</strong> tu nombre visible, avatar, ciudad, pins, calificaciones y listas compartidas son visibles para tus amigos; las listas que compartas por link público quedan accesibles a quien tenga ese link.</li>
+				<li><strong>Con proveedores de servicio (Data Processors):</strong> hosting (AWS, EC2/RDS en Estados Unidos), email transaccional (Resend), mapas y datos de lugares (Google Maps Platform, OpenStreetMap/Nominatim vía nuestro proxy backend). Procesan los datos por instrucción nuestra y bajo salvaguardas contractuales.</li>
+				<li><strong>Por motivos legales:</strong> cuando lo exija una orden judicial, citación u otro requerimiento legítimo, incluidos los de autoridades de Hong Kong bajo la PDPO u otras Ordenanzas.</li>
+			</ul>
+
+			<h2>5. Transferencias internacionales</h2>
+			<p>Aunque la Sección 33 de la PDPO (que regula las transferencias de datos personales fuera de Hong Kong) aún no está vigente, aplicamos su espíritu de forma voluntaria. Cuando transferimos datos a procesadores fuera de Hong Kong (por ejemplo, a centros de datos de AWS en Estados Unidos o a Resend en la Unión Europea / Estados Unidos), garantizamos que:</p>
+			<ul>
+				<li>el destinatario esté obligado por contrato escrito a proteger los datos con un estándar sustancialmente equivalente al de la PDPO;</li>
+				<li>los datos se transmitan con cifrado TLS en tránsito; y</li>
+				<li>la transferencia se limite a lo necesario para prestar el servicio.</li>
+			</ul>
+
+			<h2>6. Retención (DPP 2)</h2>
+			<p>Conservamos los datos personales solo durante el tiempo necesario para las finalidades indicadas. Cuando eliminás tu cuenta, borramos o anonimizamos tus datos personales dentro de los 30 días, salvo cuando la retención sea requerida para cumplir una obligación legal, resolver disputas o hacer cumplir nuestros acuerdos. Las copias residuales en backups se purgan en un ciclo rotativo de 90 días.</p>
+
+			<h2>7. Seguridad (DPP 4)</h2>
+			<p>Aplicamos medidas de seguridad razonables y prácticas, incluyendo TLS 1.2+ para todo el tráfico, almacenamiento de contraseñas con hash (PBKDF2 por defecto de Django), controles de acceso sobre la infraestructura, rate-limiting en endpoints sensibles y logging. Ningún sistema es perfectamente seguro; si detectamos una violación de datos personales que probablemente implique un riesgo real de daño significativo, notificaremos a los usuarios afectados y, cuando corresponda, a la PCPD sin demora indebida.</p>
+
+			<h2>8. Exactitud (DPP 2)</h2>
+			<p>Podés editar la mayoría de tus datos personales directamente desde la pantalla de perfil. Si algún dato que mantenemos resulta inexacto, corregilo desde la app o escribinos.</p>
+
+			<h2>9. Tus derechos (DPP 5 y 6)</h2>
+			<p>Bajo la PDPO, tenés derecho a:</p>
+			<ul>
+				<li>estar informado de nuestras políticas y prácticas de privacidad (DPP 5);</li>
+				<li>verificar si tenemos datos personales tuyos y solicitar una copia de los mismos (Data Access Request, art. 18 PDPO);</li>
+				<li>solicitar la corrección de datos inexactos (Data Correction Request, art. 22 PDPO);</li>
+				<li>oponerte a cualquier marketing directo (actualmente no enviamos marketing directo).</li>
+			</ul>
+			<p>Para ejercer estos derechos, escribinos a <a href="mailto:info@lovemuse.app">info@lovemuse.app</a> desde la dirección asociada a tu cuenta. Responderemos dentro de los 40 días, conforme exige la PDPO. Podemos cobrar una tarifa razonable por cumplir un Data Access Request, en línea con las pautas de la PCPD.</p>
+
+			<h2>10. Reclamos</h2>
+			<p>Si considerás que no hemos cumplido con la PDPO, podés presentar un reclamo ante la Office of the Privacy Commissioner for Personal Data, Hong Kong (PCPD), 12/F, Sunlight Tower, 248 Queen's Road East, Wanchai, Hong Kong — <a href="https://www.pcpd.org.hk" rel="noopener" target="_blank">www.pcpd.org.hk</a>.</p>
+
+			<h2>11. Cambios en esta Política</h2>
+			<p>Podemos actualizar esta Política. Los cambios materiales se notificarán dentro de la app o por email con al menos 14 días de antelación a su entrada en vigor. El uso continuado después de la fecha efectiva implica aceptación.</p>
+
+			<h2>12. Contacto</h2>
+			<p>Para cualquier consulta o solicitud de privacidad, contactanos en <a href="mailto:info@lovemuse.app">info@lovemuse.app</a>.</p>
+		</div>
+
+		<div data-lang="it" hidden>
+			<h1>Informativa sulla Privacy</h1>
+			<p class="meta">Ultimo aggiornamento: 18 maggio 2026 · Valida per gli utenti di Muse (lovemuse.app).</p>
+
+			<p>Muse ("noi") rispetta la tua privacy. Questa Informativa spiega quali dati personali raccogliamo, come li utilizziamo, con chi li condividiamo e quali diritti hai. È redatta in conformità alla <strong>Personal Data (Privacy) Ordinance (Cap. 486)</strong> di Hong Kong ("PDPO") e ai sei Data Protection Principles ("DPP") emanati dall'Office of the Privacy Commissioner for Personal Data, Hong Kong ("PCPD").</p>
+
+			<h2>1. Chi siamo (Data User)</h2>
+			<p>Muse opera come servizio online disponibile su lovemuse.app e tramite applicazioni mobili. Ai fini della PDPO, agiamo come <em>Data User</em> rispetto ai dati personali che raccogliamo. I contatti per richieste sulla privacy sono indicati alla fine di questa Informativa.</p>
+
+			<h2>2. Dati personali che raccogliamo</h2>
+			<p>Raccogliamo solo i dati necessari per fornire il servizio:</p>
+			<ul>
+				<li><strong>Dati dell'account:</strong> indirizzo email, nome visualizzato, password (memorizzata con hash), preferenza di lingua.</li>
+				<li><strong>Dati del profilo (facoltativi):</strong> biografia, città, preferenze alimentari, cucina preferita, handle Instagram, sito web, telefono, avatar.</li>
+				<li><strong>Contenuti creati:</strong> ristoranti contrassegnati come "visitato" o "da visitare", valutazioni, commenti, liste condivise.</li>
+				<li><strong>Grafo sociale:</strong> connessioni di amicizia e inviti inviati o accettati.</li>
+				<li><strong>Dati tecnici del dispositivo:</strong> indirizzo IP, tipo di dispositivo, sistema operativo, versione dell'app, log di crash, posizione approssimativa o precisa <em>solo</em> se ne concedi esplicitamente il permesso.</li>
+				<li><strong>Comunicazioni:</strong> email che ci invii a <a href="mailto:info@lovemuse.app">info@lovemuse.app</a>.</li>
+			</ul>
+			<p>Non raccogliamo consapevolmente dati di persone di età inferiore a 13 anni. Se ritieni che un minore ci abbia fornito dati personali, contattaci e li elimineremo.</p>
+
+			<h2>3. Finalità del trattamento (DPP 1 e 3)</h2>
+			<p>Trattiamo i tuoi dati personali per le seguenti finalità:</p>
+			<ul>
+				<li>Creazione, mantenimento e sicurezza del tuo account.</li>
+				<li>Permetterti di salvare, valutare e condividere ristoranti con gli amici.</li>
+				<li>Mostrarti l'attività dei tuoi amici in un feed personalizzato.</li>
+				<li>Inviare email transazionali (inviti, reimpostazione password, avvisi di sicurezza).</li>
+				<li>Migliorare il servizio, risolvere errori e prevenire abusi.</li>
+				<li>Rispettare le leggi applicabili e le richieste legittime delle autorità.</li>
+			</ul>
+			<p>Non utilizzeremo i tuoi dati personali per finalità materialmente diverse senza prima ottenere il tuo consenso esplicito e volontario, come richiesto dal DPP 3.</p>
+
+			<h2>4. Come condividiamo i dati (DPP 3)</h2>
+			<p><strong>Non</strong> vendiamo i tuoi dati personali. Li condividiamo solo nelle seguenti circostanze:</p>
+			<ul>
+				<li><strong>Con altri utenti:</strong> il tuo nome visualizzato, avatar, città, pin, valutazioni e liste condivise sono visibili agli amici; le liste pubbliche che generi sono accessibili a chiunque abbia il link.</li>
+				<li><strong>Con fornitori di servizio (Data Processors):</strong> hosting (AWS, EC2/RDS negli Stati Uniti), email transazionale (Resend), mappe e dati di luoghi (Google Maps Platform, OpenStreetMap/Nominatim tramite il nostro proxy backend). Trattano i dati su nostre istruzioni e con garanzie contrattuali.</li>
+				<li><strong>Per motivi legali:</strong> quando richiesto da un'ordinanza del tribunale, citazione o altra richiesta legittima, comprese le autorità di Hong Kong ai sensi della PDPO o di altre Ordinanze.</li>
+			</ul>
+
+			<h2>5. Trasferimenti internazionali</h2>
+			<p>Sebbene la Sezione 33 della PDPO (che regola i trasferimenti di dati personali al di fuori di Hong Kong) non sia ancora in vigore, ne applichiamo lo spirito volontariamente. Quando trasferiamo dati a processori fuori da Hong Kong (ad esempio, ai data centre AWS negli Stati Uniti o a Resend nell'Unione Europea / Stati Uniti), garantiamo che:</p>
+			<ul>
+				<li>il destinatario sia vincolato da contratto scritto a proteggere i dati con uno standard sostanzialmente equivalente alla PDPO;</li>
+				<li>i dati siano trasmessi con cifratura TLS in transito; e</li>
+				<li>il trasferimento sia limitato a quanto necessario per fornire il servizio.</li>
+			</ul>
+
+			<h2>6. Conservazione (DPP 2)</h2>
+			<p>Conserviamo i dati personali solo per il tempo necessario alle finalità indicate. Quando elimini il tuo account, cancelliamo o anonimizziamo i tuoi dati personali entro 30 giorni, salvo quando la conservazione sia richiesta per adempiere obblighi legali, risolvere controversie o far valere i nostri accordi. Le copie residue nei backup vengono eliminate in un ciclo rotativo di 90 giorni.</p>
+
+			<h2>7. Sicurezza (DPP 4)</h2>
+			<p>Applichiamo misure di sicurezza ragionevoli e praticabili, tra cui TLS 1.2+ per tutto il traffico, conservazione delle password con hash (PBKDF2 di default di Django), controlli di accesso sull'infrastruttura, rate-limiting sugli endpoint sensibili e logging. Nessun sistema è perfettamente sicuro; se veniamo a conoscenza di una violazione di dati personali che possa comportare un rischio reale di danno significativo, notificheremo gli utenti interessati e, ove opportuno, la PCPD senza indebito ritardo.</p>
+
+			<h2>8. Accuratezza (DPP 2)</h2>
+			<p>Puoi modificare la maggior parte dei tuoi dati personali direttamente dalla schermata del profilo. Se qualche dato in nostro possesso non è accurato, correggilo dall'app o scrivici.</p>
+
+			<h2>9. I tuoi diritti (DPP 5 e 6)</h2>
+			<p>Ai sensi della PDPO, hai il diritto di:</p>
+			<ul>
+				<li>essere informato delle nostre politiche e prassi sulla privacy (DPP 5);</li>
+				<li>verificare se conserviamo i tuoi dati personali e richiederne copia (Data Access Request, art. 18 PDPO);</li>
+				<li>richiedere la correzione dei dati inesatti (Data Correction Request, art. 22 PDPO);</li>
+				<li>opporti a qualsiasi marketing diretto (attualmente non inviamo marketing diretto).</li>
+			</ul>
+			<p>Per esercitare questi diritti, scrivi a <a href="mailto:info@lovemuse.app">info@lovemuse.app</a> dall'indirizzo associato al tuo account. Risponderemo entro 40 giorni, come richiesto dalla PDPO. Possiamo richiedere una tariffa ragionevole per un Data Access Request, in linea con le indicazioni della PCPD.</p>
+
+			<h2>10. Reclami</h2>
+			<p>Se ritieni che non abbiamo rispettato la PDPO, puoi presentare un reclamo all'Office of the Privacy Commissioner for Personal Data, Hong Kong (PCPD), 12/F, Sunlight Tower, 248 Queen's Road East, Wanchai, Hong Kong — <a href="https://www.pcpd.org.hk" rel="noopener" target="_blank">www.pcpd.org.hk</a>.</p>
+
+			<h2>11. Modifiche all'Informativa</h2>
+			<p>Possiamo aggiornare questa Informativa. I cambiamenti sostanziali saranno notificati in app o via email almeno 14 giorni prima dell'entrata in vigore. L'uso continuato dopo la data di efficacia comporta accettazione.</p>
+
+			<h2>12. Contatto</h2>
+			<p>Per qualsiasi domanda o richiesta sulla privacy, contattaci a <a href="mailto:info@lovemuse.app">info@lovemuse.app</a>.</p>
+		</div>
 
 		<footer>
-			<a href="/">Home</a><span class="sep">·</span>
-			<a href="/privacy.html">Privacy</a><span class="sep">·</span>
-			<a href="/terms.html">Terms</a><span class="sep">·</span>
-			<a href="/community.html">Community</a><span class="sep">·</span>
-			<a href="/cookies.html">Cookies</a><span class="sep">·</span>
-			<a href="/contact.html">Contact</a>
+			<a href="/" data-i18n="footerHome">Home</a><span class="sep">·</span>
+			<a href="/privacy.html" data-i18n="footerPrivacy">Privacy</a><span class="sep">·</span>
+			<a href="/terms.html" data-i18n="footerTerms">Terms</a><span class="sep">·</span>
+			<a href="/community.html" data-i18n="footerCommunity">Community</a><span class="sep">·</span>
+			<a href="/cookies.html" data-i18n="footerCookies">Cookies</a><span class="sep">·</span>
+			<a href="/contact.html" data-i18n="footerContact">Contact</a>
 		</footer>
 	</div>
+	<script src="/i18n.js"></script>
 </body>
 </html>

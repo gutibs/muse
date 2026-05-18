@@ -454,26 +454,26 @@
 
 			<!-- Legal & policies -->
 			<section class="mt-6">
-				<h3 class="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-muted">Legal</h3>
+				<h3 class="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-muted">{t('legal.section')}</h3>
 				<div class="space-y-2">
 					<a href="/legal/privacy" class="flex items-center justify-between rounded-card bg-white p-4 shadow-card active:scale-[0.98]">
-						<span class="text-sm font-medium text-ink">Privacy Policy</span>
+						<span class="text-sm font-medium text-ink">{t('legal.privacy')}</span>
 						<svg class="h-4 w-4 text-ink-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
 					</a>
 					<a href="/legal/terms" class="flex items-center justify-between rounded-card bg-white p-4 shadow-card active:scale-[0.98]">
-						<span class="text-sm font-medium text-ink">Terms of Service</span>
+						<span class="text-sm font-medium text-ink">{t('legal.terms')}</span>
 						<svg class="h-4 w-4 text-ink-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
 					</a>
 					<a href="/legal/community" class="flex items-center justify-between rounded-card bg-white p-4 shadow-card active:scale-[0.98]">
-						<span class="text-sm font-medium text-ink">Community Guidelines</span>
+						<span class="text-sm font-medium text-ink">{t('legal.community')}</span>
 						<svg class="h-4 w-4 text-ink-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
 					</a>
 					<a href="/legal/cookies" class="flex items-center justify-between rounded-card bg-white p-4 shadow-card active:scale-[0.98]">
-						<span class="text-sm font-medium text-ink">Cookie Policy</span>
+						<span class="text-sm font-medium text-ink">{t('legal.cookies')}</span>
 						<svg class="h-4 w-4 text-ink-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
 					</a>
 					<a href="/legal/contact" class="flex items-center justify-between rounded-card bg-white p-4 shadow-card active:scale-[0.98]">
-						<span class="text-sm font-medium text-ink">Contact</span>
+						<span class="text-sm font-medium text-ink">{t('legal.contact')}</span>
 						<svg class="h-4 w-4 text-ink-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
 					</a>
 				</div>

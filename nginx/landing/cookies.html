@@ -13,61 +13,161 @@
 <body>
 	<div class="wrap">
 		<header class="top">
-			<a class="back" href="/">← Back to Muse</a>
+			<a class="back" href="/" data-i18n="back">← Back to Muse</a>
+			<div class="lang-picker" role="group" aria-label="Language">
+				<button type="button" data-lang-btn="en" aria-pressed="false" onclick="Muse.i18n.setLocale('en')" aria-label="English"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30'%3E%3CclipPath id='a'%3E%3Crect width='60' height='30'/%3E%3C/clipPath%3E%3Cg clip-path='url(%23a)'%3E%3Crect width='60' height='30' fill='%23012169'/%3E%3Cpath d='M0 0l60 30M60 0L0 30' stroke='%23fff' stroke-width='6'/%3E%3Cpath d='M0 0l60 30M60 0L0 30' stroke='%23C8102E' stroke-width='4' clip-path='url(%23a)'/%3E%3Cpath d='M30 0v30M0 15h60' stroke='%23fff' stroke-width='10'/%3E%3Cpath d='M30 0v30M0 15h60' stroke='%23C8102E' stroke-width='6'/%3E%3C/g%3E%3C/svg%3E" alt="EN"></button>
+				<button type="button" data-lang-btn="es" aria-pressed="false" onclick="Muse.i18n.setLocale('es')" aria-label="Español"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 750 500'%3E%3Crect width='750' height='500' fill='%23c60b1e'/%3E%3Crect width='750' height='250' y='125' fill='%23ffc400'/%3E%3C/svg%3E" alt="ES"></button>
+				<button type="button" data-lang-btn="it" aria-pressed="false" onclick="Muse.i18n.setLocale('it')" aria-label="Italiano"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 3 2'%3E%3Crect width='1' height='2' fill='%23009246'/%3E%3Crect width='1' height='2' x='1' fill='%23fff'/%3E%3Crect width='1' height='2' x='2' fill='%23ce2b37'/%3E%3C/svg%3E" alt="IT"></button>
+			</div>
 		</header>
 
-		<h1>Cookie Policy</h1>
-		<p class="meta">Last updated: 18 May 2026</p>
+		<div data-lang="en">
+			<h1>Cookie Policy</h1>
+			<p class="meta">Last updated: 18 May 2026</p>
 
-		<p>This Cookie Policy explains how Muse uses cookies and similar storage technologies (collectively, "cookies") on the lovemuse.app website and within the Muse mobile applications. It supplements our <a href="/privacy.html">Privacy Policy</a> and reflects the guidance of the Office of the Privacy Commissioner for Personal Data, Hong Kong on the use of online tracking technologies under the <strong>Personal Data (Privacy) Ordinance (Cap. 486)</strong>.</p>
+			<p>This Cookie Policy explains how Muse uses cookies and similar storage technologies (collectively, "cookies") on the lovemuse.app website and within the Muse mobile applications. It supplements our <a href="/privacy.html">Privacy Policy</a> and reflects the guidance of the Office of the Privacy Commissioner for Personal Data, Hong Kong on the use of online tracking technologies under the <strong>Personal Data (Privacy) Ordinance (Cap. 486)</strong>.</p>
 
-		<h2>1. What is a cookie?</h2>
-		<p>A cookie is a small text file stored on your device when you visit a website. We also use related technologies such as <em>localStorage</em>, <em>sessionStorage</em> and the Capacitor Preferences API on mobile. For simplicity we refer to all of them as "cookies".</p>
+			<h2>1. What is a cookie?</h2>
+			<p>A cookie is a small text file stored on your device when you visit a website. We also use related technologies such as <em>localStorage</em>, <em>sessionStorage</em> and the Capacitor Preferences API on mobile. For simplicity we refer to all of them as "cookies".</p>
 
-		<h2>2. Cookies we use</h2>
-		<p>We use a small number of cookies, all of which fall into the "strictly necessary" or "preference" categories. We do <strong>not</strong> use advertising cookies or cross-site tracking pixels.</p>
+			<h2>2. Cookies we use</h2>
+			<p>We use a small number of cookies, all of which fall into the "strictly necessary" or "preference" categories. We do <strong>not</strong> use advertising cookies or cross-site tracking pixels.</p>
 
-		<h2>2.1 Strictly necessary</h2>
-		<ul>
-			<li><strong>Authentication tokens</strong> (JWT access & refresh) — keep you logged in. Stored in <em>localStorage</em> on the web and in secure native storage on mobile. Without these the Service cannot function.</li>
-			<li><strong>CSRF token</strong> — protects sensitive backend endpoints from cross-site request forgery.</li>
-		</ul>
+			<h2>2.1 Strictly necessary</h2>
+			<ul>
+				<li><strong>Authentication tokens</strong> (JWT access & refresh) — keep you logged in. Stored in <em>localStorage</em> on the web and in secure native storage on mobile. Without these the Service cannot function.</li>
+				<li><strong>CSRF token</strong> — protects sensitive backend endpoints from cross-site request forgery.</li>
+			</ul>
 
-		<h2>2.2 Preferences</h2>
-		<ul>
-			<li><strong>Language preference</strong> (<code>locale</code>) — remembers whether you chose English, Spanish or Italian.</li>
-			<li><strong>UI state</strong> — last-used filter on the map and feed, list of dismissed onboarding hints.</li>
-		</ul>
+			<h2>2.2 Preferences</h2>
+			<ul>
+				<li><strong>Language preference</strong> (<code>muse_locale</code>) — remembers whether you chose English, Spanish or Italian.</li>
+				<li><strong>UI state</strong> — last-used filter on the map and feed, list of dismissed onboarding hints.</li>
+			</ul>
 
-		<h2>2.3 Third-party</h2>
-		<p>We integrate two third-party services that may set their own cookies when you actively use their features:</p>
-		<ul>
-			<li><strong>Google Maps Platform</strong> — when a map tile or autocomplete result is loaded, Google may set its own cookies, governed by Google's privacy policy.</li>
-			<li><strong>OpenStreetMap tile servers</strong> — may set technical cookies governed by the OSM Foundation's privacy policy.</li>
-		</ul>
+			<h2>2.3 Third-party</h2>
+			<p>We integrate two third-party services that may set their own cookies when you actively use their features:</p>
+			<ul>
+				<li><strong>Google Maps Platform</strong> — when a map tile or autocomplete result is loaded, Google may set its own cookies, governed by Google's privacy policy.</li>
+				<li><strong>OpenStreetMap tile servers</strong> — may set technical cookies governed by the OSM Foundation's privacy policy.</li>
+			</ul>
 
-		<p>We do not use Google Analytics, Facebook Pixel, or any similar profiling/advertising cookies.</p>
+			<p>We do not use Google Analytics, Facebook Pixel, or any similar profiling/advertising cookies.</p>
 
-		<h2>3. Your choices</h2>
-		<p>You can delete cookies through your browser settings or, on mobile, by clearing app storage. Disabling the authentication cookies will log you out and prevent you from using the Service.</p>
+			<h2>3. Your choices</h2>
+			<p>You can delete cookies through your browser settings or, on mobile, by clearing app storage. Disabling the authentication cookies will log you out and prevent you from using the Service.</p>
 
-		<h2>4. Do Not Track</h2>
-		<p>Some browsers send a "Do Not Track" signal. Because we do not engage in cross-site behavioural tracking, this signal has no additional effect on our Service.</p>
+			<h2>4. Do Not Track</h2>
+			<p>Some browsers send a "Do Not Track" signal. Because we do not engage in cross-site behavioural tracking, this signal has no additional effect on our Service.</p>
 
-		<h2>5. Changes</h2>
-		<p>If we add cookies that materially change how your data is used, we will update this Policy and, where required, ask for your express consent.</p>
+			<h2>5. Changes</h2>
+			<p>If we add cookies that materially change how your data is used, we will update this Policy and, where required, ask for your express consent.</p>
 
-		<h2>6. Contact</h2>
-		<p>Questions? Email <a href="mailto:info@lovemuse.app">info@lovemuse.app</a>.</p>
+			<h2>6. Contact</h2>
+			<p>Questions? Email <a href="mailto:info@lovemuse.app">info@lovemuse.app</a>.</p>
+		</div>
+
+		<div data-lang="es" hidden>
+			<h1>Política de Cookies</h1>
+			<p class="meta">Última actualización: 18 de mayo de 2026</p>
+
+			<p>Esta Política de Cookies explica cómo Muse utiliza cookies y tecnologías de almacenamiento similares (en conjunto, "cookies") en el sitio lovemuse.app y dentro de las aplicaciones móviles de Muse. Complementa nuestra <a href="/privacy.html">Política de Privacidad</a> y refleja las pautas de la Office of the Privacy Commissioner for Personal Data, Hong Kong sobre el uso de tecnologías de rastreo online bajo la <strong>Personal Data (Privacy) Ordinance (Cap. 486)</strong>.</p>
+
+			<h2>1. ¿Qué es una cookie?</h2>
+			<p>Una cookie es un pequeño archivo de texto que se almacena en tu dispositivo al visitar un sitio web. También usamos tecnologías relacionadas como <em>localStorage</em>, <em>sessionStorage</em> y la API Preferences de Capacitor en mobile. Por simplicidad, las llamamos a todas "cookies".</p>
+
+			<h2>2. Cookies que usamos</h2>
+			<p>Usamos pocas cookies, todas dentro de las categorías "estrictamente necesarias" o "de preferencia". <strong>No</strong> usamos cookies publicitarias ni pixeles de rastreo cross-site.</p>
+
+			<h2>2.1 Estrictamente necesarias</h2>
+			<ul>
+				<li><strong>Tokens de autenticación</strong> (JWT access y refresh) — te mantienen logueado. Se almacenan en <em>localStorage</em> en la web y en el almacenamiento nativo seguro en mobile. Sin estos, el Servicio no puede funcionar.</li>
+				<li><strong>Token CSRF</strong> — protege endpoints sensibles del backend contra ataques de cross-site request forgery.</li>
+			</ul>
+
+			<h2>2.2 Preferencias</h2>
+			<ul>
+				<li><strong>Preferencia de idioma</strong> (<code>muse_locale</code>) — recuerda si elegiste inglés, español o italiano.</li>
+				<li><strong>Estado de UI</strong> — último filtro usado en el mapa y feed, lista de tips de onboarding descartados.</li>
+			</ul>
+
+			<h2>2.3 Terceros</h2>
+			<p>Integramos dos servicios de terceros que pueden setear sus propias cookies cuando usás sus funciones activamente:</p>
+			<ul>
+				<li><strong>Google Maps Platform</strong> — al cargar un tile de mapa o un autocomplete, Google puede setear cookies regidas por su política de privacidad.</li>
+				<li><strong>Servidores de tiles de OpenStreetMap</strong> — pueden setear cookies técnicas regidas por la política de privacidad de OSM Foundation.</li>
+			</ul>
+
+			<p>No usamos Google Analytics, Facebook Pixel ni ninguna cookie similar de perfilamiento o publicidad.</p>
+
+			<h2>3. Tus opciones</h2>
+			<p>Podés eliminar las cookies desde la configuración de tu navegador o, en mobile, borrando los datos de la app. Deshabilitar las cookies de autenticación cerrará tu sesión e impedirá el uso del Servicio.</p>
+
+			<h2>4. Do Not Track</h2>
+			<p>Algunos navegadores envían una señal "Do Not Track". Como no hacemos rastreo conductual cross-site, esa señal no tiene efecto adicional en nuestro Servicio.</p>
+
+			<h2>5. Cambios</h2>
+			<p>Si agregamos cookies que cambien materialmente el uso de tus datos, actualizaremos esta Política y, cuando corresponda, te pediremos consentimiento expreso.</p>
+
+			<h2>6. Contacto</h2>
+			<p>¿Dudas? Escribinos a <a href="mailto:info@lovemuse.app">info@lovemuse.app</a>.</p>
+		</div>
+
+		<div data-lang="it" hidden>
+			<h1>Informativa sui Cookie</h1>
+			<p class="meta">Ultimo aggiornamento: 18 maggio 2026</p>
+
+			<p>Questa Informativa sui Cookie spiega come Muse utilizza i cookie e le tecnologie di archiviazione simili (collettivamente, "cookie") sul sito lovemuse.app e all'interno delle applicazioni mobili Muse. Integra la nostra <a href="/privacy.html">Informativa sulla Privacy</a> e riflette le indicazioni dell'Office of the Privacy Commissioner for Personal Data, Hong Kong sull'uso di tecnologie di tracciamento online ai sensi della <strong>Personal Data (Privacy) Ordinance (Cap. 486)</strong>.</p>
+
+			<h2>1. Cos'è un cookie?</h2>
+			<p>Un cookie è un piccolo file di testo memorizzato sul tuo dispositivo quando visiti un sito web. Utilizziamo anche tecnologie correlate come <em>localStorage</em>, <em>sessionStorage</em> e l'API Preferences di Capacitor su mobile. Per semplicità, le chiamiamo tutte "cookie".</p>
+
+			<h2>2. I cookie che usiamo</h2>
+			<p>Usiamo un piccolo numero di cookie, tutti nelle categorie "strettamente necessari" o "di preferenza". <strong>Non</strong> usiamo cookie pubblicitari né pixel di tracciamento cross-site.</p>
+
+			<h2>2.1 Strettamente necessari</h2>
+			<ul>
+				<li><strong>Token di autenticazione</strong> (JWT access e refresh) — ti mantengono autenticato. Memorizzati in <em>localStorage</em> sul web e nell'archiviazione nativa sicura su mobile. Senza di essi il Servizio non può funzionare.</li>
+				<li><strong>Token CSRF</strong> — protegge gli endpoint sensibili del backend dagli attacchi di cross-site request forgery.</li>
+			</ul>
+
+			<h2>2.2 Preferenze</h2>
+			<ul>
+				<li><strong>Preferenza di lingua</strong> (<code>muse_locale</code>) — ricorda se hai scelto inglese, spagnolo o italiano.</li>
+				<li><strong>Stato della UI</strong> — ultimo filtro utilizzato su mappa e feed, elenco dei suggerimenti di onboarding chiusi.</li>
+			</ul>
+
+			<h2>2.3 Terze parti</h2>
+			<p>Integriamo due servizi di terze parti che possono impostare i propri cookie quando ne utilizzi attivamente le funzionalità:</p>
+			<ul>
+				<li><strong>Google Maps Platform</strong> — al caricamento di un tile della mappa o di un autocomplete, Google può impostare i propri cookie, regolati dalla sua informativa sulla privacy.</li>
+				<li><strong>Server di tile OpenStreetMap</strong> — possono impostare cookie tecnici regolati dall'informativa sulla privacy della OSM Foundation.</li>
+			</ul>
+
+			<p>Non usiamo Google Analytics, Facebook Pixel o cookie simili di profilazione/pubblicità.</p>
+
+			<h2>3. Le tue scelte</h2>
+			<p>Puoi eliminare i cookie dalle impostazioni del browser o, su mobile, cancellando i dati dell'app. Disabilitare i cookie di autenticazione ti farà uscire e impedirà l'uso del Servizio.</p>
+
+			<h2>4. Do Not Track</h2>
+			<p>Alcuni browser inviano un segnale "Do Not Track". Poiché non effettuiamo tracciamento comportamentale cross-site, tale segnale non ha effetti aggiuntivi sul nostro Servizio.</p>
+
+			<h2>5. Modifiche</h2>
+			<p>Se aggiungiamo cookie che cambiano sostanzialmente l'uso dei tuoi dati, aggiorneremo questa Informativa e, ove necessario, chiederemo il tuo consenso esplicito.</p>
+
+			<h2>6. Contatto</h2>
+			<p>Domande? Scrivici a <a href="mailto:info@lovemuse.app">info@lovemuse.app</a>.</p>
+		</div>
 
 		<footer>
-			<a href="/">Home</a><span class="sep">·</span>
-			<a href="/privacy.html">Privacy</a><span class="sep">·</span>
-			<a href="/terms.html">Terms</a><span class="sep">·</span>
-			<a href="/community.html">Community</a><span class="sep">·</span>
-			<a href="/cookies.html">Cookies</a><span class="sep">·</span>
-			<a href="/contact.html">Contact</a>
+			<a href="/" data-i18n="footerHome">Home</a><span class="sep">·</span>
+			<a href="/privacy.html" data-i18n="footerPrivacy">Privacy</a><span class="sep">·</span>
+			<a href="/terms.html" data-i18n="footerTerms">Terms</a><span class="sep">·</span>
+			<a href="/community.html" data-i18n="footerCommunity">Community</a><span class="sep">·</span>
+			<a href="/cookies.html" data-i18n="footerCookies">Cookies</a><span class="sep">·</span>
+			<a href="/contact.html" data-i18n="footerContact">Contact</a>
 		</footer>
 	</div>
+	<script src="/i18n.js"></script>
 </body>
 </html>

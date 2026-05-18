@@ -360,6 +360,20 @@ const translations: Record<Locale, Record<string, string>> = {
 		// Map (popups)
 		'map.popupRated': 'Rated',
 		'map.popupOnList': 'On the List',
+
+		// Legal
+		'legal.section': 'Legal',
+		'legal.title': 'Legal & Policies',
+		'legal.privacy': 'Privacy Policy',
+		'legal.terms': 'Terms of Service',
+		'legal.community': 'Community Guidelines',
+		'legal.cookies': 'Cookie Policy',
+		'legal.contact': 'Contact',
+		'legal.back': 'Back',
+		'legal.acceptancePrefix': 'By creating an account you agree to our',
+		'legal.acceptanceAnd': 'and acknowledge our',
+		'legal.acceptanceSuffix': '.',
+		'legal.lastUpdated': 'Last updated: 18 May 2026',
 	},
 
 	es: {
@@ -687,6 +701,19 @@ const translations: Record<Locale, Record<string, string>> = {
 
 		'map.popupRated': 'Calificado',
 		'map.popupOnList': 'En la Lista',
+
+		'legal.section': 'Legal',
+		'legal.title': 'Legal y Políticas',
+		'legal.privacy': 'Política de Privacidad',
+		'legal.terms': 'Términos de Servicio',
+		'legal.community': 'Normas de la Comunidad',
+		'legal.cookies': 'Política de Cookies',
+		'legal.contact': 'Contacto',
+		'legal.back': 'Volver',
+		'legal.acceptancePrefix': 'Al crear una cuenta aceptás nuestros',
+		'legal.acceptanceAnd': 'y reconocés nuestra',
+		'legal.acceptanceSuffix': '.',
+		'legal.lastUpdated': 'Última actualización: 18 de mayo de 2026',
 	},
 
 	it: {
@@ -1014,6 +1041,19 @@ const translations: Record<Locale, Record<string, string>> = {
 
 		'map.popupRated': 'Valutato',
 		'map.popupOnList': 'In Lista',
+
+		'legal.section': 'Legale',
+		'legal.title': 'Legale e Politiche',
+		'legal.privacy': 'Informativa sulla Privacy',
+		'legal.terms': 'Termini di Servizio',
+		'legal.community': 'Linee Guida della Comunità',
+		'legal.cookies': 'Informativa sui Cookie',
+		'legal.contact': 'Contatto',
+		'legal.back': 'Indietro',
+		'legal.acceptancePrefix': 'Creando un account accetti i nostri',
+		'legal.acceptanceAnd': 'e prendi atto della nostra',
+		'legal.acceptanceSuffix': '.',
+		'legal.lastUpdated': 'Ultimo aggiornamento: 18 maggio 2026',
 	},
 };
 

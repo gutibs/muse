@@ -218,10 +218,10 @@
 				</button>
 
 				<p class="text-center text-xs leading-relaxed text-ink-muted">
-					By creating an account you agree to our
-					<a href="/legal/terms" class="font-medium text-jade underline">Terms of Service</a>
-					and acknowledge our
-					<a href="/legal/privacy" class="font-medium text-jade underline">Privacy Policy</a>.
+					{t('legal.acceptancePrefix')}
+					<a href="/legal/terms" class="font-medium text-jade underline">{t('legal.terms')}</a>
+					{t('legal.acceptanceAnd')}
+					<a href="/legal/privacy" class="font-medium text-jade underline">{t('legal.privacy')}</a>{t('legal.acceptanceSuffix')}
 				</p>
 			</form>
 
@@ -231,15 +231,15 @@
 			</p>
 
 			<div class="mt-6 flex flex-wrap justify-center gap-x-3 gap-y-1 text-xs text-ink-muted">
-				<a href="/legal/privacy" class="active:opacity-70">Privacy</a>
+				<a href="/legal/privacy" class="active:opacity-70">{t('legal.privacy')}</a>
 				<span aria-hidden="true">·</span>
-				<a href="/legal/terms" class="active:opacity-70">Terms</a>
+				<a href="/legal/terms" class="active:opacity-70">{t('legal.terms')}</a>
 				<span aria-hidden="true">·</span>
-				<a href="/legal/community" class="active:opacity-70">Community</a>
+				<a href="/legal/community" class="active:opacity-70">{t('legal.community')}</a>
 				<span aria-hidden="true">·</span>
-				<a href="/legal/cookies" class="active:opacity-70">Cookies</a>
+				<a href="/legal/cookies" class="active:opacity-70">{t('legal.cookies')}</a>
 				<span aria-hidden="true">·</span>
-				<a href="/legal/contact" class="active:opacity-70">Contact</a>
+				<a href="/legal/contact" class="active:opacity-70">{t('legal.contact')}</a>
 			</div>
 		</div>
 	</div>

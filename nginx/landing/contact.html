@@ -13,46 +13,116 @@
 <body>
 	<div class="wrap">
 		<header class="top">
-			<a class="back" href="/">← Back to Muse</a>
+			<a class="back" href="/" data-i18n="back">← Back to Muse</a>
+			<div class="lang-picker" role="group" aria-label="Language">
+				<button type="button" data-lang-btn="en" aria-pressed="false" onclick="Muse.i18n.setLocale('en')" aria-label="English"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30'%3E%3CclipPath id='a'%3E%3Crect width='60' height='30'/%3E%3C/clipPath%3E%3Cg clip-path='url(%23a)'%3E%3Crect width='60' height='30' fill='%23012169'/%3E%3Cpath d='M0 0l60 30M60 0L0 30' stroke='%23fff' stroke-width='6'/%3E%3Cpath d='M0 0l60 30M60 0L0 30' stroke='%23C8102E' stroke-width='4' clip-path='url(%23a)'/%3E%3Cpath d='M30 0v30M0 15h60' stroke='%23fff' stroke-width='10'/%3E%3Cpath d='M30 0v30M0 15h60' stroke='%23C8102E' stroke-width='6'/%3E%3C/g%3E%3C/svg%3E" alt="EN"></button>
+				<button type="button" data-lang-btn="es" aria-pressed="false" onclick="Muse.i18n.setLocale('es')" aria-label="Español"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 750 500'%3E%3Crect width='750' height='500' fill='%23c60b1e'/%3E%3Crect width='750' height='250' y='125' fill='%23ffc400'/%3E%3C/svg%3E" alt="ES"></button>
+				<button type="button" data-lang-btn="it" aria-pressed="false" onclick="Muse.i18n.setLocale('it')" aria-label="Italiano"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 3 2'%3E%3Crect width='1' height='2' fill='%23009246'/%3E%3Crect width='1' height='2' x='1' fill='%23fff'/%3E%3Crect width='1' height='2' x='2' fill='%23ce2b37'/%3E%3C/svg%3E" alt="IT"></button>
+			</div>
 		</header>
 
-		<h1>Contact</h1>
-		<p class="meta">Last updated: 18 May 2026</p>
+		<div data-lang="en">
+			<h1>Contact</h1>
+			<p class="meta">Last updated: 18 May 2026</p>
 
-		<p>We're a small team. The fastest way to reach us is by email.</p>
+			<p>We're a small team. The fastest way to reach us is by email.</p>
 
-		<h2>General enquiries, support and feedback</h2>
-		<p><a href="mailto:info@lovemuse.app">info@lovemuse.app</a></p>
+			<h2>General enquiries, support and feedback</h2>
+			<p><a href="mailto:info@lovemuse.app">info@lovemuse.app</a></p>
 
-		<h2>Privacy and data protection (PDPO)</h2>
-		<p>For Data Access Requests, Data Correction Requests, opt-outs and any question relating to the <strong>Personal Data (Privacy) Ordinance (Cap. 486)</strong>:<br>
-		<a href="mailto:info@lovemuse.app?subject=Privacy%20request">info@lovemuse.app</a> (subject line: "Privacy request")</p>
-		<p>We respond to PDPO requests within 40 days, as required by the Ordinance.</p>
+			<h2>Privacy and data protection (PDPO)</h2>
+			<p>For Data Access Requests, Data Correction Requests, opt-outs and any question relating to the <strong>Personal Data (Privacy) Ordinance (Cap. 486)</strong>:<br>
+			<a href="mailto:info@lovemuse.app?subject=Privacy%20request">info@lovemuse.app</a> (subject line: "Privacy request")</p>
+			<p>We respond to PDPO requests within 40 days, as required by the Ordinance.</p>
 
-		<h2>Content reports and appeals</h2>
-		<p>To report content that breaks our <a href="/community.html">Community Guidelines</a> or to appeal a moderation decision:<br>
-		<a href="mailto:info@lovemuse.app?subject=Content%20report">info@lovemuse.app</a> (subject line: "Content report" or "Appeal")</p>
+			<h2>Content reports and appeals</h2>
+			<p>To report content that breaks our <a href="/community.html">Community Guidelines</a> or to appeal a moderation decision:<br>
+			<a href="mailto:info@lovemuse.app?subject=Content%20report">info@lovemuse.app</a> (subject line: "Content report" or "Appeal")</p>
 
-		<h2>Copyright (DMCA-style) notices</h2>
-		<p>If you believe content on Muse infringes your copyright, send us a notice including (a) identification of the work, (b) the URL or screenshot of the allegedly infringing content, (c) your contact details, and (d) a good faith statement that you are the rights holder or an authorised agent:<br>
-		<a href="mailto:info@lovemuse.app?subject=Copyright%20notice">info@lovemuse.app</a></p>
+			<h2>Copyright (DMCA-style) notices</h2>
+			<p>If you believe content on Muse infringes your copyright, send us a notice including (a) identification of the work, (b) the URL or screenshot of the allegedly infringing content, (c) your contact details, and (d) a good faith statement that you are the rights holder or an authorised agent:<br>
+			<a href="mailto:info@lovemuse.app?subject=Copyright%20notice">info@lovemuse.app</a></p>
 
-		<h2>Law-enforcement requests</h2>
-		<p>Authorised requests from Hong Kong authorities (e.g. under the PDPO, the Crimes Ordinance or the Personal Data (Privacy) (Amendment) Ordinance 2021) should be sent to <a href="mailto:info@lovemuse.app?subject=Law%20enforcement">info@lovemuse.app</a>. We require service on official letterhead identifying the authority, the legal basis, and a specific scope.</p>
+			<h2>Law-enforcement requests</h2>
+			<p>Authorised requests from Hong Kong authorities (e.g. under the PDPO, the Crimes Ordinance or the Personal Data (Privacy) (Amendment) Ordinance 2021) should be sent to <a href="mailto:info@lovemuse.app?subject=Law%20enforcement">info@lovemuse.app</a>. We require service on official letterhead identifying the authority, the legal basis, and a specific scope.</p>
 
-		<h2>Regulatory authority</h2>
-		<p>Office of the Privacy Commissioner for Personal Data, Hong Kong (PCPD)<br>
-		12/F, Sunlight Tower, 248 Queen's Road East, Wanchai, Hong Kong<br>
-		<a href="https://www.pcpd.org.hk" rel="noopener" target="_blank">www.pcpd.org.hk</a></p>
+			<h2>Regulatory authority</h2>
+			<p>Office of the Privacy Commissioner for Personal Data, Hong Kong (PCPD)<br>
+			12/F, Sunlight Tower, 248 Queen's Road East, Wanchai, Hong Kong<br>
+			<a href="https://www.pcpd.org.hk" rel="noopener" target="_blank">www.pcpd.org.hk</a></p>
+		</div>
+
+		<div data-lang="es" hidden>
+			<h1>Contacto</h1>
+			<p class="meta">Última actualización: 18 de mayo de 2026</p>
+
+			<p>Somos un equipo chico. La forma más rápida de encontrarnos es por email.</p>
+
+			<h2>Consultas generales, soporte y feedback</h2>
+			<p><a href="mailto:info@lovemuse.app">info@lovemuse.app</a></p>
+
+			<h2>Privacidad y protección de datos (PDPO)</h2>
+			<p>Para Data Access Requests, Data Correction Requests, oposiciones y cualquier consulta sobre la <strong>Personal Data (Privacy) Ordinance (Cap. 486)</strong>:<br>
+			<a href="mailto:info@lovemuse.app?subject=Privacy%20request">info@lovemuse.app</a> (asunto: "Privacy request")</p>
+			<p>Respondemos las solicitudes bajo PDPO dentro de los 40 días, conforme exige la Ordenanza.</p>
+
+			<h2>Reportes de contenido y apelaciones</h2>
+			<p>Para reportar contenido que viole nuestras <a href="/community.html">Normas de la Comunidad</a> o apelar una decisión de moderación:<br>
+			<a href="mailto:info@lovemuse.app?subject=Content%20report">info@lovemuse.app</a> (asunto: "Content report" o "Appeal")</p>
+
+			<h2>Notificaciones de copyright (estilo DMCA)</h2>
+			<p>Si creés que un contenido en Muse infringe tu copyright, enviá una notificación con (a) identificación de la obra, (b) URL o captura del contenido presuntamente infractor, (c) tus datos de contacto y (d) una declaración de buena fe de que sos el titular o un agente autorizado:<br>
+			<a href="mailto:info@lovemuse.app?subject=Copyright%20notice">info@lovemuse.app</a></p>
+
+			<h2>Requerimientos de las fuerzas de seguridad</h2>
+			<p>Los requerimientos autorizados de autoridades de Hong Kong (por ejemplo, bajo la PDPO, la Crimes Ordinance o la Personal Data (Privacy) (Amendment) Ordinance 2021) deben enviarse a <a href="mailto:info@lovemuse.app?subject=Law%20enforcement">info@lovemuse.app</a>. Exigimos notificación en papel membretado oficial que identifique a la autoridad, la base legal y un alcance específico.</p>
+
+			<h2>Autoridad regulatoria</h2>
+			<p>Office of the Privacy Commissioner for Personal Data, Hong Kong (PCPD)<br>
+			12/F, Sunlight Tower, 248 Queen's Road East, Wanchai, Hong Kong<br>
+			<a href="https://www.pcpd.org.hk" rel="noopener" target="_blank">www.pcpd.org.hk</a></p>
+		</div>
+
+		<div data-lang="it" hidden>
+			<h1>Contatto</h1>
+			<p class="meta">Ultimo aggiornamento: 18 maggio 2026</p>
+
+			<p>Siamo un piccolo team. Il modo più veloce per raggiungerci è via email.</p>
+
+			<h2>Richieste generali, supporto e feedback</h2>
+			<p><a href="mailto:info@lovemuse.app">info@lovemuse.app</a></p>
+
+			<h2>Privacy e protezione dei dati (PDPO)</h2>
+			<p>Per Data Access Requests, Data Correction Requests, opt-out e qualsiasi domanda relativa alla <strong>Personal Data (Privacy) Ordinance (Cap. 486)</strong>:<br>
+			<a href="mailto:info@lovemuse.app?subject=Privacy%20request">info@lovemuse.app</a> (oggetto: "Privacy request")</p>
+			<p>Rispondiamo alle richieste PDPO entro 40 giorni, come previsto dall'Ordinanza.</p>
+
+			<h2>Segnalazioni di contenuti e ricorsi</h2>
+			<p>Per segnalare contenuti che violano le nostre <a href="/community.html">Linee Guida della Comunità</a> o per ricorrere contro una decisione di moderazione:<br>
+			<a href="mailto:info@lovemuse.app?subject=Content%20report">info@lovemuse.app</a> (oggetto: "Content report" o "Appeal")</p>
+
+			<h2>Notifiche di copyright (in stile DMCA)</h2>
+			<p>Se ritieni che un contenuto su Muse violi il tuo copyright, inviaci una notifica con (a) identificazione dell'opera, (b) URL o screenshot del contenuto presuntivamente illecito, (c) i tuoi contatti e (d) una dichiarazione in buona fede di essere il titolare dei diritti o un agente autorizzato:<br>
+			<a href="mailto:info@lovemuse.app?subject=Copyright%20notice">info@lovemuse.app</a></p>
+
+			<h2>Richieste delle forze dell'ordine</h2>
+			<p>Le richieste autorizzate delle autorità di Hong Kong (ad esempio, ai sensi della PDPO, della Crimes Ordinance o della Personal Data (Privacy) (Amendment) Ordinance 2021) vanno inviate a <a href="mailto:info@lovemuse.app?subject=Law%20enforcement">info@lovemuse.app</a>. Richiediamo notifica su carta intestata ufficiale che identifichi l'autorità, la base giuridica e un ambito specifico.</p>
+
+			<h2>Autorità di regolamentazione</h2>
+			<p>Office of the Privacy Commissioner for Personal Data, Hong Kong (PCPD)<br>
+			12/F, Sunlight Tower, 248 Queen's Road East, Wanchai, Hong Kong<br>
+			<a href="https://www.pcpd.org.hk" rel="noopener" target="_blank">www.pcpd.org.hk</a></p>
+		</div>
 
 		<footer>
-			<a href="/">Home</a><span class="sep">·</span>
-			<a href="/privacy.html">Privacy</a><span class="sep">·</span>
-			<a href="/terms.html">Terms</a><span class="sep">·</span>
-			<a href="/community.html">Community</a><span class="sep">·</span>
-			<a href="/cookies.html">Cookies</a><span class="sep">·</span>
-			<a href="/contact.html">Contact</a>
+			<a href="/" data-i18n="footerHome">Home</a><span class="sep">·</span>
+			<a href="/privacy.html" data-i18n="footerPrivacy">Privacy</a><span class="sep">·</span>
+			<a href="/terms.html" data-i18n="footerTerms">Terms</a><span class="sep">·</span>
+			<a href="/community.html" data-i18n="footerCommunity">Community</a><span class="sep">·</span>
+			<a href="/cookies.html" data-i18n="footerCookies">Cookies</a><span class="sep">·</span>
+			<a href="/contact.html" data-i18n="footerContact">Contact</a>
 		</footer>
 	</div>
+	<script src="/i18n.js"></script>
 </body>
 </html>

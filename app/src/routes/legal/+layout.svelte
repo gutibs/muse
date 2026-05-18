@@ -1,7 +1,16 @@
 <script lang="ts">
+	import { i18n, LOCALES } from '$lib/i18n/index.svelte';
+	import { t } from '$lib/i18n/index.svelte';
 	import type { Snippet } from 'svelte';
 
 	let { children }: { children: Snippet } = $props();
+
+	// Inline SVG flags (no network) — mirrors LanguagePicker.svelte.
+	const FLAGS: Record<string, string> = {
+		en: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 30"><clipPath id="a"><rect width="60" height="30"/></clipPath><g clip-path="url(%23a)"><rect width="60" height="30" fill="%23012169"/><path d="M0 0l60 30M60 0L0 30" stroke="%23fff" stroke-width="6"/><path d="M0 0l60 30M60 0L0 30" stroke="%23C8102E" stroke-width="4" clip-path="url(%23a)"/><path d="M30 0v30M0 15h60" stroke="%23fff" stroke-width="10"/><path d="M30 0v30M0 15h60" stroke="%23C8102E" stroke-width="6"/></g></svg>',
+		es: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 500"><rect width="750" height="500" fill="%23c60b1e"/><rect width="750" height="250" y="125" fill="%23ffc400"/></svg>',
+		it: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3 2"><rect width="1" height="2" fill="%23009246"/><rect width="1" height="2" x="1" fill="%23fff"/><rect width="1" height="2" x="2" fill="%23ce2b37"/></svg>',
+	};
 
 	function back() {
 		if (typeof history !== 'undefined' && history.length > 1) {
@@ -13,17 +22,31 @@
 </script>
 
 <div class="flex h-full flex-col bg-cream">
-	<header
-		class="flex shrink-0 items-center gap-2 border-b border-cream-dark bg-cream px-3 py-3"
-	>
+	<header class="flex shrink-0 items-center gap-2 border-b border-cream-dark bg-cream px-3 py-3">
 		<button
 			onclick={back}
-			aria-label="Back"
+			aria-label={t('legal.back')}
 			class="flex min-h-11 min-w-11 items-center justify-center rounded-full text-ink-light active:bg-cream-dark active:opacity-70"
 		>
 			<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
 		</button>
-		<h1 class="text-base font-semibold text-ink">Legal</h1>
+		<h1 class="text-base font-semibold text-ink">{t('legal.section')}</h1>
+
+		<div class="ml-auto flex gap-1">
+			{#each LOCALES as loc (loc.code)}
+				{@const active = i18n.locale === loc.code}
+				<button
+					type="button"
+					onclick={() => i18n.setLocale(loc.code)}
+					aria-pressed={active}
+					aria-label={loc.label}
+					class="flex min-h-11 min-w-11 items-center justify-center rounded-button p-1.5 active:scale-95
+						{active ? 'border-2 border-jade bg-white' : 'border-2 border-transparent'}"
+				>
+					<img src={FLAGS[loc.code]} alt={loc.code.toUpperCase()} class="h-4 w-6 rounded-sm object-cover" />
+				</button>
+			{/each}
+		</div>
 	</header>
 
 	<main class="flex-1 overflow-y-auto px-5 py-5">
