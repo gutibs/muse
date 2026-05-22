@@ -1,10 +1,12 @@
 <script lang="ts">
 	import Avatar from '$lib/components/Avatar.svelte';
-	import { friendsService } from '$lib/services/friends.service';
-	import { t } from '$lib/i18n/index.svelte';
+	import { friendsService, type EmailInvitation } from '$lib/services/friends.service';
+	import { t, i18n } from '$lib/i18n/index.svelte';
 	import type { Friendship, PublicUser } from '$lib/types';
 	import { getOtherUser } from '$lib/utils/friendship';
 	import { extractFirstDrfError } from '$lib/utils/api-error';
+
+	const LOCALE_TO_BCP47: Record<string, string> = { en: 'en-GB', es: 'es-AR', it: 'it-IT' };
 
 	type Tab = 'friends' | 'requests' | 'add';
 
@@ -17,6 +19,19 @@
 	// Pending requests
 	let requests = $state<Friendship[]>([]);
 	let loadingRequests = $state(false);
+
+	// Sent email invitations (still awaiting signup)
+	let sentInvites = $state<EmailInvitation[]>([]);
+
+	function formatInviteDate(iso: string) {
+		const d = new Date(iso);
+		if (Number.isNaN(d.getTime())) return iso;
+		return d.toLocaleDateString(LOCALE_TO_BCP47[i18n.locale] || 'en-GB', {
+			day: 'numeric',
+			month: 'short',
+			year: 'numeric'
+		});
+	}
 
 	// Search / add
 	let searchQuery = $state('');
@@ -52,9 +67,17 @@
 		loadingRequests = true;
 		listError = '';
 		try {
-			requests = await friendsService.requests();
-		} catch {
-			listError = t('friends.cantLoadRequests');
+			// Received friend requests + outgoing email invites that haven't been
+			// accepted yet. We fetch them in parallel so the tab populates in one
+			// round-trip; a failure on either side surfaces as an empty list, not
+			// a hard error, because they're independent features.
+			const [reqs, invs] = await Promise.allSettled([
+				friendsService.requests(),
+				friendsService.sentInvitations()
+			]);
+			requests = reqs.status === 'fulfilled' ? reqs.value : [];
+			sentInvites = invs.status === 'fulfilled' ? invs.value : [];
+			if (reqs.status === 'rejected') listError = t('friends.cantLoadRequests');
 		} finally {
 			loadingRequests = false;
 		}
@@ -115,6 +138,12 @@
 			await friendsService.inviteByEmail(email);
 			inviteMessage = t('friends.invitationSent').replace('{email}', email);
 			inviteEmail = '';
+			// Refresh the pending list so the new invite is visible under
+			// "Requests" without forcing a tab switch.
+			friendsService.sentInvitations().then(
+				(invs) => (sentInvites = invs),
+				() => {}
+			);
 		} catch (err) {
 			inviteError = extractFirstDrfError(err, t('friends.cantSendInvite'));
 		} finally {
@@ -148,6 +177,8 @@
 
 	$effect(() => {
 		loadFriends();
+		// Loads both friend requests received AND email invites the user sent
+		// so the "Requests" tab badge count reflects total pending activity.
 		loadRequests();
 	});
 
@@ -162,7 +193,8 @@
 		<!-- Tabs -->
 		<div class="mt-3 flex gap-1 rounded-card bg-cream-dark p-1">
 			{#each (['friends', 'requests', 'add'] as Tab[]) as tab_id}
-				{@const label = tab_id === 'friends' ? t('friends.title') : tab_id === 'requests' ? `${t('friends.requests')}${requests.length ? ` (${requests.length})` : ''}` : t('friends.add')}
+				{@const pendingCount = requests.length + sentInvites.length}
+				{@const label = tab_id === 'friends' ? t('friends.title') : tab_id === 'requests' ? `${t('friends.requests')}${pendingCount ? ` (${pendingCount})` : ''}` : t('friends.add')}
 				<button
 					onclick={() => switchTab(tab_id)}
 					class="flex-1 rounded-button py-2 text-sm font-medium transition-colors active:scale-[0.98]
@@ -237,44 +269,73 @@
 				<div class="flex justify-center py-12">
 					<div class="h-6 w-6 animate-spin rounded-full border-2 border-jade border-t-transparent"></div>
 				</div>
-			{:else if requests.length === 0}
+			{:else if requests.length === 0 && sentInvites.length === 0}
 				<div class="flex flex-col items-center py-16 text-center">
 					<p class="text-sm text-ink-muted">{t('friends.noRequests')}</p>
 				</div>
 			{:else}
-				<ul class="space-y-3 pt-2">
-					{#each requests as req (req.id)}
-						<li class="rounded-card bg-white p-4 shadow-card">
-							<div class="flex items-center gap-3">
-								<Avatar name={req.fromUser.displayName} src={req.fromUser.avatar} size={44} />
-								<div class="min-w-0 flex-1">
-									<p class="truncate text-sm font-semibold text-ink">
-										{req.fromUser.displayName || req.fromUser.email}
-									</p>
-									{#if req.fromUser.city}
-										<p class="text-xs text-ink-muted">{req.fromUser.city}</p>
-									{/if}
+				{#if requests.length > 0}
+					<ul class="space-y-3 pt-2">
+						{#each requests as req (req.id)}
+							<li class="rounded-card bg-white p-4 shadow-card">
+								<div class="flex items-center gap-3">
+									<Avatar name={req.fromUser.displayName} src={req.fromUser.avatar} size={44} />
+									<div class="min-w-0 flex-1">
+										<p class="truncate text-sm font-semibold text-ink">
+											{req.fromUser.displayName || req.fromUser.email}
+										</p>
+										{#if req.fromUser.city}
+											<p class="text-xs text-ink-muted">{req.fromUser.city}</p>
+										{/if}
+									</div>
 								</div>
-							</div>
-							<div class="mt-3 flex gap-2">
-								<button
-									onclick={() => respond(req.id, 'declined')}
-									disabled={responding[req.id]}
-									class="flex min-h-10 flex-1 items-center justify-center rounded-button border border-cream-dark text-sm font-medium text-ink-light active:scale-[0.98] disabled:opacity-50"
-								>
-									{t('friends.decline')}
-								</button>
-								<button
-									onclick={() => respond(req.id, 'accepted')}
-									disabled={responding[req.id]}
-									class="flex min-h-10 flex-1 items-center justify-center rounded-button bg-jade text-sm font-semibold text-white active:scale-[0.98] disabled:opacity-50"
-								>
-									{responding[req.id] ? '...' : t('friends.accept')}
-								</button>
-							</div>
-						</li>
-					{/each}
-				</ul>
+								<div class="mt-3 flex gap-2">
+									<button
+										onclick={() => respond(req.id, 'declined')}
+										disabled={responding[req.id]}
+										class="flex min-h-10 flex-1 items-center justify-center rounded-button border border-cream-dark text-sm font-medium text-ink-light active:scale-[0.98] disabled:opacity-50"
+									>
+										{t('friends.decline')}
+									</button>
+									<button
+										onclick={() => respond(req.id, 'accepted')}
+										disabled={responding[req.id]}
+										class="flex min-h-10 flex-1 items-center justify-center rounded-button bg-jade text-sm font-semibold text-white active:scale-[0.98] disabled:opacity-50"
+									>
+										{responding[req.id] ? '...' : t('friends.accept')}
+									</button>
+								</div>
+							</li>
+						{/each}
+					</ul>
+				{/if}
+
+				{#if sentInvites.length > 0}
+					<div class="pt-5">
+						<p class="mb-1 text-xs font-semibold uppercase tracking-wide text-ink-muted">
+							{t('friends.pendingInvites')}
+						</p>
+						<p class="mb-3 text-xs text-ink-muted">{t('friends.pendingInvitesDesc')}</p>
+						<ul class="space-y-2">
+							{#each sentInvites as inv (inv.id)}
+								<li class="flex items-center gap-3 rounded-card bg-white p-3 shadow-card">
+									<div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-cream-dark text-ink-muted">
+										<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+											<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+											<polyline points="22,6 12,13 2,6" />
+										</svg>
+									</div>
+									<div class="min-w-0 flex-1">
+										<p class="truncate text-sm font-medium text-ink">{inv.email}</p>
+										<p class="text-xs text-ink-muted">
+											{t('friends.invitedOn').replace('{date}', formatInviteDate(inv.createdAt))}
+										</p>
+									</div>
+								</li>
+							{/each}
+						</ul>
+					</div>
+				{/if}
 			{/if}
 		{/if}
 

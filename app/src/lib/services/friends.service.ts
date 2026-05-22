@@ -2,6 +2,13 @@ import { api } from './api.service';
 import { i18n } from '$lib/i18n/index.svelte';
 import type { Friendship, PaginatedResponse, PublicUser } from '$lib/types';
 
+export type EmailInvitation = {
+	id: number;
+	email: string;
+	accepted: boolean;
+	createdAt: string;
+};
+
 export const friendsService = {
 	list(): Promise<Friendship[]> {
 		return api.get('/auth/friendships/friends/');
@@ -26,6 +33,13 @@ export const friendsService = {
 	inviteByEmail(email: string): Promise<void> {
 		// Pass the sender's UI language so the backend can localise the email.
 		return api.post('/auth/invite/', { email, language: i18n.locale });
+	},
+
+	async sentInvitations(): Promise<EmailInvitation[]> {
+		const res = await api.get<PaginatedResponse<EmailInvitation> | EmailInvitation[]>(
+			'/auth/invite/'
+		);
+		return Array.isArray(res) ? res : res.results;
 	},
 
 	async search(query: string): Promise<PublicUser[]> {

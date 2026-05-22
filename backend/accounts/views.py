@@ -10,7 +10,7 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 
-from accounts.models import DietaryPreference, Friendship
+from accounts.models import DietaryPreference, EmailInvitation, Friendship
 from accounts.serializers import (
 	ChangePasswordSerializer,
 	DietaryPreferenceSerializer,
@@ -167,9 +167,24 @@ class FriendshipViewSet(viewsets.ModelViewSet):
 		return Response(serializer.data)
 
 
-class EmailInvitationView(generics.CreateAPIView):
+class EmailInvitationView(generics.ListCreateAPIView):
 	serializer_class = EmailInvitationSerializer
-	throttle_classes = (InviteThrottle,)
+	pagination_class = None
+
+	def get_throttles(self):
+		# Apply the strict invite throttle only to POST so the inviter can
+		# always reload the "pending invites" list without burning the quota.
+		if self.request.method == "POST":
+			return [InviteThrottle()]
+		return []
+
+	def get_queryset(self):
+		# Only the user's own outgoing invitations, newest first. Used by the
+		# friends "Pending" UI so the inviter can see whom they've already
+		# invited via email.
+		return EmailInvitation.objects.filter(
+			from_user=self.request.user, accepted=False
+		).order_by("-created_at")
 
 	def perform_create(self, serializer):
 		invitation = serializer.save()

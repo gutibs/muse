@@ -295,6 +295,9 @@ const translations: Record<Locale, Record<string, string>> = {
 		'friends.cantSendInvite': 'Could not send invite.',
 		'friends.invitationSent': 'Invitation sent to {email}',
 		'friends.emailPlaceholder': 'friend@example.com',
+		'friends.pendingInvites': 'Email invitations sent',
+		'friends.pendingInvitesDesc': 'Waiting for these people to join Muse.',
+		'friends.invitedOn': 'Invited on {date}',
 
 		// Settings (more)
 		'settings.email': 'Email',
@@ -360,6 +363,8 @@ const translations: Record<Locale, Record<string, string>> = {
 		// Map (popups)
 		'map.popupRated': 'Rated',
 		'map.popupOnList': 'On the List',
+		'map.missingLocationBanner': '{count} pin(s) missing a map location',
+		'map.missingLocationHint': "Edit the pin and re-pick the restaurant from search to add coordinates.",
 
 		// Legal
 		'legal.section': 'Legal',
@@ -643,6 +648,9 @@ const translations: Record<Locale, Record<string, string>> = {
 		'friends.cantSendInvite': 'No se pudo enviar la invitación.',
 		'friends.invitationSent': 'Invitación enviada a {email}',
 		'friends.emailPlaceholder': 'amigo@ejemplo.com',
+		'friends.pendingInvites': 'Invitaciones por email enviadas',
+		'friends.pendingInvitesDesc': 'Esperando que se sumen a Muse.',
+		'friends.invitedOn': 'Invitada el {date}',
 
 		'settings.email': 'Email',
 		'settings.currentPassword': 'Contraseña Actual',
@@ -701,6 +709,8 @@ const translations: Record<Locale, Record<string, string>> = {
 
 		'map.popupRated': 'Calificado',
 		'map.popupOnList': 'En la Lista',
+		'map.missingLocationBanner': '{count} pin(s) sin ubicación en el mapa',
+		'map.missingLocationHint': 'Editá el pin y volvé a elegir el restaurante desde la búsqueda para agregar coordenadas.',
 
 		'legal.section': 'Legal',
 		'legal.title': 'Legal y Políticas',
@@ -983,6 +993,9 @@ const translations: Record<Locale, Record<string, string>> = {
 		'friends.cantSendInvite': "Impossibile inviare l'invito.",
 		'friends.invitationSent': 'Invito inviato a {email}',
 		'friends.emailPlaceholder': 'amico@esempio.com',
+		'friends.pendingInvites': 'Inviti via email inviati',
+		'friends.pendingInvitesDesc': 'In attesa che si uniscano a Muse.',
+		'friends.invitedOn': 'Invitato il {date}',
 
 		'settings.email': 'Email',
 		'settings.currentPassword': 'Password Attuale',
@@ -1041,6 +1054,8 @@ const translations: Record<Locale, Record<string, string>> = {
 
 		'map.popupRated': 'Valutato',
 		'map.popupOnList': 'In Lista',
+		'map.missingLocationBanner': '{count} pin senza posizione sulla mappa',
+		'map.missingLocationHint': 'Modifica il pin e riseleziona il ristorante dalla ricerca per aggiungere le coordinate.',
 
 		'legal.section': 'Legale',
 		'legal.title': 'Legale e Politiche',

@@ -28,6 +28,13 @@
 	type MarkerEntry = { marker: L.Marker; cuisineSlugs: string[]; isFriend: boolean };
 	let allMarkers = $state<MarkerEntry[]>([]);
 
+	// Surface the discrepancy reported by Jess: a pin can appear "on the list"
+	// but be missing from the map when the underlying restaurant has no
+	// lat/lng. Without this banner the user has no clue why their pin
+	// disappeared and assumes the map is broken.
+	let pinsMissingLocation = $state<Array<{ pinId: number; name: string }>>([]);
+	let showMissingDetail = $state(false);
+
 	// Map search
 	let citySearch = $state('');
 	let cuisineSearch = $state('');
@@ -187,11 +194,15 @@
 
 		const markersById = new Map<number, L.Marker>();
 		allMarkers = [];
+		pinsMissingLocation = [];
 
 		// Only show restaurants that the user has pinned (rated or on the list)
 		for (const pin of pins) {
 			const r = pin.restaurantDetail;
-			if (!r?.lat || !r?.lng) continue;
+			if (!r?.lat || !r?.lng) {
+				pinsMissingLocation.push({ pinId: pin.id, name: r?.name ?? '—' });
+				continue;
+			}
 
 			const color = pin.status === 'visited' ? PIN_COLORS.visited : PIN_COLORS.toVisit;
 			const icon = createPinIcon(L, color);
@@ -312,6 +323,36 @@
 					<circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
 				</svg>
 				<span class="text-sm text-ink-muted">{t('search.city')} / {t('search.anyCuisine')}</span>
+			</button>
+		{/if}
+
+		<!-- Banner: pins on the user's list that can't be plotted because the
+		     restaurant has no lat/lng. Without this, the pin shows under "On the
+		     list" but is silently absent from the map, which read as a bug. -->
+		{#if pinsMissingLocation.length > 0}
+			<button
+				type="button"
+				onclick={() => (showMissingDetail = !showMissingDetail)}
+				class="flex w-full items-start gap-2 rounded-card bg-amber-50 px-3 py-2 text-left shadow-card active:opacity-80"
+			>
+				<svg class="mt-0.5 h-4 w-4 shrink-0 text-amber-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+					<line x1="12" y1="9" x2="12" y2="13" />
+					<line x1="12" y1="17" x2="12.01" y2="17" />
+				</svg>
+				<div class="min-w-0 flex-1">
+					<p class="text-xs font-medium text-amber-800">
+						{t('map.missingLocationBanner').replace('{count}', String(pinsMissingLocation.length))}
+					</p>
+					{#if showMissingDetail}
+						<ul class="mt-1 space-y-0.5 text-[11px] text-amber-900">
+							{#each pinsMissingLocation as item (item.pinId)}
+								<li>· {item.name}</li>
+							{/each}
+						</ul>
+						<p class="mt-1 text-[11px] italic text-amber-800/80">{t('map.missingLocationHint')}</p>
+					{/if}
+				</div>
 			</button>
 		{/if}
 

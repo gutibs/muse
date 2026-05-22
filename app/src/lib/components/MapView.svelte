@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
+	import { getCurrentPosition } from '$lib/utils/geolocate';
 	import type L from 'leaflet';
 
 	let {
@@ -51,33 +52,38 @@
 
 			Leaflet.control.zoom({ position: 'bottomright' }).addTo(instance);
 
+			let userInteracted = false;
 			if (autoLocate) {
-				let userInteracted = false;
-
 				instance.once('dragstart', () => { userInteracted = true; });
 				instance.once('zoomstart', () => { userInteracted = true; });
 				instance.once('popupopen', () => { userInteracted = true; });
-
-				instance.once('locationfound', (e: L.LocationEvent) => {
-					if (!userInteracted && instance) {
-						instance.setView(e.latlng, 16);
-					}
-				});
-
-				instance.once('locationerror', (e: L.ErrorEvent) => {
-					console.warn('[map] geolocation failed:', e.message, '(code', (e as L.ErrorEvent & { code?: number }).code, ')');
-				});
-
-				instance.locate({
-					setView: false,
-					enableHighAccuracy: true,
-					timeout: 10000,
-					maximumAge: 60000,
-				});
 			}
 
 			map = instance;
 			onMapReady?.(instance);
+
+			// Geolocate via the Capacitor wrapper instead of Leaflet's locate().
+			// On Android, Leaflet's `navigator.geolocation` path hits the WebView
+			// permission auto-grant in MainActivity.java but never triggers the
+			// Android runtime permission dialog, so location silently fails on a
+			// fresh install. Going through `@capacitor/geolocation` invokes
+			// requestPermissions() which shows the OS prompt. We run this AFTER
+			// onMapReady so listeners attached by the parent page see the
+			// synthetic `locationfound` / `locationerror` events.
+			if (autoLocate) {
+				getCurrentPosition({ enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 })
+					.then((pos) => {
+						if (cancelled || !instance) return;
+						const latlng = Leaflet.latLng(pos.latitude, pos.longitude);
+						if (!userInteracted) instance.setView(latlng, 16);
+						instance.fire('locationfound', { latlng, accuracy: pos.accuracy });
+					})
+					.catch((err) => {
+						if (cancelled || !instance) return;
+						console.warn('[map] geolocation failed:', err);
+						instance.fire('locationerror', { message: err?.message ?? String(err) });
+					});
+			}
 		})();
 
 		return () => {

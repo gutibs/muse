@@ -26,6 +26,75 @@ logger = logging.getLogger(__name__)
 
 PLACES_API_BASE = "https://places.googleapis.com/v1"
 
+# Country/region words a user might type at the end of a city query to
+# disambiguate (e.g. "London UK" → restrict to GB). Mapped to ISO-3166-1
+# alpha-2 codes accepted by Google Places `includedRegionCodes`.
+# Lowercased; matched against the trailing token(s) of the query.
+_COUNTRY_HINTS = {
+	# United Kingdom
+	"uk": "gb", "u.k": "gb", "u.k.": "gb", "gb": "gb",
+	"england": "gb", "scotland": "gb", "wales": "gb",
+	"northern ireland": "gb", "great britain": "gb", "united kingdom": "gb",
+	"britain": "gb",
+	# United States
+	"us": "us", "u.s": "us", "u.s.": "us", "usa": "us", "u.s.a": "us",
+	"u.s.a.": "us", "united states": "us", "america": "us",
+	# Canada
+	"canada": "ca", "ca": "ca",
+	# Australia / NZ
+	"australia": "au", "au": "au",
+	"new zealand": "nz", "nz": "nz",
+	# Common European
+	"ireland": "ie", "ie": "ie",
+	"france": "fr", "fr": "fr",
+	"spain": "es", "españa": "es", "es": "es",
+	"italy": "it", "italia": "it", "it": "it",
+	"germany": "de", "deutschland": "de", "de": "de",
+	"portugal": "pt", "pt": "pt",
+	"netherlands": "nl", "holland": "nl", "nl": "nl",
+	"belgium": "be", "be": "be",
+	"switzerland": "ch", "ch": "ch",
+	"austria": "at", "at": "at",
+	# LATAM
+	"argentina": "ar", "ar": "ar",
+	"brazil": "br", "brasil": "br", "br": "br",
+	"chile": "cl", "cl": "cl",
+	"mexico": "mx", "méxico": "mx", "mx": "mx",
+	"uruguay": "uy", "uy": "uy",
+	"colombia": "co", "co": "co",
+	"peru": "pe", "perú": "pe", "pe": "pe",
+	# APAC
+	"japan": "jp", "jp": "jp",
+	"china": "cn", "cn": "cn",
+	"hong kong": "hk", "hk": "hk",
+	"singapore": "sg", "sg": "sg",
+	"india": "in", "in": "in",
+}
+
+
+def _extract_country_hint(query: str):
+	"""Return (country_code, cleaned_query) if the trailing words of `query`
+	match a known country name/code, else (None, query). Strips a trailing
+	comma + the matched suffix so the query sent to Google is just the city.
+	"""
+	q = (query or "").strip()
+	if not q:
+		return None, q
+	# Try multi-word suffixes first (e.g. "united kingdom"), then single word.
+	lowered = q.lower().rstrip(",")
+	for n in (3, 2, 1):
+		parts = lowered.rsplit(" ", n)
+		if len(parts) <= n:
+			continue
+		suffix = parts[-n] if n == 1 else " ".join(parts[-n:])
+		suffix = suffix.strip(", ")
+		code = _COUNTRY_HINTS.get(suffix)
+		if code:
+			head = q[: len(q) - len(suffix)].rstrip(", ").strip()
+			return code, head or q
+	return None, q
+
+
 _ALLOWED_PHOTO_HOSTS = {
 	"places.googleapis.com",
 	"lh3.googleusercontent.com",
@@ -129,10 +198,16 @@ def city_autocomplete(request):
 	if not query or len(query) < 2:
 		return Response({"results": []})
 
+	# Detect "City, UK" / "City Canada" suffix and bias Google to that country.
+	# Without this, "London UK" routinely returns London, Ontario first.
+	country_code, city_query = _extract_country_hint(query)
+
 	body = {
-		"input": query,
+		"input": city_query or query,
 		"includedPrimaryTypes": ["locality", "administrative_area_level_3"],
 	}
+	if country_code:
+		body["includedRegionCodes"] = [country_code]
 
 	try:
 		r = requests.post(

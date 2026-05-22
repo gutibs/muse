@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
 	import LevelSelector from '$lib/components/LevelSelector.svelte';
 	import LocationPicker from '$lib/components/LocationPicker.svelte';
 	import PersonaChips from '$lib/components/PersonaChips.svelte';
@@ -56,6 +57,28 @@
 		restaurantsService.cuisines().then((c) => (cuisines = c));
 		restaurantsService.tags().then((t) => (tags = t));
 		pinsService.personas().then((p) => (personas = p));
+	});
+
+	// If we got here from `/restaurant/<id>` → "Add to my pins", the restaurant
+	// id is in the query string. Pre-fetch it and jump straight to step 2 so
+	// the user doesn't have to re-search/re-type the name they already picked.
+	$effect(() => {
+		const idParam = page.url.searchParams.get('restaurantId');
+		const id = idParam ? Number(idParam) : NaN;
+		if (!Number.isFinite(id) || id <= 0) return;
+		// Avoid clobbering state if user already navigated forward.
+		if (selectedRestaurant || creatingNew || step !== 1) return;
+		restaurantsService.get(id).then(
+			(r) => {
+				if (!selectedRestaurant && !creatingNew && step === 1) {
+					selectedRestaurant = r;
+					step = 2;
+				}
+			},
+			() => {
+				// Silent: user can still search manually.
+			}
+		);
 	});
 
 	// Debounced search — queries both our DB and Google Places in parallel
