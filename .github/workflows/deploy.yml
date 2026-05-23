@@ -54,3 +54,41 @@ jobs:
             # deploys: tables that already exist get marked as migrated; missing ones
             # are created normally. Safe on clean DBs too.
             sudo docker-compose -f docker-compose.aws.yml exec -T backend python manage.py migrate --fake-initial
+
+            # Post-deploy health check.
+            # `up -d` returns success the moment containers are created, even if
+            # nginx aborts seconds later with a bad-config crash loop (vivido el
+            # 2026-05-23 con `{8,}` sin comillar en una regex). Probamos el
+            # endpoint público hasta que devuelva 401 (el código esperado de
+            # /api/v1/ con DRF IsAuthenticated). Si en ~40s no sale, el deploy
+            # queda en rojo y dumpamos logs para diagnóstico.
+            echo "=== Health check ==="
+            sleep 5
+            OK=0
+            for i in $(seq 1 12); do
+              STATE=$(sudo docker-compose -f docker-compose.aws.yml ps nginx 2>&1)
+              if echo "$STATE" | grep -qE "Restarting|Exit"; then
+                echo "nginx not Up (attempt $i):"
+                echo "$STATE"
+                break
+              fi
+              CODE=$(curl -sS -o /dev/null -w "%{http_code}" --max-time 10 -k \
+                --resolve lovemuse.app:443:127.0.0.1 \
+                https://lovemuse.app/api/v1/ || echo "000")
+              if [ "$CODE" = "401" ]; then
+                echo "Health check OK (HTTP 401 on attempt $i)"
+                OK=1
+                break
+              fi
+              echo "Attempt $i: HTTP $CODE — retrying in 3s"
+              sleep 3
+            done
+            if [ "$OK" != "1" ]; then
+              echo "=== Deploy health check FAILED ==="
+              sudo docker-compose -f docker-compose.aws.yml ps
+              echo "--- nginx logs ---"
+              sudo docker-compose -f docker-compose.aws.yml logs --tail=40 nginx
+              echo "--- backend logs ---"
+              sudo docker-compose -f docker-compose.aws.yml logs --tail=20 backend
+              exit 1
+            fi
