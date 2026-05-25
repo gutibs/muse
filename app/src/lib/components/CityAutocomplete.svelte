@@ -8,6 +8,7 @@
 		biasLat,
 		biasLng,
 		onPick,
+		onSubmit,
 	}: {
 		value?: string;
 		placeholder?: string;
@@ -15,6 +16,7 @@
 		biasLat?: number;
 		biasLng?: number;
 		onPick?: (suggestion: CitySuggestion) => void;
+		onSubmit?: () => void;
 	} = $props();
 
 	let suggestions = $state<CitySuggestion[]>([]);
@@ -74,6 +76,12 @@
 		oninput={onInput}
 		onfocus={onFocus}
 		onblur={onBlur}
+		onkeydown={(e) => {
+			if (e.key === 'Enter') {
+				showDropdown = false;
+				onSubmit?.();
+			}
+		}}
 		autocomplete="off"
 		{placeholder}
 		class="w-full rounded-input border border-cream-dark bg-white px-4 py-3 text-base text-ink outline-none focus:border-jade"

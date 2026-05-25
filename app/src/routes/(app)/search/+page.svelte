@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import CityAutocomplete from '$lib/components/CityAutocomplete.svelte';
 	import DietaryBadges from '$lib/components/DietaryBadges.svelte';
 	import PinsMap, { type MapItem } from '$lib/components/PinsMap.svelte';
 	import { t } from '$lib/i18n/index.svelte';
@@ -210,20 +211,22 @@
 			/>
 		</div>
 
-		<!-- Filters row -->
-		<div class="mt-2 flex gap-2">
-			<input
-				type="text"
+		<!-- City filter (with autocomplete dropdown) -->
+		<div class="mt-2">
+			<CityAutocomplete
 				bind:value={cityFilter}
-				oninput={onInputChange}
-				onkeydown={(e) => e.key === 'Enter' && runSearch()}
 				placeholder={t('search.city')}
-				class="min-w-0 flex-1 rounded-input border border-cream-dark bg-white px-3 py-2.5 text-base text-ink outline-none focus:border-jade"
+				onPick={() => runSearch()}
+				onSubmit={() => runSearch()}
 			/>
+		</div>
+
+		<!-- Cuisine filter -->
+		<div class="mt-2">
 			<select
 				bind:value={cuisineFilter}
 				onchange={runSearch}
-				class="min-w-0 flex-1 rounded-input border border-cream-dark bg-white px-3 py-2.5 text-base text-ink outline-none focus:border-jade"
+				class="w-full rounded-input border border-cream-dark bg-white px-3 py-2.5 text-base text-ink outline-none focus:border-jade"
 			>
 				<option value="">{t('search.anyCuisine')}</option>
 				{#each cuisines as c}
