@@ -32,43 +32,88 @@ PLACES_API_BASE = "https://places.googleapis.com/v1"
 # Lowercased; matched against the trailing token(s) of the query.
 _COUNTRY_HINTS = {
 	# United Kingdom
-	"uk": "gb", "u.k": "gb", "u.k.": "gb", "gb": "gb",
-	"england": "gb", "scotland": "gb", "wales": "gb",
-	"northern ireland": "gb", "great britain": "gb", "united kingdom": "gb",
+	"uk": "gb",
+	"u.k": "gb",
+	"u.k.": "gb",
+	"gb": "gb",
+	"england": "gb",
+	"scotland": "gb",
+	"wales": "gb",
+	"northern ireland": "gb",
+	"great britain": "gb",
+	"united kingdom": "gb",
 	"britain": "gb",
 	# United States
-	"us": "us", "u.s": "us", "u.s.": "us", "usa": "us", "u.s.a": "us",
-	"u.s.a.": "us", "united states": "us", "america": "us",
+	"us": "us",
+	"u.s": "us",
+	"u.s.": "us",
+	"usa": "us",
+	"u.s.a": "us",
+	"u.s.a.": "us",
+	"united states": "us",
+	"america": "us",
 	# Canada
-	"canada": "ca", "ca": "ca",
+	"canada": "ca",
+	"ca": "ca",
 	# Australia / NZ
-	"australia": "au", "au": "au",
-	"new zealand": "nz", "nz": "nz",
+	"australia": "au",
+	"au": "au",
+	"new zealand": "nz",
+	"nz": "nz",
 	# Common European
-	"ireland": "ie", "ie": "ie",
-	"france": "fr", "fr": "fr",
-	"spain": "es", "españa": "es", "es": "es",
-	"italy": "it", "italia": "it", "it": "it",
-	"germany": "de", "deutschland": "de", "de": "de",
-	"portugal": "pt", "pt": "pt",
-	"netherlands": "nl", "holland": "nl", "nl": "nl",
-	"belgium": "be", "be": "be",
-	"switzerland": "ch", "ch": "ch",
-	"austria": "at", "at": "at",
+	"ireland": "ie",
+	"ie": "ie",
+	"france": "fr",
+	"fr": "fr",
+	"spain": "es",
+	"españa": "es",
+	"es": "es",
+	"italy": "it",
+	"italia": "it",
+	"it": "it",
+	"germany": "de",
+	"deutschland": "de",
+	"de": "de",
+	"portugal": "pt",
+	"pt": "pt",
+	"netherlands": "nl",
+	"holland": "nl",
+	"nl": "nl",
+	"belgium": "be",
+	"be": "be",
+	"switzerland": "ch",
+	"ch": "ch",
+	"austria": "at",
+	"at": "at",
 	# LATAM
-	"argentina": "ar", "ar": "ar",
-	"brazil": "br", "brasil": "br", "br": "br",
-	"chile": "cl", "cl": "cl",
-	"mexico": "mx", "méxico": "mx", "mx": "mx",
-	"uruguay": "uy", "uy": "uy",
-	"colombia": "co", "co": "co",
-	"peru": "pe", "perú": "pe", "pe": "pe",
+	"argentina": "ar",
+	"ar": "ar",
+	"brazil": "br",
+	"brasil": "br",
+	"br": "br",
+	"chile": "cl",
+	"cl": "cl",
+	"mexico": "mx",
+	"méxico": "mx",
+	"mx": "mx",
+	"uruguay": "uy",
+	"uy": "uy",
+	"colombia": "co",
+	"co": "co",
+	"peru": "pe",
+	"perú": "pe",
+	"pe": "pe",
 	# APAC
-	"japan": "jp", "jp": "jp",
-	"china": "cn", "cn": "cn",
-	"hong kong": "hk", "hk": "hk",
-	"singapore": "sg", "sg": "sg",
-	"india": "in", "in": "in",
+	"japan": "jp",
+	"jp": "jp",
+	"china": "cn",
+	"cn": "cn",
+	"hong kong": "hk",
+	"hk": "hk",
+	"singapore": "sg",
+	"sg": "sg",
+	"india": "in",
+	"in": "in",
 }
 
 
@@ -208,6 +253,26 @@ def city_autocomplete(request):
 	}
 	if country_code:
 		body["includedRegionCodes"] = [country_code]
+	else:
+		# No explicit country hint: bias by the caller's current map view so
+		# a bare "london" prefers the London the user is looking at over the
+		# US-default Google falls back to.
+		lat = request.query_params.get("lat")
+		lng = request.query_params.get("lng")
+		if lat and lng:
+			try:
+				body["locationBias"] = {
+					"circle": {
+						"center": {"latitude": float(lat), "longitude": float(lng)},
+						"radius": 500000.0,
+					}
+				}
+			except (TypeError, ValueError):
+				logger.warning(
+					"city_autocomplete: ignoring non-numeric locationBias lat=%r lng=%r",
+					lat,
+					lng,
+				)
 
 	try:
 		r = requests.post(

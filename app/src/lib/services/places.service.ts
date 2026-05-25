@@ -56,8 +56,15 @@ export const placesService = {
 		return api.get(`/places/details/${placeId}/`);
 	},
 
-	cityAutocomplete(query: string): Promise<{ results: CitySuggestion[] }> {
-		return api.get(`/places/cities/autocomplete/?q=${encodeURIComponent(query)}`);
+	cityAutocomplete(
+		query: string,
+		lat?: number,
+		lng?: number,
+	): Promise<{ results: CitySuggestion[] }> {
+		const qs = new URLSearchParams({ q: query });
+		if (lat !== undefined && Number.isFinite(lat)) qs.set('lat', String(lat));
+		if (lng !== undefined && Number.isFinite(lng)) qs.set('lng', String(lng));
+		return api.get(`/places/cities/autocomplete/?${qs}`);
 	},
 
 	/**

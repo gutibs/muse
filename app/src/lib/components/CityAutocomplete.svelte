@@ -5,11 +5,15 @@
 		value = $bindable(''),
 		placeholder = 'City',
 		id = 'city-autocomplete',
+		biasLat,
+		biasLng,
 		onPick,
 	}: {
 		value?: string;
 		placeholder?: string;
 		id?: string;
+		biasLat?: number;
+		biasLng?: number;
 		onPick?: (suggestion: CitySuggestion) => void;
 	} = $props();
 
@@ -35,7 +39,7 @@
 		debounceTimer = setTimeout(async () => {
 			loading = true;
 			try {
-				const res = await placesService.cityAutocomplete(value.trim());
+				const res = await placesService.cityAutocomplete(value.trim(), biasLat, biasLng);
 				suggestions = res.results;
 			} catch {
 				suggestions = [];

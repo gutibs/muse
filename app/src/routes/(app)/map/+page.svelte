@@ -77,6 +77,16 @@
 		}
 	}
 
+	async function flyToCity(placeId: string) {
+		if (!mapRef) return;
+		try {
+			const details = await placesService.details(placeId);
+			mapRef.setView([details.lat, details.lng], 13, { animate: true });
+		} catch {
+			// silent fail — keep the search bar open so the user can retry
+		}
+	}
+
 	async function mapSearch() {
 		if (!mapRef) return;
 		const hasCityQuery = citySearch.trim().length > 0;
@@ -89,13 +99,15 @@
 			// If city query, ask the backend for matching cities (filtered by
 			// type=city) and fly to the first hit. Avoids the previous bug where
 			// Nominatim returned random places (streets, monuments) for any text.
+			// Bias by the current map center so a bare "london" prefers the
+			// London the user is looking at over the US-default Google returns.
 			if (hasCityQuery) {
 				try {
-					const res = await placesService.cityAutocomplete(citySearch.trim());
+					const c = mapRef.getCenter();
+					const res = await placesService.cityAutocomplete(citySearch.trim(), c.lat, c.lng);
 					const first = res.results?.[0];
 					if (first) {
-						const details = await placesService.details(first.placeId);
-						mapRef.setView([details.lat, details.lng], 13, { animate: true });
+						await flyToCity(first.placeId);
 					}
 				} catch {
 					// silent fail — search bar stays open for retry
@@ -277,7 +289,12 @@
 						<CityAutocomplete
 							bind:value={citySearch}
 							placeholder={t('search.city')}
-							onPick={() => mapSearch()}
+							biasLat={mapRef?.getCenter().lat}
+							biasLng={mapRef?.getCenter().lng}
+							onPick={(s) => {
+								flyToCity(s.placeId);
+								applyMarkerFilter();
+							}}
 						/>
 					</div>
 					<button
