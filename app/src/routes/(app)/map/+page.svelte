@@ -289,8 +289,6 @@
 						<CityAutocomplete
 							bind:value={citySearch}
 							placeholder={t('search.city')}
-							biasLat={mapRef?.getCenter().lat}
-							biasLng={mapRef?.getCenter().lng}
 							onPick={(s) => {
 								flyToCity(s.placeId);
 								applyMarkerFilter();
