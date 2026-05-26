@@ -26,7 +26,21 @@
 	let container: HTMLDivElement;
 
 	$effect(() => {
+		// Close on outside pointerdown instead of input blur. The blur-based
+		// close caused a race on /map: the Android virtual keyboard triggers a
+		// transient blur on the absolutely-positioned input, closing the
+		// dropdown 150ms later — before the autocomplete request returns. With
+		// outside-pointerdown the dropdown stays open until the user actually
+		// taps somewhere else (a suggestion item still closes via `pick`).
+		function onDocPointerDown(e: PointerEvent) {
+			if (!showDropdown) return;
+			if (container && !container.contains(e.target as Node)) {
+				showDropdown = false;
+			}
+		}
+		document.addEventListener('pointerdown', onDocPointerDown);
 		return () => {
+			document.removeEventListener('pointerdown', onDocPointerDown);
 			if (debounceTimer) clearTimeout(debounceTimer);
 		};
 	});
@@ -58,11 +72,6 @@
 		onPick?.(s);
 	}
 
-	function onBlur() {
-		// Delay hiding so click on suggestion registers
-		setTimeout(() => (showDropdown = false), 150);
-	}
-
 	function onFocus() {
 		if (suggestions.length > 0) showDropdown = true;
 	}
@@ -75,7 +84,6 @@
 		bind:value
 		oninput={onInput}
 		onfocus={onFocus}
-		onblur={onBlur}
 		onkeydown={(e) => {
 			if (e.key === 'Enter') {
 				showDropdown = false;
