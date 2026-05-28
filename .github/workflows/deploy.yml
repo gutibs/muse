@@ -7,6 +7,7 @@ on:
       - 'backend/**'
       - 'nginx/default-aws.conf'
       - 'nginx/Dockerfile.aws'
+      - 'nginx/landing/**'
       - 'docker-compose.aws.yml'
       - '.github/workflows/deploy.yml'
 
