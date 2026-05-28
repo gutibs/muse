@@ -7,7 +7,7 @@
 		<h2>Política de Cookies</h2>
 		<p class="meta">Última actualización: 18 de mayo de 2026</p>
 
-		<p>Esta Política de Cookies explica cómo Muse utiliza cookies y tecnologías de almacenamiento similares (en conjunto, "cookies") en lovemuse.app y dentro de las aplicaciones móviles. Complementa nuestra <a href="/legal/privacy">Política de Privacidad</a> y refleja las pautas de la PCPD sobre tecnologías de rastreo online bajo la <strong>Personal Data (Privacy) Ordinance (Cap. 486)</strong>.</p>
+		<p>Esta Política de Cookies explica cómo Muse utiliza cookies y tecnologías de almacenamiento similares (en conjunto, "cookies") en lovemuse.app y dentro de las aplicaciones móviles. Complementa nuestra <a href="/legal/pdpo">Política de Privacidad</a> y refleja las pautas de la PCPD sobre tecnologías de rastreo online bajo la <strong>Personal Data (Privacy) Ordinance (Cap. 486)</strong>.</p>
 
 		<h3>1. ¿Qué es una cookie?</h3>
 		<p>Una cookie es un pequeño archivo de texto almacenado en tu dispositivo al visitar un sitio web. También usamos tecnologías relacionadas como <em>localStorage</em>, <em>sessionStorage</em> y la API Preferences de Capacitor en mobile. Por simplicidad las llamamos "cookies".</p>
@@ -51,7 +51,7 @@
 		<h2>Informativa sui Cookie</h2>
 		<p class="meta">Ultimo aggiornamento: 18 maggio 2026</p>
 
-		<p>Questa Informativa spiega come Muse utilizza i cookie e tecnologie di archiviazione simili (collettivamente, "cookie") su lovemuse.app e nelle app mobili. Integra la nostra <a href="/legal/privacy">Informativa sulla Privacy</a> e riflette le indicazioni della PCPD sull'uso di tecnologie di tracciamento online ai sensi della <strong>Personal Data (Privacy) Ordinance (Cap. 486)</strong>.</p>
+		<p>Questa Informativa spiega come Muse utilizza i cookie e tecnologie di archiviazione simili (collettivamente, "cookie") su lovemuse.app e nelle app mobili. Integra la nostra <a href="/legal/pdpo">Informativa sulla Privacy</a> e riflette le indicazioni della PCPD sull'uso di tecnologie di tracciamento online ai sensi della <strong>Personal Data (Privacy) Ordinance (Cap. 486)</strong>.</p>
 
 		<h3>1. Cos'è un cookie?</h3>
 		<p>Un cookie è un piccolo file di testo memorizzato sul tuo dispositivo. Utilizziamo anche <em>localStorage</em>, <em>sessionStorage</em> e l'API Preferences di Capacitor su mobile. Per semplicità le chiamiamo "cookie".</p>
@@ -95,7 +95,7 @@
 		<h2>Cookie Policy</h2>
 		<p class="meta">Last updated: 18 May 2026</p>
 
-		<p>This Cookie Policy explains how Muse uses cookies and similar storage technologies (collectively, "cookies") on the lovemuse.app website and within the Muse mobile applications. It supplements our <a href="/legal/privacy">Privacy Policy</a> and reflects the guidance of the PCPD on the use of online tracking technologies under the <strong>Personal Data (Privacy) Ordinance (Cap. 486)</strong>.</p>
+		<p>This Cookie Policy explains how Muse uses cookies and similar storage technologies (collectively, "cookies") on the lovemuse.app website and within the Muse mobile applications. It supplements our <a href="/legal/pdpo">Privacy Policy</a> and reflects the guidance of the PCPD on the use of online tracking technologies under the <strong>Personal Data (Privacy) Ordinance (Cap. 486)</strong>.</p>
 
 		<h3>1. What is a cookie?</h3>
 		<p>A cookie is a small text file stored on your device when you visit a website. We also use related technologies such as <em>localStorage</em>, <em>sessionStorage</em> and the Capacitor Preferences API on mobile. For simplicity we refer to all of them as "cookies".</p>

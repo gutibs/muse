@@ -221,7 +221,7 @@
 					{t('legal.acceptancePrefix')}
 					<a href="/legal/terms" class="font-medium text-jade underline">{t('legal.terms')}</a>
 					{t('legal.acceptanceAnd')}
-					<a href="/legal/privacy" class="font-medium text-jade underline">{t('legal.privacy')}</a>{t('legal.acceptanceSuffix')}
+					<a href="/legal" class="font-medium text-jade underline">{t('legal.policies')}</a>{t('legal.acceptanceSuffix')}
 				</p>
 			</form>
 
@@ -231,7 +231,9 @@
 			</p>
 
 			<div class="mt-6 flex flex-wrap justify-center gap-x-3 gap-y-1 text-xs text-ink-muted">
-				<a href="/legal/privacy" class="active:opacity-70">{t('legal.privacy')}</a>
+				<a href="/legal/pdpo" class="active:opacity-70">{t('legal.pdpo')}</a>
+				<span aria-hidden="true">·</span>
+				<a href="/legal/gdpr" class="active:opacity-70">{t('legal.gdpr')}</a>
 				<span aria-hidden="true">·</span>
 				<a href="/legal/terms" class="active:opacity-70">{t('legal.terms')}</a>
 				<span aria-hidden="true">·</span>
