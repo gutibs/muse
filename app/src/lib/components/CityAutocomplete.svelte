@@ -22,6 +22,8 @@
 	let suggestions = $state<CitySuggestion[]>([]);
 	let showDropdown = $state(false);
 	let loading = $state(false);
+	let errored = $state(false);
+	let lastQuery = $state('');
 	let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 	let container: HTMLDivElement;
 
@@ -47,6 +49,7 @@
 
 	function onInput() {
 		showDropdown = true;
+		errored = false;
 		if (debounceTimer) clearTimeout(debounceTimer);
 		if (!value || value.trim().length < 2) {
 			suggestions = [];
@@ -54,11 +57,16 @@
 		}
 		debounceTimer = setTimeout(async () => {
 			loading = true;
+			const q = value.trim();
+			lastQuery = q;
 			try {
-				const res = await placesService.cityAutocomplete(value.trim(), biasLat, biasLng);
+				const res = await placesService.cityAutocomplete(q, biasLat, biasLng);
 				suggestions = res.results;
-			} catch {
+				errored = false;
+			} catch (err) {
+				console.error('[CityAutocomplete] fetch failed:', err);
 				suggestions = [];
+				errored = true;
 			} finally {
 				loading = false;
 			}
@@ -95,12 +103,16 @@
 		class="w-full rounded-input border border-cream-dark bg-white px-4 py-3 text-base text-ink outline-none focus:border-jade"
 	/>
 
-	{#if showDropdown && (suggestions.length > 0 || loading)}
+	{#if showDropdown && value.trim().length >= 2 && (suggestions.length > 0 || loading || errored || lastQuery)}
 		<div class="absolute left-0 right-0 top-full z-50 mt-1 max-h-64 overflow-y-auto rounded-card bg-white shadow-elevated">
 			{#if loading && suggestions.length === 0}
 				<div class="flex items-center justify-center p-3">
 					<div class="h-4 w-4 animate-spin rounded-full border-2 border-jade border-t-transparent"></div>
 				</div>
+			{:else if errored}
+				<div class="p-3 text-sm text-blush">Couldn't load suggestions. Check your connection.</div>
+			{:else if suggestions.length === 0 && lastQuery}
+				<div class="p-3 text-sm text-ink-muted">No matches for "{lastQuery}".</div>
 			{:else}
 				{#each suggestions as s (s.placeId)}
 					<button
