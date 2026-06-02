@@ -26,12 +26,19 @@ jobs:
             cd /home/ubuntu/muse
             git pull origin main
 
-            # Backup DB before any restart. Keeps last 14 dumps.
-            # Named volumes (muse_pgdata, muse_pgbackups) are preserved across down/up.
+            # Backup lógico de la DB de PRODUCCIÓN (RDS) antes de cualquier restart.
+            # Guarda los últimos 14 dumps en el volumen muse_pgbackups. El contenedor
+            # `db` se usa solo como cliente pg_dump con red hacia RDS; la app habla con
+            # RDS directo (DB_HOST en el .env). Complementa los backups automáticos de RDS.
+            # El bloque es best-effort (|| true): si falla, el deploy sigue.
             if sudo docker-compose -f docker-compose.aws.yml ps -q db | grep -q .; then
               TS=$(date -u +%Y%m%d-%H%M%S)
-              sudo docker-compose -f docker-compose.aws.yml exec -T db \
-                sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB" | gzip > /backups/muse-'"$TS"'.sql.gz' || true
+              RDS_HOST=$(grep -E '^[[:space:]]*DB_HOST=' .env | tail -1 | cut -d= -f2 | tr -d ' ')
+              RDS_USER=$(grep -E '^[[:space:]]*DB_USER=' .env | tail -1 | cut -d= -f2 | tr -d ' ')
+              RDS_NAME=$(grep -E '^[[:space:]]*DB_NAME=' .env | tail -1 | cut -d= -f2 | tr -d ' ')
+              RDS_PASS=$(grep -E '^[[:space:]]*DB_PASSWORD=' .env | tail -1 | cut -d= -f2-)
+              sudo docker-compose -f docker-compose.aws.yml exec -T -e PGPASSWORD="$RDS_PASS" db \
+                sh -c "pg_dump -h '$RDS_HOST' -U '$RDS_USER' '$RDS_NAME' | gzip > /backups/muse-$TS.sql.gz" || true
               sudo docker-compose -f docker-compose.aws.yml exec -T db \
                 sh -c 'ls -1t /backups/muse-*.sql.gz 2>/dev/null | tail -n +15 | xargs -r rm -f' || true
             fi

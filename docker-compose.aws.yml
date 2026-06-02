@@ -1,4 +1,8 @@
 services:
+  # TEMPORAL: la app migró a RDS (el backend entra por DB_HOST del .env). Este
+  # contenedor queda solo como (a) fallback de datos y (b) cliente pg_dump para
+  # los backups lógicos de RDS (ver deploy.yml). Eliminar una vez RDS esté
+  # probado en prod unos días.
   db:
     image: postgis/postgis:16-3.4
     container_name: muse_db
@@ -22,9 +26,9 @@ services:
       dockerfile: Dockerfile.prod
     env_file:
       - ./.env
-    environment:
-      DB_HOST: db
-      DB_PORT: 5432
+    # DB_HOST/DB_PORT salen del .env (apuntan a RDS). NO agregar acá un
+    # `environment: DB_HOST: db`: pisaría el .env y mandaría el backend a la DB
+    # local del contenedor en lugar de a RDS (fue el bug de la migración).
     depends_on:
       db:
         condition: service_healthy
