@@ -1,13 +1,16 @@
 {
 	"name": "app",
 	"private": true,
-	"version": "0.1.10",
+	"version": "0.1.11",
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build",
 		"build:apk": "vite build --mode capacitor",
 		"build:apk-prod": "vite build --mode capacitor-prod",
+		"bump:patch": "node scripts/bump-version.mjs patch",
+		"bump:minor": "node scripts/bump-version.mjs minor",
+		"bump:major": "node scripts/bump-version.mjs major",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
