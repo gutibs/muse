@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from accounts.models import EmailInvitation, Friendship, Profile
+from accounts.models import ConsentRecord, EmailInvitation, Friendship, Profile
 
 
 @admin.register(Profile)
@@ -22,6 +22,26 @@ class FriendshipAdmin(admin.ModelAdmin):
 		"to_user__username",
 	)
 	readonly_fields = ("created_at", "updated_at")
+
+
+@admin.register(ConsentRecord)
+class ConsentRecordAdmin(admin.ModelAdmin):
+	"""Audit log of data-protection consent. Read-only: these rows are legal
+	evidence and must never be edited or hand-created from the admin."""
+
+	list_display = ("user", "policy", "policy_version", "accepted_at", "ip_address")
+	list_filter = ("policy", "policy_version")
+	search_fields = ("user__email", "user__username", "ip_address")
+	readonly_fields = ("user", "policy", "policy_version", "accepted_at", "ip_address")
+
+	def has_add_permission(self, request):
+		return False
+
+	def has_change_permission(self, request, obj=None):
+		return False
+
+	def has_delete_permission(self, request, obj=None):
+		return False
 
 
 @admin.register(EmailInvitation)

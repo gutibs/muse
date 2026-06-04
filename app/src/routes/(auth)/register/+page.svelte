@@ -32,6 +32,9 @@
 	let submitting = $state(false);
 	let showPassword = $state(false);
 	let showConfirmPassword = $state(false);
+	// Active consent — unchecked by default, both required to enable submit.
+	let acceptGdpr = $state(false);
+	let acceptPdpo = $state(false);
 
 	// Step 2: preferences
 	let step = $state(1);
@@ -61,7 +64,7 @@
 
 		submitting = true;
 		try {
-			await authStore.register(email, password, displayName || undefined);
+			await authStore.register(email, password, acceptGdpr, acceptPdpo, displayName || undefined);
 			// Both lookups are non-blocking — the user can finish registration
 			// even if either list fails to load (UI just renders empty grids).
 			try {
@@ -209,9 +212,34 @@
 					</div>
 				</div>
 
+				<div class="space-y-3">
+					<label class="flex min-h-11 cursor-pointer items-start gap-3 text-sm leading-relaxed text-ink-muted">
+						<input
+							type="checkbox"
+							bind:checked={acceptGdpr}
+							class="mt-0.5 h-5 w-5 shrink-0 accent-jade"
+						/>
+						<span>
+							{t('register.consentRead')}
+							<a href="/legal/gdpr" class="font-medium text-jade underline">{t('legal.gdpr')}</a>
+						</span>
+					</label>
+					<label class="flex min-h-11 cursor-pointer items-start gap-3 text-sm leading-relaxed text-ink-muted">
+						<input
+							type="checkbox"
+							bind:checked={acceptPdpo}
+							class="mt-0.5 h-5 w-5 shrink-0 accent-jade"
+						/>
+						<span>
+							{t('register.consentRead')}
+							<a href="/legal/pdpo" class="font-medium text-jade underline">{t('legal.pdpo')}</a>
+						</span>
+					</label>
+				</div>
+
 				<button
 					type="submit"
-					disabled={submitting || !email || !password || !confirmPassword}
+					disabled={submitting || !email || !password || !confirmPassword || !acceptGdpr || !acceptPdpo}
 					class="flex min-h-12 w-full items-center justify-center rounded-button bg-jade text-base font-semibold text-white transition-opacity active:scale-[0.98] disabled:opacity-50"
 				>
 					{submitting ? t('auth.creatingAccount') : t('auth.createAccount')}

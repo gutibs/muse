@@ -4,7 +4,8 @@ from django.db.models import Q
 from django.urls import reverse
 from rest_framework.test import APIClient
 
-from accounts.models import EmailInvitation, Friendship, Profile
+from accounts.consent import POLICY_VERSIONS
+from accounts.models import ConsentRecord, EmailInvitation, Friendship, Profile
 from feed.models import Activity
 from tests.factories import EmailInvitationFactory, UserFactory
 
@@ -25,6 +26,8 @@ def test_register_creates_profile_and_consumes_invitation():
 			"email": "b@example.com",
 			"password": "Sup3r-strong-pass!",
 			"displayName": "Bee",
+			"acceptGdpr": True,
+			"acceptPdpo": True,
 		},
 		format="json",
 	)
@@ -61,6 +64,74 @@ def test_register_creates_profile_and_consumes_invitation():
 	# Each side's row points at the other as target_user.
 	assert friendship_acts.filter(actor=a, target_user=b).exists()
 	assert friendship_acts.filter(actor=b, target_user=a).exists()
+
+	# Active consent: one ConsentRecord per policy, stamped with the current
+	# version. These rows are the legal proof the user accepted GDPR + PDPO.
+	consents = ConsentRecord.objects.filter(user=b)
+	assert consents.count() == 2
+	assert {c.policy for c in consents} == {
+		ConsentRecord.Policy.GDPR,
+		ConsentRecord.Policy.PDPO,
+	}
+	for c in consents:
+		assert c.policy_version == POLICY_VERSIONS[c.policy]
+
+
+@pytest.mark.critical
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+	"consent",
+	[
+		{},  # both missing
+		{"acceptGdpr": True},  # pdpo missing
+		{"acceptPdpo": True},  # gdpr missing
+		{"acceptGdpr": True, "acceptPdpo": False},  # pdpo explicitly refused
+		{"acceptGdpr": False, "acceptPdpo": True},  # gdpr explicitly refused
+	],
+)
+def test_register_requires_active_consent(consent):
+	"""Registration is rejected unless BOTH consent flags are explicitly true.
+	A missing or false flag → 400 and no user/consent rows are created."""
+	client = APIClient()
+	url = reverse("register")
+	response = client.post(
+		url,
+		data={
+			"email": "noconsent@example.com",
+			"password": "Sup3r-strong-pass!",
+			**consent,
+		},
+		format="json",
+	)
+
+	assert response.status_code == 400, response.content
+	assert not User.objects.filter(email__iexact="noconsent@example.com").exists()
+	assert ConsentRecord.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_register_consent_records_capture_ip():
+	"""The consenting client IP is persisted on each ConsentRecord (proof of
+	the context in which consent was given)."""
+	client = APIClient()
+	url = reverse("register")
+	response = client.post(
+		url,
+		data={
+			"email": "ip@example.com",
+			"password": "Sup3r-strong-pass!",
+			"acceptGdpr": True,
+			"acceptPdpo": True,
+		},
+		format="json",
+		REMOTE_ADDR="203.0.113.7",
+	)
+
+	assert response.status_code == 201, response.content
+	user = User.objects.get(email__iexact="ip@example.com")
+	records = ConsentRecord.objects.filter(user=user)
+	assert records.count() == 2
+	assert all(r.ip_address == "203.0.113.7" for r in records)
 
 
 @pytest.mark.critical

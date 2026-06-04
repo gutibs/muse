@@ -213,6 +213,7 @@ const translations: Record<Locale, Record<string, string>> = {
 		'login.hidePassword': 'Hide password',
 		'register.subtitle': 'Create your account',
 		'register.signInLink': 'Sign in',
+		'register.consentRead': 'I have read and accept the',
 
 		// Pin
 		'pin.editPin': 'Edit Pin',
@@ -572,6 +573,7 @@ const translations: Record<Locale, Record<string, string>> = {
 		'login.hidePassword': 'Ocultar contraseña',
 		'register.subtitle': 'Creá tu cuenta',
 		'register.signInLink': 'Iniciar sesión',
+		'register.consentRead': 'He leído y acepto la',
 
 		'pin.editPin': 'Editar Pin',
 		'pin.addPin': 'Agregar Pin',
@@ -919,6 +921,7 @@ const translations: Record<Locale, Record<string, string>> = {
 		'login.hidePassword': 'Nascondi password',
 		'register.subtitle': 'Crea il tuo account',
 		'register.signInLink': 'Accedi',
+		'register.consentRead': 'Ho letto e accetto la',
 
 		'pin.editPin': 'Modifica Pin',
 		'pin.addPin': 'Aggiungi Pin',

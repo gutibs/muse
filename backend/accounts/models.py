@@ -61,6 +61,39 @@ class Profile(models.Model):
 		return self.display_name or self.user.email or self.user.username
 
 
+class ConsentRecord(models.Model):
+	"""Proof that a user actively consented to a data-protection policy at a
+	given point in time. One row per (user, policy) acceptance. GDPR/PDPO
+	require being able to demonstrate *when* and *to which version* consent
+	was given — hence policy_version + accepted_at + ip_address.
+
+	Append-only by intent: re-consenting to a new policy version creates a new
+	row, it does not overwrite the old one. Never edited from the admin.
+	"""
+
+	class Policy(models.TextChoices):
+		GDPR = "gdpr", "GDPR"
+		PDPO = "pdpo", "PDPO"
+
+	user = models.ForeignKey(
+		settings.AUTH_USER_MODEL,
+		on_delete=models.CASCADE,
+		related_name="consents",
+	)
+	policy = models.CharField(max_length=10, choices=Policy.choices)
+	policy_version = models.CharField(max_length=20)
+	accepted_at = models.DateTimeField(auto_now_add=True)
+	ip_address = models.GenericIPAddressField(null=True, blank=True)
+
+	class Meta:
+		db_table = "accounts_consent_record"
+		ordering = ["-accepted_at"]
+		indexes = [models.Index(fields=["user", "policy"], name="accounts_co_user_id_idx")]
+
+	def __str__(self):
+		return f"{self.user} accepted {self.policy} v{self.policy_version}"
+
+
 class Friendship(models.Model):
 	class Status(models.TextChoices):
 		PENDING = "pending", "Pending"

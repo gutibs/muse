@@ -75,8 +75,20 @@ class AuthStore {
 		this.user = await authService.getProfile();
 	}
 
-	async register(email: string, password: string, displayName?: string) {
-		const result = await authService.register({ email, password, displayName });
+	async register(
+		email: string,
+		password: string,
+		acceptGdpr: boolean,
+		acceptPdpo: boolean,
+		displayName?: string
+	) {
+		const result = await authService.register({
+			email,
+			password,
+			displayName,
+			acceptGdpr,
+			acceptPdpo
+		});
 		this.accessToken = result.tokens.access;
 		this.refreshToken = result.tokens.refresh;
 		localStorage.setItem(TOKEN_KEY, result.tokens.access);

@@ -3,7 +3,14 @@ from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from accounts.models import DietaryPreference, EmailInvitation, Friendship, Profile
+from accounts.consent import POLICY_VERSIONS
+from accounts.models import (
+	ConsentRecord,
+	DietaryPreference,
+	EmailInvitation,
+	Friendship,
+	Profile,
+)
 
 User = get_user_model()
 
@@ -81,12 +88,36 @@ class RegisterSerializer(serializers.Serializer):
 	email = serializers.EmailField()
 	password = serializers.CharField(write_only=True, validators=[validate_password])
 	display_name = serializers.CharField(max_length=100, required=False, default="")
+	# Active consent (GDPR + PDPO): required and must be explicitly True. A
+	# missing or False value is a 400 — the client cannot register without
+	# ticking both boxes. Each acceptance is persisted as a ConsentRecord.
+	accept_gdpr = serializers.BooleanField(write_only=True)
+	accept_pdpo = serializers.BooleanField(write_only=True)
 
 	def validate_email(self, value):
 		value = value.lower()
 		if User.objects.filter(email__iexact=value).exists():
 			raise serializers.ValidationError("A user with this email already exists.")
 		return value
+
+	def validate_accept_gdpr(self, value):
+		if value is not True:
+			raise serializers.ValidationError("You must accept the GDPR policy to register.")
+		return value
+
+	def validate_accept_pdpo(self, value):
+		if value is not True:
+			raise serializers.ValidationError("You must accept the PDPO policy to register.")
+		return value
+
+	def _client_ip(self):
+		request = self.context.get("request")
+		if request is None:
+			return None
+		forwarded = request.META.get("HTTP_X_FORWARDED_FOR")
+		if forwarded:
+			return forwarded.split(",")[0].strip()
+		return request.META.get("REMOTE_ADDR")
 
 	def create(self, validated_data):
 		user = User.objects.create_user(
@@ -97,6 +128,19 @@ class RegisterSerializer(serializers.Serializer):
 		if validated_data.get("display_name"):
 			user.profile.display_name = validated_data["display_name"]
 			user.profile.save(update_fields=["display_name"])
+
+		ip = self._client_ip()
+		ConsentRecord.objects.bulk_create(
+			[
+				ConsentRecord(
+					user=user,
+					policy=policy,
+					policy_version=POLICY_VERSIONS[policy],
+					ip_address=ip,
+				)
+				for policy in (ConsentRecord.Policy.GDPR, ConsentRecord.Policy.PDPO)
+			]
+		)
 
 		invitations = EmailInvitation.objects.filter(
 			email__iexact=validated_data["email"],
