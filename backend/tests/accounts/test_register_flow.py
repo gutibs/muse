@@ -26,8 +26,7 @@ def test_register_creates_profile_and_consumes_invitation():
 			"email": "b@example.com",
 			"password": "Sup3r-strong-pass!",
 			"displayName": "Bee",
-			"acceptGdpr": True,
-			"acceptPdpo": True,
+			"acceptPrivacy": True,
 		},
 		format="json",
 	)
@@ -82,15 +81,12 @@ def test_register_creates_profile_and_consumes_invitation():
 @pytest.mark.parametrize(
 	"consent",
 	[
-		{},  # both missing
-		{"acceptGdpr": True},  # pdpo missing
-		{"acceptPdpo": True},  # gdpr missing
-		{"acceptGdpr": True, "acceptPdpo": False},  # pdpo explicitly refused
-		{"acceptGdpr": False, "acceptPdpo": True},  # gdpr explicitly refused
+		{},  # missing
+		{"acceptPrivacy": False},  # explicitly refused
 	],
 )
 def test_register_requires_active_consent(consent):
-	"""Registration is rejected unless BOTH consent flags are explicitly true.
+	"""Registration is rejected unless the privacy flag is explicitly true.
 	A missing or false flag → 400 and no user/consent rows are created."""
 	client = APIClient()
 	url = reverse("register")
@@ -120,8 +116,7 @@ def test_register_consent_records_capture_ip():
 		data={
 			"email": "ip@example.com",
 			"password": "Sup3r-strong-pass!",
-			"acceptGdpr": True,
-			"acceptPdpo": True,
+			"acceptPrivacy": True,
 		},
 		format="json",
 		REMOTE_ADDR="203.0.113.7",

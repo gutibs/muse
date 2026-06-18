@@ -88,11 +88,11 @@ class RegisterSerializer(serializers.Serializer):
 	email = serializers.EmailField()
 	password = serializers.CharField(write_only=True, validators=[validate_password])
 	display_name = serializers.CharField(max_length=100, required=False, default="")
-	# Active consent (GDPR + PDPO): required and must be explicitly True. A
-	# missing or False value is a 400 — the client cannot register without
-	# ticking both boxes. Each acceptance is persisted as a ConsentRecord.
-	accept_gdpr = serializers.BooleanField(write_only=True)
-	accept_pdpo = serializers.BooleanField(write_only=True)
+	# Active consent: a single unified privacy checkbox, required and must be
+	# explicitly True. A missing or False value is a 400 — the client cannot
+	# register without ticking it. Accepting the unified policy still persists
+	# one ConsentRecord per framework (GDPR + PDPO) as legal proof.
+	accept_privacy = serializers.BooleanField(write_only=True)
 
 	def validate_email(self, value):
 		value = value.lower()
@@ -100,14 +100,9 @@ class RegisterSerializer(serializers.Serializer):
 			raise serializers.ValidationError("A user with this email already exists.")
 		return value
 
-	def validate_accept_gdpr(self, value):
+	def validate_accept_privacy(self, value):
 		if value is not True:
-			raise serializers.ValidationError("You must accept the GDPR policy to register.")
-		return value
-
-	def validate_accept_pdpo(self, value):
-		if value is not True:
-			raise serializers.ValidationError("You must accept the PDPO policy to register.")
+			raise serializers.ValidationError("You must accept the privacy policy to register.")
 		return value
 
 	def _client_ip(self):

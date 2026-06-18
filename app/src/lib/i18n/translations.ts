@@ -370,8 +370,7 @@ const translations: Record<Locale, Record<string, string>> = {
 		// Legal
 		'legal.section': 'Legal',
 		'legal.title': 'Legal & Policies',
-		'legal.pdpo': 'PDPO Privacy Policy',
-		'legal.gdpr': 'GDPR Privacy Policy',
+		'legal.privacy': 'Privacy Policy',
 		'legal.policies': 'Privacy Policies',
 		'legal.terms': 'Terms of Service',
 		'legal.community': 'Community Guidelines',
@@ -718,8 +717,7 @@ const translations: Record<Locale, Record<string, string>> = {
 
 		'legal.section': 'Legal',
 		'legal.title': 'Legal y Políticas',
-		'legal.pdpo': 'Política de Privacidad PDPO',
-		'legal.gdpr': 'Política de Privacidad GDPR',
+		'legal.privacy': 'Política de Privacidad',
 		'legal.policies': 'Políticas de Privacidad',
 		'legal.terms': 'Términos de Servicio',
 		'legal.community': 'Normas de la Comunidad',
@@ -1066,8 +1064,7 @@ const translations: Record<Locale, Record<string, string>> = {
 
 		'legal.section': 'Legale',
 		'legal.title': 'Legale e Politiche',
-		'legal.pdpo': 'Informativa sulla Privacy PDPO',
-		'legal.gdpr': 'Informativa sulla Privacy GDPR',
+		'legal.privacy': 'Informativa sulla Privacy',
 		'legal.policies': 'Informative sulla Privacy',
 		'legal.terms': 'Termini di Servizio',
 		'legal.community': 'Linee Guida della Comunità',

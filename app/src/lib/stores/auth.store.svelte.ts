@@ -78,16 +78,14 @@ class AuthStore {
 	async register(
 		email: string,
 		password: string,
-		acceptGdpr: boolean,
-		acceptPdpo: boolean,
+		acceptPrivacy: boolean,
 		displayName?: string
 	) {
 		const result = await authService.register({
 			email,
 			password,
 			displayName,
-			acceptGdpr,
-			acceptPdpo
+			acceptPrivacy
 		});
 		this.accessToken = result.tokens.access;
 		this.refreshToken = result.tokens.refresh;

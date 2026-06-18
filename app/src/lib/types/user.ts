@@ -68,8 +68,8 @@ export interface RegisterRequest {
 	email: string;
 	password: string;
 	displayName?: string;
-	// Active consent — both required true; the parser converts to snake_case
-	// (accept_gdpr / accept_pdpo) for the backend.
-	acceptGdpr: boolean;
-	acceptPdpo: boolean;
+	// Active consent — a single unified privacy checkbox, required true; the
+	// parser converts to snake_case (accept_privacy) for the backend, which
+	// still records one ConsentRecord per framework (GDPR + PDPO).
+	acceptPrivacy: boolean;
 }
