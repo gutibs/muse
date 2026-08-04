@@ -1,6 +1,8 @@
 from django.contrib.gis.geos import Point
 from rest_framework import serializers
 
+from accounts.serializers import UserAnonymousSafeSerializer
+from accounts.services.friendships import friend_ids
 from restaurants.models import Cuisine, MenuItem, Restaurant, Tag
 
 
@@ -156,27 +158,11 @@ class RestaurantDetailSerializer(RestaurantSerializer):
 		fields = RestaurantSerializer.Meta.fields + ("menu_items", "reviews", "friend_stats")
 
 	def _friend_ids(self):
-		if hasattr(self, "_cached_friend_ids"):
-			return self._cached_friend_ids
-		from django.db.models import Q
-
-		from accounts.models import Friendship
-
-		user = self.context["request"].user
-		if not user.is_authenticated:
-			self._cached_friend_ids = set()
-			return self._cached_friend_ids
-		friendships = Friendship.objects.filter(
-			Q(from_user=user) | Q(to_user=user),
-			status=Friendship.Status.ACCEPTED,
-		).values_list("from_user_id", "to_user_id")
-		ids = set()
-		for a, b in friendships:
-			ids.add(a)
-			ids.add(b)
-		ids.discard(user.id)
-		self._cached_friend_ids = ids
-		return ids
+		"""Cached per serializer instance: get_reviews and get_friend_stats
+		both need it and would otherwise each hit the database."""
+		if not hasattr(self, "_cached_friend_ids"):
+			self._cached_friend_ids = friend_ids(self.context["request"].user)
+		return self._cached_friend_ids
 
 	def get_friend_stats(self, obj):
 		from django.db.models import Avg
@@ -208,18 +194,15 @@ class RestaurantDetailSerializer(RestaurantSerializer):
 			.order_by("-updated_at")[:20]
 		)
 		pins.sort(key=lambda p: (0 if p.user_id in friend_ids else 1, -p.updated_at.timestamp()))
+		# UserAnonymousSafeSerializer, not a hand-rolled dict: same author shape
+		# as every other endpoint, no email (reviews are public to non-friends
+		# by design, D-001), `is_deleted` for the anonymous byline, and an
+		# absolute avatar URL — the dict emitted a MEDIA_URL-relative path that
+		# could not resolve from the Capacitor WebView.
 		return [
 			{
 				"id": p.id,
-				"user": {
-					"id": p.user.id,
-					# An erased author keeps the review but loses the byline. The
-					# client renders its own translated "Anonymous" off this flag
-					# instead of us baking a Spanish string into the API.
-					"display_name": getattr(p.user.profile, "display_name", ""),
-					"avatar": p.user.profile.avatar.url if p.user.profile.avatar else None,
-					"is_deleted": getattr(p.user.profile, "deleted_at", None) is not None,
-				},
+				"user": UserAnonymousSafeSerializer(p.user, context=self.context).data,
 				"rating": p.rating,
 				"comment": p.comment,
 				"visited_at": p.visited_at,

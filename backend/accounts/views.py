@@ -23,6 +23,7 @@ from accounts.serializers import (
 )
 from accounts.services.account_deletion import anonymise_user
 from accounts.services.email import EmailSendError, send_invitation_email
+from accounts.services.friendships import are_friends
 from pins.models import Pin
 from pins.serializers import PinSerializer
 
@@ -51,13 +52,10 @@ class InviteThrottle(UserRateThrottle):
 	scope = "invite"
 
 
-def _are_friends(user_a, user_b) -> bool:
-	if user_a == user_b:
-		return True
-	return Friendship.objects.filter(
-		(Q(from_user=user_a, to_user=user_b) | Q(from_user=user_b, to_user=user_a)),
-		status=Friendship.Status.ACCEPTED,
-	).exists()
+# Kept as a module-level alias: this name is referenced from views below and
+# from tests. The implementation moved to accounts.services.friendships, next
+# to friend_ids(), so every "who are my friends" question has one answer.
+_are_friends = are_friends
 
 
 class RegisterView(generics.CreateAPIView):
