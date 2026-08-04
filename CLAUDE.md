@@ -17,7 +17,7 @@ compartir por link público.
 muse/
 ├── app/          # SvelteKit + Capacitor
 ├── backend/      # Django + DRF
-│   ├── tests/    # pytest + factory_boy (5 tests críticos hoy)
+│   ├── tests/    # pytest + factory_boy (17 archivos, 58 tests, 35 críticos)
 │   └── scripts/  # hooks custom de pre-commit
 ├── nginx/        # Config prod
 └── Makefile
@@ -57,14 +57,23 @@ a `main` es porque alguien hizo `--no-verify` (no lo hagas).
   los uses para "probar el hook"; tomá un valor random que matchee el regex.
 
 ## Tests del path crítico (`backend/tests/`)
-- 5 tests marcados `@pytest.mark.critical` cubren:
-  - `_are_friends` simétrico y solo cuenta `ACCEPTED`
-  - `RegisterView` crea Profile vía signal y consume `EmailInvitation`
-  - `PinSerializer.validate` (status ↔ rating)
+35 tests marcados `@pytest.mark.critical`. Los que cubren invariantes que no
+podés romper sin romper el producto:
+  - `are_friends` simétrico y solo cuenta `ACCEPTED`; `friend_ids` idem
+  - `RegisterView` crea Profile vía signal, consume `EmailInvitation` y
+    persiste los `ConsentRecord` (GDPR + PDPO)
+  - `PinSerializer.validate` (status ↔ rating) y el 409 al pinear dos veces
   - `from_google` race → un único Restaurant en DB
-  - `SharedListPublicView` 404 en token inactivo/inválido
+  - `SharedListPublicView` 404 en token inactivo/inválido y **no expone el
+    email del dueño** (endpoint anónimo)
+  - Borrado de cuenta: exige contraseña, anonimiza conservando reseñas,
+    borra el grafo social, invalida los JWT vigentes
 - **Cualquier cambio en `accounts/`, `pins/`, `restaurants/from_google` debe correr la suite.**
-  Si rompiste alguno, el bug está en tu cambio (los 5 fueron verdes en `9472833`).
+  Si rompiste alguno, el bug está en tu cambio.
+- **Corré con `--create-db`.** `pytest.ini` trae `--reuse-db`: al agregar una
+  migración, la base reusada queda con el schema al día pero sin los datos que
+  siembran las data migrations, y te da 5 rojos que no tienen nada que ver con
+  tu cambio.
 
 ---
 
@@ -149,39 +158,53 @@ el código real hoy o existió hasta hace poco — no son hipotéticos.
 
 ## Validación duplicada modelo+serializer
 - `Pin.clean()` y `PinSerializer.validate` chequean lo mismo (status↔rating).
-  La del modelo NUNCA corre porque nadie llama `full_clean()`. Cuando agregues
-  validación, ponela en UN solo lugar (preferentemente el serializer, que es
-  por donde entra HTTP).
+  La del modelo **sí corre**: `Pin.save()` llama `full_clean(validate_unique=False)`.
+  El `validate_unique=False` no es opcional — con la validación de unicidad
+  activada, pinear dos veces lanzaba el `ValidationError` de Django antes del
+  INSERT, DRF no lo traduce, y el usuario recibía un 500 en lugar del 409 que
+  `PinViewSet.create` intenta dar. Cuando agregues validación, ponela en UN
+  solo lugar (preferentemente el serializer, que es por donde entra HTTP).
 
-## Reimplementar Leaflet en cada vista
-- `leaflet` se importa dinámicamente en 7 archivos, con 4 copias literales
-  de `escapeHtml` y popups HTML inline duplicados. **No agregues una 8va vista
-  con su propio bootstrap de Leaflet.** Cuando exista `lib/components/PinsMap.svelte`
-  + `lib/utils/escape-html.ts` + `lib/utils/map-popup.ts`, usalos.
+## Reimplementar Leaflet o el ícono de rating en cada vista
+- Ya existen `lib/components/PinsMap.svelte`, `lib/utils/escape-html.ts` y
+  `lib/utils/map-popup.ts`. **Usalos**; no agregues una vista con su propio
+  bootstrap de Leaflet ni otra copia de `escapeHtml`.
+- Para rating: `RatingHearts.svelte` es el display de sólo lectura,
+  `RatingStars.svelte` el input, `HeartIcon.svelte` el glifo. El path del SVG
+  llegó a estar pegado en 17 lugares — no lo vuelvas a pegar.
 
-## Frontend que solo lee la primera página
-- `profile/+page.svelte` hace `pinsService.list()` y solo usa `res.results`
-  (no sigue paginación). El backend pagina con PAGE_SIZE=20. Bug latente
-  cuando un usuario llegue a 21+ pins. Si agregás listados largos, **paginá
-  o usá un infinite scroll** desde el principio.
+## Frontend que solo lee la primera página (VIGENTE, 2 lugares)
+- `profile/+page.svelte:125` y `restaurant/[id]/+page.svelte:34` llaman
+  `pinsService.list()` y usan sólo `res.results`, sin seguir la paginación. El
+  backend pagina con PAGE_SIZE=20.
+- El de `restaurant/[id]` es el que muerde primero: busca el pin propio del
+  restaurante dentro de la primera página. Con 21+ pins, un restaurante que ya
+  pineaste muestra "Agregar a mis pins" en vez de "Editar"; al tocarlo, el
+  backend responde 409 porque el pin existe. El 409 ahora está bien formado
+  (trae `pinId`), pero el frontend no lo usa para redirigir.
+- Si agregás listados largos, **paginá o usá infinite scroll** desde el
+  principio.
 
 ## CharField libre cuando hay un set finito de valores
-- `Profile.dietary` es `CharField(max_length=50, blank=True)` con valores
-  hardcoded en frontend (`'Omnivore' | 'Vegetarian' | ...`). Un typo en
-  frontend = registro inconsistente en DB. Para campos con set cerrado, usar
-  `TextChoices` o FK a tabla. Aplica también a `MenuItem.is_vegetarian/
-  is_gluten_free` (3 booleans en lugar de M2M con `Tag`).
+- Ya resuelto para dietary: `Profile.dietary_preferences` es M2M a
+  `DietaryPreference` (set cerrado, seedeado por migración), y los tags de
+  `MenuItem` son M2M con `Tag`. **El patrón queda como regla**: campo con set
+  finito → `TextChoices` o FK, nunca texto libre que el frontend rellena.
 
 ## Geocoding sin proxy
 - `LocationPicker.svelte` pegaba directo a Nominatim sin User-Agent custom.
-  Viola su usage policy y rate-limita en prod. **Cualquier llamada a un
-  servicio externo desde el frontend tiene que ir por backend** (mismo patrón
-  que ya existe con Google Places en `places/views.py`).
+  Ya está detrás de `ReverseGeocodeView`. **Cualquier llamada a un servicio
+  externo desde el frontend tiene que ir por backend** — hoy Google Places va
+  por `places/services/google_places.py` y Nominatim por `places/views.py`.
 
 ## Catches mudos
-- En backend lo enforza el hook `check_no_silent_excepts`. En frontend hay
-  4+ lugares con `catch {}` sin log. Si agregás uno, mínimo `console.warn`
-  con scope. Eventualmente migrar a un `logSilent` central.
+- En backend lo enforza el hook `check_no_silent_excepts`. En frontend usá
+  `logSilent(scope, err)` de `lib/utils/logger.ts` — ya está adoptado en todos
+  los catches menos uno (descartar el share sheet rechaza con `AbortError`, o
+  sea que dispara en una cancelación normal y logearlo sería ruido; el
+  comentario lo aclara ahí mismo).
+- Un catch que muestra un mensaje al usuario **igual necesita log**: sin traza
+  en consola, un reporte de "no me carga X" no tiene evidencia que mirar.
 
 ## Hardcodear cosas que deberían ser env
 - `SECRET_KEY`, `GOOGLE_PLACES_API_KEY`, URLs públicas, credenciales SMTP — todo
@@ -189,12 +212,13 @@ el código real hoy o existió hasta hace poco — no son hipotéticos.
   `os.environ.get("X", default)`. Vars nuevas: actualizar `.env.example` en
   el mismo commit.
 
-## Auto-friendship por invite queda PENDING (bug abierto)
-- `RegisterSerializer.create` crea el `Friendship` con status PENDING. El
-  email de invitación promete que la amistad se crea "automáticamente". Hay
-  test (`test_register_creates_profile_and_consumes_invitation`) que documenta
-  el comportamiento ACTUAL. Cuando se aplique el fix, hay que invertir el
-  assert a `ACCEPTED`. Ver `AUDIT_BUGS_FOUND.md` #1.
+## Textos legales duplicados
+- Los textos legales viven **sólo** en `nginx/landing/*.html` (en/es/it). La
+  app no lleva copia: linkea a las URLs públicas desde `app/src/lib/legal.ts`.
+  Cuando estaban en los dos lados divergieron sin que nadie lo notara —la app
+  unificó GDPR+PDPO y la landing no—, así que la política que veías dependía
+  de por dónde entrabas. `docs/GDPR_PRIVACY_POLICY.md` es borrador interno,
+  **no** lo que se publica.
 
 ## Reglas escritas que nadie chequea
 - Esta sección entera podría ser tests visuales o lint custom. La regla:
@@ -213,9 +237,12 @@ una segunda implementación al lado.
 
 | Responsabilidad | Módulo canónico | Notas |
 |---|---|---|
-| Importar/normalizar restaurantes desde Google Places | `restaurants/services/google_import.py` | Maneja la race condition de doble alta (D-002). |
+| Hablar con Google Places (HTTP) | `places/services/google_places.py` | Único lugar que usa la API key y maneja errores de `requests`. Valida el `place_id` antes de interpolarlo en la URL. |
+| Importar/normalizar restaurantes desde Google | `restaurants/services/google_import.py` | Parseo + race condition de doble alta (D-002). El HTTP lo delega al cliente de arriba. |
 | Email transaccional al usuario (invitations) | `accounts/services/email.py::send_invitation_email` | Envuelve Resend. Lanza `EmailSendError(status_code=502/503)`. Templates en `backend/templates/emails/invitation.{es,en,it}.{html,txt}`. |
-| Friendship simétrico | `accounts/views.py::_are_friends` | No cuenta PENDING ni DECLINED. Reusalo en cualquier filtro nuevo de "datos de amigos". |
+| Amistades (simétrico, sólo ACCEPTED) | `accounts/services/friendships.py` | `are_friends(a, b)` y `friend_ids(user)`. No cuentan PENDING ni DECLINED. Reusalos en cualquier filtro nuevo de "datos de amigos" — el set de ids estuvo duplicado en dos módulos por no existir el helper. |
+| Borrado de cuenta (GDPR art. 17) | `accounts/services/account_deletion.py::anonymise_user` | Anonimiza, no borra: las reseñas sobreviven sin identidad (D-009). Atómico. |
+| Parseo de coordenadas de query params | `places/geo.py` | `parse_lat_lng` y `parse_radius_km`. Lanzan `ValidationError` de DRF → 400. |
 
 Cuando agregues un service nuevo:
 - Vive en `<app>/services/<scope>.py` (mismo patrón que los de arriba).
@@ -231,19 +258,36 @@ Cuando agregues un service nuevo:
 # Infraestructura
 
 ## Producción (estado actual)
-- **EC2** `t3.small` Ubuntu 24.04 — IP fija `3.129.56.80`
+- **EC2** `t3.small` Ubuntu 24.04 — IP fija `3.129.56.80`, disco raíz 20 GiB
+  (era 8 GiB y se llenó el 2026-08-04: el deploy murió en el `git pull` y el
+  sitio quedó caído. Si volvés a rozar el límite, mirá `/var/lib/containerd`.)
 - **RDS** `db.t3.micro` PostgreSQL 16 — endpoint `database-1.c1yuu8ceyjpj.us-east-2.rds.amazonaws.com`
 - **SG EC2** (`muse-ec2-sg`): 22 (0.0.0.0/0 — intencional para GitHub Actions), 80, 443
 - **SG RDS** (`muse-rds-sg`): 5432 solo desde `muse-ec2-sg`
-- **Deploy**: push a `main` → GitHub Actions → SSH al EC2 → `docker-compose up --build`
-  - Bug conocido de docker-compose 1.29.2: hacer `down && up --build`, nunca solo `up --build`.
+- **Dominio y SSL**: `lovemuse.app` con Certbot, servido por nginx (`nginx/default-aws.conf`).
+- **Deploy**: push a `main` → GitHub Actions → SSH al EC2. El orden importa:
+  **`build` primero, con los contenedores todavía arriba; recién después
+  `down` + `up -d`.** Al revés (que era como estaba), cualquier fallo del build
+  dejaba producción caída. `set -e` corta antes del `down`, así que un build
+  roto es un deploy en rojo con el sitio intacto.
+  - Bug conocido de docker-compose 1.29.2: hacer `down && up`, nunca solo `up`.
+  - `command_timeout: 30m` en la acción SSH: un build sin cache no entra en los
+    10 minutos por defecto y la sesión se corta a mitad de camino.
+  - El prune de imágenes va **al final y con `--filter until=720h`**. Un
+    `docker image prune -af` sin filtro se lleva las capas intermedias sin tag
+    de las que depende el cache del builder clásico (compose v1 no usa
+    BuildKit) y fuerza un build completo en el deploy siguiente.
 - **Secrets en GitHub**: `EC2_HOST`, `EC2_SSH_KEY`
 - **Vars de entorno**: en `/home/ubuntu/muse/.env` en el server (no en el repo)
-- **Pendiente**: dominio + SSL Certbot + actualizar `ALLOWED_HOSTS` y `CORS_ALLOWED_ORIGINS`
+- **Pendiente**: la imagen del backend instala `requirements/dev.txt` (pytest,
+  ipython, debug-toolbar viajan a producción y pesan ~1.75 GB).
 
 ## APK
 - Build prod: `npm run build:apk-prod` (usa `.env.capacitor-prod` → `lovemuse.app`)
 - NUNCA `build:apk` para distribución (apunta a `muse.dothecode.com`, dev URL)
+- **El APK V1.0.0 compilado es anterior al borrado de cuenta.** Play Store lo
+  exige para toda app con registro, así que hace falta rebuildear antes de
+  publicar (sería `V1.1.0`: feature visible al usuario).
 
 ### Versionado APK — convención `V<major>.<minor>.<patch>`
 Toda release del APK lleva un version humano en formato `V<major>.<minor>.<patch>`:
