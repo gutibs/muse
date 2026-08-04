@@ -21,10 +21,23 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
+          # Default is 10m. Un build sin cache (gdal + pip desde cero) tarda
+          # más: el 2026-08-04 la sesión se cortó en el paso 7/11 y el job
+          # quedó en rojo aunque el build después terminó bien en el server.
+          command_timeout: 30m
           script: |
             set -e
             cd /home/ubuntu/muse
             git pull origin main
+
+            # Build ANTES de tocar lo que está corriendo. Con `set -e`, un build
+            # fallido corta acá y el sitio sigue sirviendo la versión anterior:
+            # el deploy queda en rojo, producción intacta.
+            # Antes esto vivía en un `up --build` posterior al `down`, así que
+            # cualquier tropiezo del build (disco lleno, timeout de SSH, un
+            # typo en el Dockerfile) dejaba el sitio caído hasta que alguien
+            # entrara a mano. Pasó dos veces el 2026-08-04.
+            sudo docker-compose -f docker-compose.aws.yml build
 
             # Backup lógico de la DB de PRODUCCIÓN (RDS) antes de cualquier restart.
             # Guarda los últimos 14 dumps en el volumen muse_pgbackups. El contenedor
@@ -48,7 +61,9 @@ jobs:
             # a clean down before up.
             sudo docker-compose -f docker-compose.aws.yml down --remove-orphans
 
-            sudo docker-compose -f docker-compose.aws.yml up --build -d
+            # Sin --build: la imagen ya se construyó arriba. La ventana de
+            # indisponibilidad es sólo este down/up, no el build entero.
+            sudo docker-compose -f docker-compose.aws.yml up -d
 
             # Wait for db healthcheck before migrating
             for i in $(seq 1 30); do
@@ -100,3 +115,12 @@ jobs:
               sudo docker-compose -f docker-compose.aws.yml logs --tail=20 backend
               exit 1
             fi
+
+            # Recolección de imágenes viejas, sólo con el deploy ya sano.
+            # El filtro `until` es lo importante: `prune -af` a secas se lleva
+            # las capas intermedias sin tag de las que depende el cache del
+            # builder clásico (docker-compose v1 no usa BuildKit), y el
+            # siguiente build arranca de cero. Con 720h se van sólo las
+            # imágenes realmente viejas y el cache reciente sobrevive.
+            # Sin esto el disco se llenó: 28 imágenes, 3 en uso (2026-08-04).
+            sudo docker image prune -af --filter "until=720h" || true
