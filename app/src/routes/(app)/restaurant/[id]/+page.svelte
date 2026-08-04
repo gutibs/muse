@@ -8,6 +8,7 @@
 	import { restaurantsService } from '$lib/services/restaurants.service';
 	import type { Pin, RestaurantDetail } from '$lib/types';
 	import { timeAgo } from '$lib/utils/time';
+	import { logSilent } from '$lib/utils/logger';
 
 	let restaurantId = $derived(Number(page.params.id));
 
@@ -29,8 +30,9 @@
 				// already filters to the current user.
 				const res = await pinsService.list();
 				myPin = res.results.find((p) => p.restaurant === id) ?? null;
-			} catch {
+			} catch (err) {
 				error = t('restaurant.cantLoad');
+				logSilent('restaurant:load', err);
 			} finally {
 				loading = false;
 			}

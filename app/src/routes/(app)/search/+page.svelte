@@ -34,6 +34,7 @@
 	let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 	import { authStore } from '$lib/stores/auth.store.svelte';
+	import { logSilent } from '$lib/utils/logger';
 
 	$effect(() => {
 		if (authStore.isAuthenticated && cuisines.length === 0) {
@@ -45,7 +46,7 @@
 		try {
 			cuisines = await restaurantsService.cuisines();
 		} catch (err) {
-			console.warn('[search] cuisines fetch failed', err);
+			logSilent('search:cuisines', err);
 			if (retry) setTimeout(() => loadCuisines(false), 1500);
 		}
 	}
@@ -113,9 +114,10 @@
 			]);
 			results = dbRes.status === 'fulfilled' ? dbRes.value.results : [];
 			googleResults = placesRes.status === 'fulfilled' ? placesRes.value.results : [];
-		} catch {
+		} catch (err) {
 			error = t('search.cantLoadResults');
 			results = [];
+			logSilent('search:load', err);
 		} finally {
 			loading = false;
 		}

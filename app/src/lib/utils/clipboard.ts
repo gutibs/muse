@@ -1,10 +1,15 @@
+import { logSilent } from '$lib/utils/logger';
+
 export async function copyToClipboard(text: string): Promise<boolean> {
 	if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
 		try {
 			await navigator.clipboard.writeText(text);
 			return true;
-		} catch {
-			// fall through to legacy fallback
+		} catch (err) {
+			// Denied permission or insecure context — fall through to the
+			// legacy fallback. Logged because "the copy button does nothing"
+			// is otherwise impossible to diagnose from a user report.
+			logSilent('clipboard:modern', err);
 		}
 	}
 	if (typeof document === 'undefined') return false;
@@ -21,7 +26,8 @@ export async function copyToClipboard(text: string): Promise<boolean> {
 		const ok = document.execCommand('copy');
 		document.body.removeChild(textarea);
 		return ok;
-	} catch {
+	} catch (err) {
+		logSilent('clipboard:legacy', err);
 		return false;
 	}
 }

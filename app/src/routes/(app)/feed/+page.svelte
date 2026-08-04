@@ -4,6 +4,7 @@
 	import { t } from '$lib/i18n/index.svelte';
 	import type { Activity } from '$lib/types';
 	import { timeAgo } from '$lib/utils/time';
+	import { logSilent } from '$lib/utils/logger';
 
 	let activities = $state<Activity[]>([]);
 	let loading = $state(true);
@@ -20,8 +21,9 @@
 			if (page === 1) activities = res.results;
 			else activities = [...activities, ...res.results];
 			nextPage = res.next ? page + 1 : null;
-		} catch {
+		} catch (err) {
 			error = t('home.cantLoad');
+			logSilent('feed:load', err);
 		} finally {
 			loading = false;
 			loadingMore = false;

@@ -10,6 +10,7 @@
 	import { placesService } from '$lib/services/places.service';
 	import { restaurantsService } from '$lib/services/restaurants.service';
 	import { usersService } from '$lib/services/users.service';
+	import { logSilent } from '$lib/utils/logger';
 	import { authStore } from '$lib/stores/auth.store.svelte';
 	import type { Pin } from '$lib/types';
 	import { getOtherUser } from '$lib/utils/friendship';
@@ -82,8 +83,9 @@
 		try {
 			const details = await placesService.details(placeId);
 			mapRef.setView([details.lat, details.lng], 13, { animate: true });
-		} catch {
-			// silent fail — keep the search bar open so the user can retry
+		} catch (err) {
+			// Keep the search bar open so the user can retry.
+			logSilent('map:flyToCity', err);
 		}
 	}
 
@@ -109,8 +111,9 @@
 					if (first) {
 						await flyToCity(first.placeId);
 					}
-				} catch {
-					// silent fail — search bar stays open for retry
+				} catch (err) {
+					// Search bar stays open for retry.
+					logSilent('map:cityAutocomplete', err);
 				}
 			}
 
@@ -129,8 +132,8 @@
 					mapRef.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 });
 				}
 			}
-		} catch {
-			// silent fail
+		} catch (err) {
+			logSilent('map:search', err);
 		} finally {
 			searching = false;
 		}
@@ -174,15 +177,20 @@
 							isFriend: true,
 						});
 					}
-				} catch {
-					// friend might have no pins or permission error
+				} catch (err) {
+					// This friend may have no pins, or the friendship may have
+					// been revoked between listing and fetching. Skip them and
+					// keep drawing the rest.
+					logSilent('map:friendPins', err);
 				}
 			}
 
 			friendLayers = group;
 			if (showFriendPins) group.addTo(map);
-		} catch {
-			// no friends yet
+		} catch (err) {
+			// No friends yet, or the friends list failed: the map still works
+			// with the user's own pins.
+			logSilent('map:friendLayers', err);
 		}
 	}
 

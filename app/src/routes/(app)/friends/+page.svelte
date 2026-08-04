@@ -5,6 +5,7 @@
 	import type { Friendship, PublicUser } from '$lib/types';
 	import { getOtherUser } from '$lib/utils/friendship';
 	import { extractFirstDrfError } from '$lib/utils/api-error';
+	import { logSilent } from '$lib/utils/logger';
 
 	const LOCALE_TO_BCP47: Record<string, string> = { en: 'en-GB', es: 'es-AR', it: 'it-IT' };
 
@@ -56,8 +57,9 @@
 		listError = '';
 		try {
 			friends = await friendsService.list();
-		} catch {
+		} catch (err) {
 			listError = t('friends.cantLoadFriends');
+			logSilent('friends:list', err);
 		} finally {
 			loadingFriends = false;
 		}
@@ -161,7 +163,10 @@
 				await navigator.share({ title: subject, text: body });
 				return;
 			} catch {
-				// User cancelled or share failed — fall through to mailto.
+				// Deliberately not logged: dismissing the share sheet rejects
+				// with AbortError, so this fires on ordinary user cancellation
+				// and logging it would be noise, not a signal.
+				// Falls through to mailto.
 			}
 		}
 		const href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;

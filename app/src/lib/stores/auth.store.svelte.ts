@@ -2,6 +2,7 @@ import { goto } from '$app/navigation';
 import { initApiAuth } from '$lib/services/api.service';
 import { authService } from '$lib/services/auth.service';
 import type { Profile } from '$lib/types';
+import { logSilent } from '$lib/utils/logger';
 
 const TOKEN_KEY = 'muse_access_token';
 const REFRESH_KEY = 'muse_refresh_token';
@@ -10,7 +11,11 @@ function isJwtExpired(token: string): boolean {
 	try {
 		const payload = JSON.parse(atob(token.split('.')[1]));
 		return typeof payload.exp !== 'number' || payload.exp * 1000 <= Date.now();
-	} catch {
+	} catch (err) {
+		// Unparseable token in storage: treat as expired so the user is sent
+		// to login rather than looping on a broken credential. Logged because
+		// a corrupt token is an anomaly worth seeing, not a normal state.
+		logSilent('auth:jwtParse', err);
 		return true;
 	}
 }
@@ -59,7 +64,11 @@ class AuthStore {
 
 		try {
 			this.user = await authService.getProfile();
-		} catch {
+		} catch (err) {
+			// This is the path behind every "it logged me out on its own"
+			// report: the stored token was rejected or the profile call
+			// failed. It left no trace at all before.
+			logSilent('auth:init:getProfile', err);
 			this.clearTokens();
 		}
 

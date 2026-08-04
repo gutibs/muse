@@ -14,6 +14,7 @@
 	import type { Cuisine, Persona, PinStatus, Restaurant, Tag } from '$lib/types';
 	import { ApiError } from '$lib/types';
 	import { extractFirstDrfError } from '$lib/utils/api-error';
+	import { logSilent } from '$lib/utils/logger';
 
 	// State
 	let step = $state(1);
@@ -100,9 +101,10 @@
 				]);
 				searchResults = dbRes.status === 'fulfilled' ? dbRes.value.results : [];
 				googleResults = placesRes.status === 'fulfilled' ? placesRes.value.results : [];
-			} catch {
+			} catch (err) {
 				searchResults = [];
 				googleResults = [];
+				logSilent('pin:new:search', err);
 			}
 			searching = false;
 		}, 300);

@@ -4,6 +4,7 @@
 	import PinsMap, { type MapItem } from '$lib/components/PinsMap.svelte';
 	import { t } from '$lib/i18n/index.svelte';
 	import type { SharedListPublic } from '$lib/types';
+	import { logSilent } from '$lib/utils/logger';
 
 	let token = $derived(page.params.token);
 
@@ -24,8 +25,9 @@
 				return;
 			}
 			data = await res.json();
-		} catch {
+		} catch (err) {
 			error = t('shared.cantLoad');
+			logSilent('shared:load', err);
 		} finally {
 			loading = false;
 		}

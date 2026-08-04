@@ -8,6 +8,7 @@
 	import { pinsService } from '$lib/services/pins.service';
 	import type { Persona, Pin, PinStatus } from '$lib/types';
 	import { extractFirstDrfError } from '$lib/utils/api-error';
+	import { logSilent } from '$lib/utils/logger';
 
 	const pinId = $derived(Number(page.params.id));
 
@@ -43,8 +44,9 @@
 			rating = p.rating ?? 0;
 			comment = p.comment ?? '';
 			selectedPersonas = (p.personasDetail ?? []).map((per) => per.id);
-		} catch {
+		} catch (err) {
 			loadError = t('pin.cantLoad');
+			logSilent('pin:edit:load', err);
 		} finally {
 			loading = false;
 		}
@@ -53,8 +55,9 @@
 	async function loadPersonas() {
 		try {
 			personas = await pinsService.personas();
-		} catch {
+		} catch (err) {
 			personas = [];
+			logSilent('pin:edit:personas', err);
 		}
 	}
 
