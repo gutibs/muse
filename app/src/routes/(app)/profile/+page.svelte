@@ -10,6 +10,7 @@
 	import { extractFirstDrfError } from '$lib/utils/api-error';
 	import { copyToClipboard } from '$lib/utils/clipboard';
 	import { logSilent } from '$lib/utils/logger';
+	import { LEGAL_URLS } from '$lib/legal';
 
 	const LOCALE_TO_BCP47: Record<string, string> = { en: 'en-GB', es: 'es-AR', it: 'it-IT' };
 
@@ -456,23 +457,23 @@
 			<section class="mt-6">
 				<h3 class="mb-2 text-sm font-semibold uppercase tracking-wide text-ink-muted">{t('legal.section')}</h3>
 				<div class="space-y-2">
-					<a href="/legal/privacy" class="flex items-center justify-between rounded-card bg-white p-4 shadow-card active:scale-[0.98]">
+					<a href={LEGAL_URLS.privacy} target="_blank" rel="noopener" class="flex items-center justify-between rounded-card bg-white p-4 shadow-card active:scale-[0.98]">
 						<span class="text-sm font-medium text-ink">{t('legal.privacy')}</span>
 						<svg class="h-4 w-4 text-ink-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
 					</a>
-					<a href="/legal/terms" class="flex items-center justify-between rounded-card bg-white p-4 shadow-card active:scale-[0.98]">
+					<a href={LEGAL_URLS.terms} target="_blank" rel="noopener" class="flex items-center justify-between rounded-card bg-white p-4 shadow-card active:scale-[0.98]">
 						<span class="text-sm font-medium text-ink">{t('legal.terms')}</span>
 						<svg class="h-4 w-4 text-ink-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
 					</a>
-					<a href="/legal/community" class="flex items-center justify-between rounded-card bg-white p-4 shadow-card active:scale-[0.98]">
+					<a href={LEGAL_URLS.community} target="_blank" rel="noopener" class="flex items-center justify-between rounded-card bg-white p-4 shadow-card active:scale-[0.98]">
 						<span class="text-sm font-medium text-ink">{t('legal.community')}</span>
 						<svg class="h-4 w-4 text-ink-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
 					</a>
-					<a href="/legal/cookies" class="flex items-center justify-between rounded-card bg-white p-4 shadow-card active:scale-[0.98]">
+					<a href={LEGAL_URLS.cookies} target="_blank" rel="noopener" class="flex items-center justify-between rounded-card bg-white p-4 shadow-card active:scale-[0.98]">
 						<span class="text-sm font-medium text-ink">{t('legal.cookies')}</span>
 						<svg class="h-4 w-4 text-ink-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
 					</a>
-					<a href="/legal/contact" class="flex items-center justify-between rounded-card bg-white p-4 shadow-card active:scale-[0.98]">
+					<a href={LEGAL_URLS.contact} target="_blank" rel="noopener" class="flex items-center justify-between rounded-card bg-white p-4 shadow-card active:scale-[0.98]">
 						<span class="text-sm font-medium text-ink">{t('legal.contact')}</span>
 						<svg class="h-4 w-4 text-ink-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
 					</a>

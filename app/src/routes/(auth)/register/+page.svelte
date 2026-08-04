@@ -11,6 +11,7 @@
 	import type { Cuisine, DietaryPreference } from '$lib/types';
 	import { extractFirstDrfError } from '$lib/utils/api-error';
 	import { logSilent } from '$lib/utils/logger';
+	import { LEGAL_URLS } from '$lib/legal';
 
 	// Frontend-only icon map per dietary preference slug. The backend doesn't
 	// know about icons (DietaryPreference has only name + slug), so this small
@@ -221,7 +222,7 @@
 						/>
 						<span>
 							{t('register.consentRead')}
-							<a href="/legal/privacy" class="font-medium text-jade underline">{t('legal.privacy')}</a>
+							<a href={LEGAL_URLS.privacy} target="_blank" rel="noopener" class="font-medium text-jade underline">{t('legal.privacy')}</a>
 						</span>
 					</label>
 				</div>
@@ -236,9 +237,9 @@
 
 				<p class="text-center text-xs leading-relaxed text-ink-muted">
 					{t('legal.acceptancePrefix')}
-					<a href="/legal/terms" class="font-medium text-jade underline">{t('legal.terms')}</a>
+					<a href={LEGAL_URLS.terms} target="_blank" rel="noopener" class="font-medium text-jade underline">{t('legal.terms')}</a>
 					{t('legal.acceptanceAnd')}
-					<a href="/legal" class="font-medium text-jade underline">{t('legal.policies')}</a>{t('legal.acceptanceSuffix')}
+					<a href={LEGAL_URLS.privacy} target="_blank" rel="noopener" class="font-medium text-jade underline">{t('legal.policies')}</a>{t('legal.acceptanceSuffix')}
 				</p>
 			</form>
 
@@ -248,15 +249,15 @@
 			</p>
 
 			<div class="mt-6 flex flex-wrap justify-center gap-x-3 gap-y-1 text-xs text-ink-muted">
-				<a href="/legal/privacy" class="active:opacity-70">{t('legal.privacy')}</a>
+				<a href={LEGAL_URLS.privacy} target="_blank" rel="noopener" class="active:opacity-70">{t('legal.privacy')}</a>
 				<span aria-hidden="true">·</span>
-				<a href="/legal/terms" class="active:opacity-70">{t('legal.terms')}</a>
+				<a href={LEGAL_URLS.terms} target="_blank" rel="noopener" class="active:opacity-70">{t('legal.terms')}</a>
 				<span aria-hidden="true">·</span>
-				<a href="/legal/community" class="active:opacity-70">{t('legal.community')}</a>
+				<a href={LEGAL_URLS.community} target="_blank" rel="noopener" class="active:opacity-70">{t('legal.community')}</a>
 				<span aria-hidden="true">·</span>
-				<a href="/legal/cookies" class="active:opacity-70">{t('legal.cookies')}</a>
+				<a href={LEGAL_URLS.cookies} target="_blank" rel="noopener" class="active:opacity-70">{t('legal.cookies')}</a>
 				<span aria-hidden="true">·</span>
-				<a href="/legal/contact" class="active:opacity-70">{t('legal.contact')}</a>
+				<a href={LEGAL_URLS.contact} target="_blank" rel="noopener" class="active:opacity-70">{t('legal.contact')}</a>
 			</div>
 		</div>
 	</div>

@@ -1,5 +1,17 @@
 # Muse — GDPR Privacy Notice
 
+> ⚠️ **This file is NOT the published policy.** What users actually read is
+> `nginx/landing/gdpr.html` (and `pdpo.html`), served at lovemuse.app and
+> linked from the app and the store listings. This document is an internal
+> working draft plus the technical annex describing how each right is
+> implemented.
+>
+> They have drifted before — this file said backups are purged on a 30-day
+> cycle while the published page said 90. **If you change a user-facing
+> statement here, change the published HTML too, or the discrepancy is what a
+> regulator reads.** The 30 vs 90 day contradiction is still open: nobody has
+> confirmed the real retention configured on RDS.
+
 *Effective date: 22 May 2026*
 *Last updated: 22 May 2026*
 *Version: 1.0*
