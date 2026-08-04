@@ -338,6 +338,7 @@
 
 		<h3>6. Retention (DPP 2)</h3>
 		<p>We keep personal data only for as long as is necessary for the purposes set out above. When you delete your account, we delete or anonymise your personal data within 30 days, except where retention is required to comply with a legal obligation, to resolve disputes or to enforce our agreements. Backups containing residual copies are purged on a rolling 90-day cycle.</p>
+		<p>Deleting your account (Settings → Delete my account) removes your profile, friendships, invitations, shared links and consent records immediately, and deactivates your login. The ratings and comments you left on restaurants are kept but permanently detached from you: they appear as "Anonymous" and can no longer be traced back to your account.</p>
 
 		<h3>7. Security (DPP 4)</h3>
 		<p>We apply reasonable and practicable security measures, including TLS 1.2+ for all traffic, hashed password storage (Django's PBKDF2 default), access controls on our infrastructure, rate-limiting on sensitive endpoints, and logging. No system is perfectly secure; if we become aware of a personal data breach that is likely to result in real risk of significant harm, we will notify affected users and, where appropriate, the PCPD without undue delay.</p>

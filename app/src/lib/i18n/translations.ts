@@ -202,6 +202,7 @@ const translations: Record<Locale, Record<string, string>> = {
 		'common.profile': 'Profile',
 		'common.welcome': 'Welcome',
 		'common.yourName': 'Your Name',
+		'common.cancel': 'Cancel',
 
 		// Login / Auth screens
 		'login.subtitle': 'Where friends eat well',
@@ -309,6 +310,14 @@ const translations: Record<Locale, Record<string, string>> = {
 		'settings.updating': 'Updating...',
 		'settings.passwordUpdated': 'Password updated',
 		'settings.cantChangePassword': 'Could not change password.',
+		'settings.dangerZone': 'Danger Zone',
+		'settings.deleteAccount': 'Delete my account',
+		'settings.deleteAccountWarning':
+			'This cannot be undone. Your profile, friends, invitations and shared links are deleted. Your ratings and comments stay on the restaurants, shown as "Anonymous".',
+		'settings.deleteAccountPassword': 'Enter your password to confirm',
+		'settings.deleteAccountConfirm': 'Delete permanently',
+		'settings.deletingAccount': 'Deleting...',
+		'settings.cantDeleteAccount': 'Could not delete the account.',
 		'settings.appName': 'Muse',
 		'settings.appVersion': 'Version 0.1.0 (MVP)',
 
@@ -562,6 +571,7 @@ const translations: Record<Locale, Record<string, string>> = {
 		'common.profile': 'Perfil',
 		'common.welcome': 'Bienvenido',
 		'common.yourName': 'Tu Nombre',
+		'common.cancel': 'Cancelar',
 
 		'login.subtitle': 'Donde los amigos comen bien',
 		'login.forgotPassword': '¿Olvidaste tu contraseña?',
@@ -663,6 +673,14 @@ const translations: Record<Locale, Record<string, string>> = {
 		'settings.updating': 'Actualizando...',
 		'settings.passwordUpdated': 'Contraseña actualizada',
 		'settings.cantChangePassword': 'No se pudo cambiar la contraseña.',
+		'settings.dangerZone': 'Zona de riesgo',
+		'settings.deleteAccount': 'Eliminar mi cuenta',
+		'settings.deleteAccountWarning':
+			'No se puede deshacer. Se eliminan tu perfil, tus amigos, las invitaciones y los enlaces compartidos. Tus calificaciones y comentarios quedan en los restaurantes, mostrados como «Anónimo».',
+		'settings.deleteAccountPassword': 'Ingresá tu contraseña para confirmar',
+		'settings.deleteAccountConfirm': 'Eliminar definitivamente',
+		'settings.deletingAccount': 'Eliminando...',
+		'settings.cantDeleteAccount': 'No se pudo eliminar la cuenta.',
 		'settings.appName': 'Muse',
 		'settings.appVersion': 'Versión 0.1.0 (MVP)',
 
@@ -909,6 +927,7 @@ const translations: Record<Locale, Record<string, string>> = {
 		'common.profile': 'Profilo',
 		'common.welcome': 'Benvenuto',
 		'common.yourName': 'Il tuo nome',
+		'common.cancel': 'Annulla',
 
 		'login.subtitle': 'Dove gli amici mangiano bene',
 		'login.forgotPassword': 'Password dimenticata?',
@@ -1010,6 +1029,14 @@ const translations: Record<Locale, Record<string, string>> = {
 		'settings.updating': 'Aggiornamento...',
 		'settings.passwordUpdated': 'Password aggiornata',
 		'settings.cantChangePassword': 'Impossibile cambiare la password.',
+		'settings.dangerZone': 'Zona di rischio',
+		'settings.deleteAccount': 'Elimina il mio account',
+		'settings.deleteAccountWarning':
+			'Non è reversibile. Vengono eliminati il tuo profilo, i tuoi amici, gli inviti e i link condivisi. Le tue valutazioni e i tuoi commenti restano sui ristoranti, mostrati come «Anonimo».',
+		'settings.deleteAccountPassword': 'Inserisci la password per confermare',
+		'settings.deleteAccountConfirm': 'Elimina definitivamente',
+		'settings.deletingAccount': 'Eliminazione...',
+		'settings.cantDeleteAccount': 'Impossibile eliminare l’account.',
 		'settings.appName': 'Muse',
 		'settings.appVersion': 'Versione 0.1.0 (MVP)',
 

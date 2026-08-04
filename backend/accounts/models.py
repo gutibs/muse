@@ -51,6 +51,11 @@ class Profile(models.Model):
 		blank=True,
 		related_name="profiles",
 	)
+	# Set when the user exercises their right to erasure. The row stays so the
+	# person's reviews keep hanging off a valid FK (see D-009), but everything
+	# identifying is wiped. Anything rendering an author must treat a non-null
+	# value as "anonymous" — the label itself is the client's job, translated.
+	deleted_at = models.DateTimeField(null=True, blank=True)
 	created_at = models.DateTimeField(auto_now_add=True)
 	updated_at = models.DateTimeField(auto_now=True)
 
@@ -58,6 +63,8 @@ class Profile(models.Model):
 		db_table = "accounts_profile"
 
 	def __str__(self):
+		if self.deleted_at:
+			return "Deleted user"
 		return self.display_name or self.user.email or self.user.username
 
 

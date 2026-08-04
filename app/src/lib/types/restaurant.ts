@@ -53,7 +53,9 @@ export interface MenuItem {
 
 export interface Review {
 	id: number;
-	user: { id: number; displayName: string; avatar: string | null };
+	/** `isDeleted` means the author erased their account: render the localised
+	 * "anonymous" label instead of the byline — see accounts.services.account_deletion. */
+	user: { id: number; displayName: string; avatar: string | null; isDeleted: boolean };
 	rating: number;
 	comment: string;
 	visitedAt: string | null;

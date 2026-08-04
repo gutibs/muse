@@ -12,6 +12,7 @@ from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 
 from accounts.models import DietaryPreference, EmailInvitation, Friendship
 from accounts.serializers import (
+	AccountDeletionSerializer,
 	ChangePasswordSerializer,
 	DietaryPreferenceSerializer,
 	EmailInvitationSerializer,
@@ -20,6 +21,7 @@ from accounts.serializers import (
 	RegisterSerializer,
 	UserPublicSerializer,
 )
+from accounts.services.account_deletion import anonymise_user
 from accounts.services.email import EmailSendError, send_invitation_email
 from pins.models import Pin
 from pins.serializers import PinSerializer
@@ -70,11 +72,20 @@ class RegisterView(generics.CreateAPIView):
 		return Response(result, status=status.HTTP_201_CREATED)
 
 
-class ProfileView(generics.RetrieveUpdateAPIView):
+class ProfileView(generics.RetrieveUpdateDestroyAPIView):
 	serializer_class = ProfileSerializer
 
 	def get_object(self):
 		return self.request.user.profile
+
+	def destroy(self, request, *args, **kwargs):
+		"""Right to erasure. Anonymises rather than dropping the row — see
+		accounts.services.account_deletion and docs/PRODUCT_DECISIONS.md D-009.
+		"""
+		serializer = AccountDeletionSerializer(data=request.data, context={"request": request})
+		serializer.is_valid(raise_exception=True)
+		anonymise_user(request.user)
+		return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class DietaryPreferenceListView(generics.ListAPIView):
@@ -182,9 +193,9 @@ class EmailInvitationView(generics.ListCreateAPIView):
 		# Only the user's own outgoing invitations, newest first. Used by the
 		# friends "Pending" UI so the inviter can see whom they've already
 		# invited via email.
-		return EmailInvitation.objects.filter(
-			from_user=self.request.user, accepted=False
-		).order_by("-created_at")
+		return EmailInvitation.objects.filter(from_user=self.request.user, accepted=False).order_by(
+			"-created_at"
+		)
 
 	def perform_create(self, serializer):
 		invitation = serializer.save()

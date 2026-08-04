@@ -34,3 +34,23 @@ def test_shared_list_public_view_404_on_inactive_or_invalid():
 	assert data["title"] == "My Faves"
 	# camelCase renderer; pins is exposed as `pins` in either casing
 	assert "pins" in data
+
+
+@pytest.mark.critical
+@pytest.mark.django_db
+def test_shared_list_public_view_does_not_leak_owner_email():
+	"""The share link travels through WhatsApp and lands with strangers. The
+	owner's email is personal data and has no business on an unauthenticated
+	endpoint — only the display identity does."""
+	owner = UserFactory()
+	owner.profile.display_name = "Jane"
+	owner.profile.save()
+
+	shared = SharedListFactory(user=owner, is_active=True)
+	resp = APIClient().get(reverse("shared-list-public", kwargs={"token": shared.token}))
+
+	assert resp.status_code == 200, resp.content
+	assert owner.email not in resp.content.decode()
+	assert "email" not in resp.json()["owner"]
+	# The public identity itself is still there — the list has to say whose it is.
+	assert resp.json()["owner"]["displayName"] == "Jane"

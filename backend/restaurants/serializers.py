@@ -213,8 +213,12 @@ class RestaurantDetailSerializer(RestaurantSerializer):
 				"id": p.id,
 				"user": {
 					"id": p.user.id,
+					# An erased author keeps the review but loses the byline. The
+					# client renders its own translated "Anonymous" off this flag
+					# instead of us baking a Spanish string into the API.
 					"display_name": getattr(p.user.profile, "display_name", ""),
 					"avatar": p.user.profile.avatar.url if p.user.profile.avatar else None,
+					"is_deleted": getattr(p.user.profile, "deleted_at", None) is not None,
 				},
 				"rating": p.rating,
 				"comment": p.comment,

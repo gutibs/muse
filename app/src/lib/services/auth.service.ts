@@ -47,4 +47,10 @@ export const authService = {
 	changePassword(currentPassword: string, newPassword: string): Promise<void> {
 		return api.post('/auth/change-password/', { currentPassword, newPassword });
 	},
+
+	/** Right to erasure (GDPR art. 17). Irreversible: the account is anonymised
+	 * server-side and every token stops working immediately. */
+	deleteAccount(currentPassword: string): Promise<void> {
+		return api.delete('/auth/profile/', { currentPassword });
+	},
 };

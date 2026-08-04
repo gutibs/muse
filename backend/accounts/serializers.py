@@ -167,10 +167,39 @@ class UserPublicSerializer(serializers.ModelSerializer):
 	display_name = serializers.CharField(source="profile.display_name")
 	avatar = serializers.ImageField(source="profile.avatar")
 	city = serializers.CharField(source="profile.city")
+	is_deleted = serializers.SerializerMethodField()
 
 	class Meta:
 		model = User
-		fields = ("id", "email", "display_name", "avatar", "city")
+		fields = ("id", "email", "display_name", "avatar", "city", "is_deleted")
+
+	def get_is_deleted(self, obj) -> bool:
+		return getattr(obj.profile, "deleted_at", None) is not None
+
+
+class UserAnonymousSafeSerializer(UserPublicSerializer):
+	"""Identity without the email, for surfaces reachable without logging in.
+
+	`UserPublicSerializer` carries the email, which is fine between
+	authenticated friends but not on a public share link — those URLs get
+	forwarded through chat apps and end up with strangers.
+	"""
+
+	class Meta(UserPublicSerializer.Meta):
+		fields = ("id", "display_name", "avatar", "city", "is_deleted")
+
+
+class AccountDeletionSerializer(serializers.Serializer):
+	"""Erasure is irreversible, so an access token is not enough on its own —
+	the caller re-proves the password. Protects against a device left unlocked
+	or a leaked token nuking someone's account."""
+
+	current_password = serializers.CharField(write_only=True)
+
+	def validate_current_password(self, value):
+		if not self.context["request"].user.check_password(value):
+			raise serializers.ValidationError("Current password is incorrect.")
+		return value
 
 
 class FriendshipSerializer(serializers.ModelSerializer):

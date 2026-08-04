@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from accounts.serializers import UserPublicSerializer
+from accounts.serializers import UserAnonymousSafeSerializer
 from pins.models import Persona, Pin, SharedList
 from restaurants.serializers import RestaurantSerializer
 
@@ -84,6 +84,7 @@ class SharedListSerializer(serializers.ModelSerializer):
 		# window.location.origin is "http://localhost" (Capacitor scheme) and
 		# would otherwise produce a useless link.
 		from django.conf import settings
+
 		base = getattr(settings, "APP_PUBLIC_URL", "https://lovemuse.app").rstrip("/")
 		return f"{base}/shared/{obj.token}"
 
@@ -93,7 +94,8 @@ class SharedListSerializer(serializers.ModelSerializer):
 
 
 class SharedListPublicSerializer(serializers.ModelSerializer):
-	owner = UserPublicSerializer(source="user", read_only=True)
+	# Email-free on purpose: this endpoint answers to anyone holding the link.
+	owner = UserAnonymousSafeSerializer(source="user", read_only=True)
 	pins = serializers.SerializerMethodField()
 
 	class Meta:

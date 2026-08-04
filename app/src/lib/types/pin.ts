@@ -47,12 +47,14 @@ export interface SharedList {
 export interface SharedListPublic {
 	id: number;
 	title: string;
+	// No email here on purpose: this payload comes from the unauthenticated
+	// share-link endpoint, which anyone the link reaches can read.
 	owner: {
 		id: number;
-		email: string;
 		displayName: string;
 		avatar: string | null;
 		city: string;
+		isDeleted: boolean;
 	};
 	pins: Pin[];
 	createdAt: string;

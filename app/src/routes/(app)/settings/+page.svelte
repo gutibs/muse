@@ -45,6 +45,34 @@
 			pwSaving = false;
 		}
 	}
+
+	// Delete account (GDPR art. 17). Two steps on purpose: opening the panel,
+	// then re-typing the password. No confirm() dialog — a modal would freeze
+	// the Capacitor WebView.
+	let deletingOpen = $state(false);
+	let deletePassword = $state('');
+	let deleteError = $state('');
+	let deleteSaving = $state(false);
+
+	function toggleDeleteForm() {
+		deletingOpen = !deletingOpen;
+		deletePassword = '';
+		deleteError = '';
+	}
+
+	async function handleDeleteAccount() {
+		deleteError = '';
+		deleteSaving = true;
+		try {
+			await authService.deleteAccount(deletePassword);
+			// The account is gone; drop local tokens and land on the login screen.
+			authStore.logout();
+		} catch (err) {
+			deleteError = extractFirstDrfError(err, t('settings.cantDeleteAccount'));
+		} finally {
+			deleteSaving = false;
+		}
+	}
 </script>
 
 <div class="flex h-full flex-col">
@@ -161,5 +189,58 @@
 				{t('auth.signOut')}
 			</button>
 		</div>
+
+		<!-- Danger zone -->
+		<section class="mt-10">
+			<h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-ink-muted">{t('settings.dangerZone')}</h2>
+			<div class="space-y-2">
+				<button
+					onclick={toggleDeleteForm}
+					class="flex min-h-11 w-full items-center justify-between rounded-card bg-white p-4 shadow-card active:scale-[0.98]"
+				>
+					<span class="text-sm font-medium text-blush">{t('settings.deleteAccount')}</span>
+					<svg class="h-4 w-4 text-ink-muted transition-transform {deletingOpen ? 'rotate-180' : ''}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<polyline points="6 9 12 15 18 9" />
+					</svg>
+				</button>
+
+				{#if deletingOpen}
+					<div class="space-y-3 rounded-card border border-blush/40 bg-white p-4 shadow-card">
+						<p class="text-sm text-ink-light">{t('settings.deleteAccountWarning')}</p>
+
+						{#if deleteError}
+							<div class="rounded-button bg-blush-light/20 px-3 py-2 text-sm text-blush">{deleteError}</div>
+						{/if}
+
+						<div>
+							<label for="deletePw" class="mb-1 block text-xs font-medium text-ink-light">{t('settings.deleteAccountPassword')}</label>
+							<input
+								id="deletePw"
+								type="password"
+								bind:value={deletePassword}
+								autocomplete="current-password"
+								class="w-full rounded-input border border-cream-dark bg-white px-4 py-3 text-base text-ink outline-none focus:border-blush"
+							/>
+						</div>
+
+						<div class="flex gap-2">
+							<button
+								onclick={toggleDeleteForm}
+								class="flex min-h-11 flex-1 items-center justify-center rounded-button border border-cream-dark text-sm font-medium text-ink active:scale-[0.98]"
+							>
+								{t('common.cancel')}
+							</button>
+							<button
+								onclick={handleDeleteAccount}
+								disabled={deleteSaving || !deletePassword}
+								class="flex min-h-11 flex-1 items-center justify-center rounded-button bg-blush text-sm font-semibold text-white active:scale-[0.98] disabled:opacity-50"
+							>
+								{deleteSaving ? t('settings.deletingAccount') : t('settings.deleteAccountConfirm')}
+							</button>
+						</div>
+					</div>
+				{/if}
+			</div>
+		</section>
 	</div>
 </div>

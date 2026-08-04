@@ -261,11 +261,12 @@ This annex documents, for transparency and operator due-diligence, how the right
 - The export is delivered within one month per Art. 12(3).
 
 ### A.2 Deletion ("Erasure")
-- Endpoint: `DELETE /api/v1/auth/profile/me/` — triggers the erasure pipeline.
-- Personal-identifying fields are nulled or replaced with `deleted-<uuid>@muse.local`. Content rows (pins, ratings, comments) are either deleted or fully anonymised (`user_id` foreign keys nulled with `ON DELETE SET NULL`).
-- Backups are purged on the 30-day rolling cycle described in §6.
-- Email invitations addressed to the deleted user are also deleted.
-- The deletion is irreversible; you will be asked to confirm in-app.
+- Endpoint: `DELETE /api/v1/auth/profile/` — triggers the erasure pipeline. Reachable in-app from **Settings → Delete my account**.
+- The request must carry your current password: an access token alone is not accepted, so a lost or unlocked device cannot be used to erase your account.
+- Identifying fields are replaced or emptied: email and username become `deleted-<uuid>@muse.local`, the password is made unusable, the account is deactivated, and every profile field (display name, bio, city, phone, Instagram, website, avatar file, location, dietary preferences) is cleared.
+- Deleted outright: friendships in both directions, email invitations you sent and any addressed to you, feed activity, shared-list links, and your consent records.
+- Retained, without your identity attached: the ratings and comments you left on restaurants. They remain visible to other users, attributed to "Anonymous". This is the one category we keep, because removing it would erase other people's reference points about a venue.
+- The deletion is irreversible and takes effect immediately; all active sessions stop working at once.
 
 ### A.3 Objection and restriction
 - These rights are handled manually via [privacy@lovemuse.app](mailto:privacy@lovemuse.app) (we expect very low volume).

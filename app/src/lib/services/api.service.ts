@@ -132,7 +132,11 @@ export const api = {
 			body: JSON.stringify(body),
 		});
 	},
-	delete(path: string): Promise<void> {
-		return request<void>(path, { method: 'DELETE' });
+	/** `body` is only used by account deletion, which re-checks the password. */
+	delete(path: string, body?: unknown): Promise<void> {
+		return request<void>(path, {
+			method: 'DELETE',
+			body: body ? JSON.stringify(body) : undefined,
+		});
 	},
 };

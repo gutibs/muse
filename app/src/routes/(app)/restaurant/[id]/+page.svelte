@@ -213,15 +213,27 @@
 						{#each restaurant.reviews as review (review.id)}
 							<li class="rounded-card bg-white p-4 shadow-card {review.isFriend ? 'ring-1 ring-jade/30' : ''}">
 								<div class="flex items-start gap-3">
-									<a href={`/users/${review.user.id}`} class="shrink-0">
-										<Avatar name={review.user.displayName} src={review.user.avatar} size={36} />
-									</a>
+									<!-- An erased author keeps the review but loses the byline: no
+									     avatar, no name, and no link (their profile is gone). -->
+									{#if review.user.isDeleted}
+										<div class="shrink-0">
+											<Avatar name={t('restaurant.anonymous')} src={null} size={36} />
+										</div>
+									{:else}
+										<a href={`/users/${review.user.id}`} class="shrink-0">
+											<Avatar name={review.user.displayName} src={review.user.avatar} size={36} />
+										</a>
+									{/if}
 									<div class="min-w-0 flex-1">
 										<div class="flex items-center justify-between">
 											<div class="flex items-center gap-1.5">
-												<a href={`/users/${review.user.id}`} class="text-sm font-semibold text-ink active:text-jade">
-													{review.user.displayName || t('restaurant.anonymous')}
-												</a>
+												{#if review.user.isDeleted}
+													<span class="text-sm font-semibold text-ink-muted">{t('restaurant.anonymous')}</span>
+												{:else}
+													<a href={`/users/${review.user.id}`} class="text-sm font-semibold text-ink active:text-jade">
+														{review.user.displayName || t('restaurant.anonymous')}
+													</a>
+												{/if}
 												{#if review.isFriend}
 													<span class="rounded-full bg-jade/10 px-1.5 py-0.5 text-[9px] font-medium uppercase text-jade">{t('restaurant.friendBadge')}</span>
 												{/if}
