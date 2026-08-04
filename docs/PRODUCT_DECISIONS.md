@@ -167,19 +167,7 @@ con un status_code útil. Bypassearlo deja al producto sin tracking.
 
 ---
 
-Tarea: agregar D-007 a PRODUCT_DECISIONS.md sobre la gestión de Cuisines.
-
-Antes de empezar, leé:
-- docs/PRODUCT_DECISIONS.md (estructura existente).
-- AUDIT_CUISINES.md (que armaste en la tarea anterior).
-- backend/restaurants/admin.py (Cuisine admin).
-- backend/restaurants/views.py (CuisineViewSet ReadOnly).
-
-Pasos:
-
-1. Agregar D-007 al final de PRODUCT_DECISIONS.md con esta estructura:
-
-D-007: Cuisine es taxonomía cerrada gestionada por staff
+## D-007: Cuisine es taxonomía cerrada gestionada por staff
 
 **Contexto**: la lista de cuisines (Italian, Japanese, Chinese, etc.) que
 los usuarios asignan a restaurants viene de un fixture de 25 entries
@@ -209,15 +197,49 @@ la moderación rompe el control de calidad.
 
 **Estado**: vigente.
 
-2. Commit:
-   git add docs/PRODUCT_DECISIONS.md
-   git commit -m "docs: add D-007 cuisine is staff-managed taxonomy
+---
 
-   Documents the implicit decision found during C-005 follow-up:
-   Cuisine model has admin ABM but ReadOnly API. Lock-in until product
-   decides if users should request additions (would require approval
-   workflow per D-002 pattern)."
+## D-009: Borrar la cuenta anonimiza, no borra las reseñas
 
-Stop conditions: ninguna esperada.
+**Contexto**: GDPR art. 17 y el derecho de supresión de la PDPO obligan a
+darle al usuario una forma de borrar su cuenta. Google Play además lo exige
+para toda app con registro. La pregunta abierta era qué pasa con los pins,
+ratings y comentarios de esa persona.
 
-Reportame: hash del commit.
+**Decisión**: la cuenta se **anonimiza**, no se elimina la fila. El `User`
+queda como cascarón (`deleted-<uuid>@muse.local`, password inutilizable,
+`is_active=False`), el `Profile` se vacía por completo y se marca con
+`deleted_at`. Los `Pin` sobreviven con su rating y su comentario, sin
+identidad asociada. Todo lo demás —amistades, invitaciones enviadas y
+recibidas, actividad del feed, listas compartidas, consentimientos— se borra.
+
+**Justificación**: por D-001 las reseñas públicas son la propuesta de valor
+del producto. Un borrado duro con CASCADE vaciaría la página de cada
+restaurante que esa persona reseñó, castigando a terceros que no tomaron
+ninguna decisión. La anonimización cumple el derecho de supresión (el dato
+deja de ser atribuible a una persona identificable) sin destruir el valor
+que otros usuarios ya consumen.
+
+**Confirmación con contraseña**: el `DELETE` exige `currentPassword`. Un
+access token robado o un teléfono desbloqueado no alcanzan para borrarle la
+cuenta a alguien.
+
+**El label "Anónimo" es del cliente, no de la API**: el backend expone
+`isDeleted: true` y `displayName: ""`; la app renderiza la traducción que
+corresponda (`restaurant.anonymous`, en en/es/it). Hardcodear el string en el
+backend lo dejaría en un solo idioma para los tres mercados.
+
+**Materializa en**:
+- `backend/accounts/services/account_deletion.py` (pipeline, único punto)
+- `backend/accounts/views.py:ProfileView.destroy` (boundary HTTP)
+- `backend/accounts/models.py:Profile.deleted_at` + migración `0008`
+- `backend/tests/accounts/test_account_deletion.py` (5 críticos)
+- `app/src/routes/(app)/settings/+page.svelte` (Danger Zone)
+- `docs/GDPR_PRIVACY_POLICY.md` A.2
+
+**No hagas**: cambiar el pipeline a `user.delete()` porque "es más limpio" —
+te llevás las reseñas de todos los restaurantes que esa persona visitó. Ni
+sacar la confirmación por contraseña por fricción: es la única barrera entre
+un token filtrado y un borrado irreversible.
+
+**Estado**: vigente.
