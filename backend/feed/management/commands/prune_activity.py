@@ -3,9 +3,11 @@
 Run from a cron/scheduler in production, e.g.:
     docker compose exec backend python manage.py prune_activity --days 90
 """
+
+from datetime import timedelta
+
 from django.core.management.base import BaseCommand
 from django.utils import timezone
-from datetime import timedelta
 
 from feed.models import Activity
 
