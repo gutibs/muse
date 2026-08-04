@@ -1,4 +1,4 @@
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from rest_framework import generics, permissions, status, viewsets
 from rest_framework.response import Response
 
@@ -40,8 +40,16 @@ class PinViewSet(viewsets.ModelViewSet):
 		# (user, restaurant) is unique. If a pin already exists, surface that as
 		# 409 with the existing pin id so the client can navigate the user
 		# straight to the edit screen instead of showing a generic 500.
+		#
+		# The atomic() block is required, not decorative: in PostgreSQL a failed
+		# statement aborts the surrounding transaction, so without a savepoint
+		# to roll back to, the lookup below raises TransactionManagementError
+		# instead of returning the pin. Harmless under autocommit, fatal the day
+		# a request runs inside a transaction (ATOMIC_REQUESTS, a wrapping
+		# atomic block, or a test).
 		try:
-			return super().create(request, *args, **kwargs)
+			with transaction.atomic():
+				return super().create(request, *args, **kwargs)
 		except IntegrityError:
 			restaurant_id = request.data.get("restaurant") or request.data.get("restaurantId")
 			existing = Pin.objects.filter(user=request.user, restaurant_id=restaurant_id).first()

@@ -22,6 +22,8 @@ from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle, ScopedRateThrottle, UserRateThrottle
 from rest_framework.views import APIView
 
+from places.geo import parse_lat_lng
+
 logger = logging.getLogger(__name__)
 
 PLACES_API_BASE = "https://places.googleapis.com/v1"
@@ -404,19 +406,8 @@ class ReverseGeocodeView(APIView):
 	throttle_scope = "reverse_geocode"
 
 	def get(self, request):
-		try:
-			lat = float(request.query_params.get("lat", ""))
-			lng = float(request.query_params.get("lng", ""))
-		except ValueError:
-			return Response(
-				{"detail": "lat and lng must be numeric"},
-				status=status.HTTP_400_BAD_REQUEST,
-			)
-		if not (-90 <= lat <= 90 and -180 <= lng <= 180):
-			return Response(
-				{"detail": "lat/lng out of range"},
-				status=status.HTTP_400_BAD_REQUEST,
-			)
+		# Same parsing as RestaurantViewSet.nearby — see places.geo.
+		lat, lng = parse_lat_lng(request.query_params)
 
 		try:
 			r = requests.get(

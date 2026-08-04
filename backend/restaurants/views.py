@@ -8,6 +8,7 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
+from places.geo import KM_PER_DEGREE, parse_lat_lng, parse_radius_km
 from restaurants.models import Cuisine, Restaurant, Tag
 from restaurants.serializers import (
 	CuisineSerializer,
@@ -112,20 +113,16 @@ class RestaurantViewSet(viewsets.ModelViewSet):
 
 	@action(detail=False, methods=["get"])
 	def nearby(self, request):
-		lat = request.query_params.get("lat")
-		lng = request.query_params.get("lng")
-		radius = float(request.query_params.get("radius", 5))
+		# Parsing lives in places.geo so this endpoint and the reverse-geocode
+		# proxy validate coordinates the same way. Bad input raises DRF's
+		# ValidationError → 400; it used to reach a bare float() and 500.
+		lat, lng = parse_lat_lng(request.query_params)
+		radius_km = parse_radius_km(request.query_params)
 
-		if not lat or not lng:
-			return Response(
-				{"detail": "lat and lng are required."},
-				status=status.HTTP_400_BAD_REQUEST,
-			)
-
-		point = Point(float(lng), float(lat), srid=4326)
+		point = Point(lng, lat, srid=4326)
 		qs = (
 			self.get_queryset()
-			.filter(location__dwithin=(point, radius / 111.32))
+			.filter(location__dwithin=(point, radius_km / KM_PER_DEGREE))
 			.annotate(distance=Distance("location", point))
 			.order_by("distance")
 		)

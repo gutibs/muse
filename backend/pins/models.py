@@ -71,11 +71,17 @@ class Pin(models.Model):
 			raise ValidationError({"rating": "Cannot rate a restaurant you have not visited."})
 
 	def save(self, *args, **kwargs):
-		# full_clean runs clean_fields + clean + validate_unique. Adds a
-		# uniqueness query per save (cheap on this small table), in
-		# exchange for guaranteeing the status<->rating invariant lands
-		# even when callers go through .objects.create / .save directly.
-		self.full_clean()
+		# clean_fields + clean, guaranteeing the status<->rating invariant
+		# lands even when callers go through .objects.create / .save directly.
+		#
+		# validate_unique=False on purpose: uniqueness is left to the database
+		# constraint. Checking it here raised Django's ValidationError before
+		# the INSERT, which DRF does not translate, so pinning an
+		# already-pinned restaurant 500'd instead of reaching the IntegrityError
+		# handler in PinViewSet.create that answers 409 with the existing pin
+		# id. Letting the constraint fire also drops one SELECT per save and
+		# closes the check-then-insert race between two concurrent requests.
+		self.full_clean(validate_unique=False)
 		super().save(*args, **kwargs)
 
 
