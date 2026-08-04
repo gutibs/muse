@@ -9,7 +9,7 @@ verify the IntegrityError except-branch (restaurants/services/google_import.py)
 finds the duplicate row and returns it instead of creating a second one.
 
 Post-B-006 the fetch + race fallback live in the service module, not the
-view, so we patch `restaurants.services.google_import.requests.get`.
+view, so we patch `places.services.google_places.requests.get`.
 """
 
 from unittest.mock import patch
@@ -96,7 +96,7 @@ def test_from_google_race_creates_single_restaurant(settings):
 	url = reverse("restaurant-from-google")
 	with patch.object(Restaurant.objects, "filter", side_effect=filter_first_call_returns_empty):
 		with patch(
-			"restaurants.services.google_import.requests.get",
+			"places.services.google_places.requests.get",
 			return_value=_FakeGoogleResponse(),
 		):
 			response = client.post(url, data={"placeId": place_id}, format="json")

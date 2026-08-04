@@ -5,6 +5,7 @@
 	import { t } from '$lib/i18n/index.svelte';
 	import type { SharedListPublic } from '$lib/types';
 	import { logSilent } from '$lib/utils/logger';
+	import RatingHearts from '$lib/components/RatingHearts.svelte';
 
 	let token = $derived(page.params.token);
 
@@ -113,15 +114,7 @@
 										<p class="text-xs text-ink-muted">{pin.restaurantDetail.city}</p>
 									{/if}
 									{#if pin.rating}
-										<div class="flex text-rose-400">
-											{#each Array(5) as _, i}
-												{#if i < (pin.rating ?? 0)}
-													<svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-												{:else}
-													<svg class="h-3.5 w-3.5 text-cream-dark" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-												{/if}
-											{/each}
-										</div>
+										<RatingHearts value={(pin.rating ?? 0)} />
 									{/if}
 									{#if pin.comment}
 										<p class="line-clamp-2 text-xs italic text-ink-light">"{pin.comment}"</p>

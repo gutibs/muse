@@ -5,9 +5,9 @@ HTTP client + parsing + race-safe persistence) into a single service
 function. Race-safety, defensive truncation, and the auto-approve
 decision (D-002) live here.
 
-The HTTP call to Google Places stays inline in this module rather than
-being shared with `places/views.py` — that's a separate refactor (would
-extract a `places/client.py`). See B-006 discussion.
+The HTTP call itself lives in `places.services.google_places`, shared with
+`places/views.py` — this module keeps the parsing, the defensive truncation
+and the race-safe persistence.
 """
 
 from __future__ import annotations
@@ -15,17 +15,15 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable
 
-import requests
-from django.conf import settings
 from django.contrib.gis.geos import Point
 from django.db import IntegrityError
 
+from places.services import google_places
 from restaurants.models import Restaurant
 
 logger = logging.getLogger(__name__)
 
 
-PLACES_API_BASE = "https://places.googleapis.com/v1"
 _FIELD_MASK = ",".join(
 	[
 		"id",
@@ -52,35 +50,22 @@ class GoogleImportError(Exception):
 		self.status_code = status_code
 
 
-def normalize_place_id(place_id: str) -> str:
-	"""Places API (New) sometimes returns IDs as 'places/ChIJ...'; the bare
-	ID is what we store, so normalise on input/output."""
-	if place_id.startswith("places/"):
-		return place_id.split("/", 1)[1]
-	return place_id
+# Re-exported: the canonical implementation is in the Places client, but
+# this module's callers have always imported it from here.
+normalize_place_id = google_places.normalize_place_id
 
 
 def fetch_place_details(place_id: str) -> dict:
-	"""Hit Google Places API for the field set we care about. Raises
-	GoogleImportError on any network/HTTP failure."""
-	key = settings.GOOGLE_PLACES_API_KEY
-	if not key:
-		raise GoogleImportError("Google Places API is not configured.", status_code=503)
+	"""Hit Google Places API for the field set we care about.
 
+	Delegates to places.services.google_places (the single HTTP client) and
+	re-raises its failures as GoogleImportError so this module keeps one
+	exception type for its callers.
+	"""
 	try:
-		r = requests.get(
-			f"{PLACES_API_BASE}/places/{place_id}",
-			headers={
-				"X-Goog-Api-Key": key,
-				"X-Goog-FieldMask": _FIELD_MASK,
-			},
-			timeout=5,
-		)
-		r.raise_for_status()
-		return r.json()
-	except requests.RequestException as exc:
-		logger.exception("from_google: Google Places fetch failed for %s", place_id)
-		raise GoogleImportError("Could not verify place with Google.", status_code=502) from exc
+		return google_places.details(place_id, _FIELD_MASK)
+	except google_places.GooglePlacesError as exc:
+		raise GoogleImportError(exc.message, status_code=exc.status_code) from exc
 
 
 def normalize_place_data(

@@ -1,12 +1,15 @@
 """Thin proxy to Google Places API (New).
 
-Frontend never sees the API key — all requests go through here.
-We only forward the fields we actually need.
+Frontend never sees the API key — every request goes through here, and the
+HTTP calls themselves live in places.services.google_places. What stays in
+this module is the HTTP boundary: query parsing, the response shape the app
+expects, throttling and auth.
 """
 
 import logging
-from urllib.parse import urlparse
 
+# Used by ReverseGeocodeView, which proxies Nominatim — a different provider
+# from Google Places, whose client lives in places.services.google_places.
 import requests
 from django.conf import settings
 from django.http import HttpResponseRedirect
@@ -23,10 +26,9 @@ from rest_framework.throttling import AnonRateThrottle, ScopedRateThrottle, User
 from rest_framework.views import APIView
 
 from places.geo import parse_lat_lng
+from places.services import google_places
 
 logger = logging.getLogger(__name__)
-
-PLACES_API_BASE = "https://places.googleapis.com/v1"
 
 # Country/region words a user might type at the end of a city query to
 # disambiguate (e.g. "London UK" → restrict to GB). Mapped to ISO-3166-1
@@ -142,17 +144,6 @@ def _extract_country_hint(query: str):
 	return None, q
 
 
-_ALLOWED_PHOTO_HOSTS = {
-	"places.googleapis.com",
-	"lh3.googleusercontent.com",
-	"lh4.googleusercontent.com",
-	"lh5.googleusercontent.com",
-	"lh6.googleusercontent.com",
-	"maps.googleapis.com",
-	"maps.gstatic.com",
-}
-
-
 class PlacesThrottle(UserRateThrottle):
 	scope = "places"
 
@@ -168,12 +159,38 @@ def _not_configured():
 	)
 
 
+def _location_bias(request, radius_m: float) -> dict | None:
+	"""Optional map-centre bias. Bad client coordinates degrade to no bias
+	rather than failing the search, but are logged."""
+	lat = request.query_params.get("lat")
+	lng = request.query_params.get("lng")
+	if not lat or not lng:
+		return None
+	try:
+		return {
+			"circle": {
+				"center": {"latitude": float(lat), "longitude": float(lng)},
+				"radius": radius_m,
+			}
+		}
+	except (TypeError, ValueError):
+		logger.warning("ignoring non-numeric locationBias lat=%r lng=%r", lat, lng)
+		return None
+
+
+def _structured(prediction: dict) -> tuple[str, str]:
+	fmt = prediction.get("structuredFormat", {})
+	return (
+		fmt.get("mainText", {}).get("text", ""),
+		fmt.get("secondaryText", {}).get("text", ""),
+	)
+
+
 @api_view(["GET"])
 @throttle_classes([PlacesThrottle])
 def autocomplete(request):
 	"""Autocomplete restaurant names as the user types."""
-	key = settings.GOOGLE_PLACES_API_KEY
-	if not key:
+	if not google_places.is_configured():
 		return _not_configured()
 
 	query = request.query_params.get("q", "").strip()
@@ -184,52 +201,19 @@ def autocomplete(request):
 		"input": query,
 		"includedPrimaryTypes": ["restaurant", "cafe", "bar", "bakery", "meal_takeaway"],
 	}
-
-	lat = request.query_params.get("lat")
-	lng = request.query_params.get("lng")
-	if lat and lng:
-		try:
-			body["locationBias"] = {
-				"circle": {
-					"center": {"latitude": float(lat), "longitude": float(lng)},
-					"radius": 50000.0,
-				}
-			}
-		except ValueError:
-			# Bad client-provided lat/lng — fall back to no bias instead of
-			# 500ing. Worth logging so DevTools / metrics can see it.
-			logger.warning(
-				"autocomplete: ignoring non-numeric locationBias lat=%r lng=%r", lat, lng
-			)
+	bias = _location_bias(request, 50000.0)
+	if bias:
+		body["locationBias"] = bias
 
 	try:
-		r = requests.post(
-			f"{PLACES_API_BASE}/places:autocomplete",
-			json=body,
-			headers={
-				"Content-Type": "application/json",
-				"X-Goog-Api-Key": key,
-			},
-			timeout=5,
-		)
-		r.raise_for_status()
-		data = r.json()
-	except requests.RequestException as exc:
-		logger.exception("Google Places API call failed: %s", exc)
-		return Response({"detail": "Places API error."}, status=502)
+		predictions = google_places.autocomplete(body)
+	except google_places.GooglePlacesError as exc:
+		return Response({"detail": exc.message}, status=exc.status_code)
 
 	results = []
-	for s in data.get("suggestions", []):
-		p = s.get("placePrediction")
-		if not p:
-			continue
-		results.append(
-			{
-				"place_id": p.get("placeId"),
-				"name": p.get("structuredFormat", {}).get("mainText", {}).get("text", ""),
-				"address": p.get("structuredFormat", {}).get("secondaryText", {}).get("text", ""),
-			}
-		)
+	for p in predictions:
+		main, secondary = _structured(p)
+		results.append({"place_id": p.get("placeId"), "name": main, "address": secondary})
 	return Response({"results": results})
 
 
@@ -237,8 +221,7 @@ def autocomplete(request):
 @throttle_classes([PlacesThrottle])
 def city_autocomplete(request):
 	"""Autocomplete city names."""
-	key = settings.GOOGLE_PLACES_API_KEY
-	if not key:
+	if not google_places.is_configured():
 		return _not_configured()
 
 	query = request.query_params.get("q", "").strip()
@@ -259,55 +242,21 @@ def city_autocomplete(request):
 		# No explicit country hint: bias by the caller's current map view so
 		# a bare "london" prefers the London the user is looking at over the
 		# US-default Google falls back to.
-		lat = request.query_params.get("lat")
-		lng = request.query_params.get("lng")
-		if lat and lng:
-			try:
-				body["locationBias"] = {
-					"circle": {
-						"center": {"latitude": float(lat), "longitude": float(lng)},
-						"radius": 500000.0,
-					}
-				}
-			except (TypeError, ValueError):
-				logger.warning(
-					"city_autocomplete: ignoring non-numeric locationBias lat=%r lng=%r",
-					lat,
-					lng,
-				)
+		bias = _location_bias(request, 500000.0)
+		if bias:
+			body["locationBias"] = bias
 
 	try:
-		r = requests.post(
-			f"{PLACES_API_BASE}/places:autocomplete",
-			json=body,
-			headers={
-				"Content-Type": "application/json",
-				"X-Goog-Api-Key": key,
-			},
-			timeout=5,
-		)
-		r.raise_for_status()
-		data = r.json()
-	except requests.RequestException as exc:
-		logger.exception("Google Places API call failed: %s", exc)
-		return Response({"detail": "Places API error."}, status=502)
+		predictions = google_places.autocomplete(body)
+	except google_places.GooglePlacesError as exc:
+		return Response({"detail": exc.message}, status=exc.status_code)
 
 	results = []
-	for s in data.get("suggestions", []):
-		p = s.get("placePrediction")
-		if not p:
-			continue
-		main = p.get("structuredFormat", {}).get("mainText", {}).get("text", "")
-		secondary = p.get("structuredFormat", {}).get("secondaryText", {}).get("text", "")
-		# Build "City, Country" or just name if no secondary
+	for p in predictions:
+		main, secondary = _structured(p)
+		# "City, Country", or just the name when there is no secondary line.
 		display = f"{main}, {secondary}" if secondary else main
-		results.append(
-			{
-				"place_id": p.get("placeId"),
-				"name": main,
-				"display": display,
-			}
-		)
+		results.append({"place_id": p.get("placeId"), "name": main, "display": display})
 	return Response({"results": results})
 
 
@@ -315,8 +264,7 @@ def city_autocomplete(request):
 @throttle_classes([PlacesThrottle])
 def place_details(request, place_id: str):
 	"""Fetch full details for a place. Returns normalized data ready to create a Restaurant."""
-	key = settings.GOOGLE_PLACES_API_KEY
-	if not key:
+	if not google_places.is_configured():
 		return _not_configured()
 
 	fields = ",".join(
@@ -335,19 +283,9 @@ def place_details(request, place_id: str):
 	)
 
 	try:
-		r = requests.get(
-			f"{PLACES_API_BASE}/places/{place_id}",
-			headers={
-				"X-Goog-Api-Key": key,
-				"X-Goog-FieldMask": fields,
-			},
-			timeout=5,
-		)
-		r.raise_for_status()
-		p = r.json()
-	except requests.RequestException as exc:
-		logger.exception("Google Places API call failed: %s", exc)
-		return Response({"detail": "Places API error."}, status=502)
+		p = google_places.details(place_id, fields)
+	except google_places.GooglePlacesError as exc:
+		return Response({"detail": exc.message}, status=exc.status_code)
 
 	city = ""
 	country = ""
@@ -459,34 +397,14 @@ def place_photo(request):
 
 	Query: ref (photo resource name)
 	"""
-	key = settings.GOOGLE_PLACES_API_KEY
-	if not key:
+	if not google_places.is_configured():
 		return _not_configured()
 
-	photo_ref = request.query_params.get("ref", "").strip()
-	if not photo_ref or not photo_ref.startswith("places/"):
-		return Response({"detail": "Invalid ref."}, status=400)
-
 	try:
-		r = requests.get(
-			f"{PLACES_API_BASE}/{photo_ref}/media",
-			params={"maxWidthPx": 800, "skipHttpRedirect": "true"},
-			headers={"X-Goog-Api-Key": key},
-			timeout=5,
-		)
-		r.raise_for_status()
-		data = r.json()
-	except requests.RequestException as exc:
-		logger.exception("Google Places API call failed: %s", exc)
-		return Response({"detail": "Places API error."}, status=502)
+		# The service validates the ref shape and that the resolved URL points
+		# at Google-owned storage before we hand the user a redirect.
+		uri = google_places.photo_uri(request.query_params.get("ref", ""))
+	except google_places.GooglePlacesError as exc:
+		return Response({"detail": exc.message}, status=exc.status_code)
 
-	photo_uri = (data.get("photoUri") or "").strip()
-	if not photo_uri.startswith("https://"):
-		return Response({"detail": "Invalid photo URL."}, status=502)
-
-	parsed = urlparse(photo_uri)
-	host = (parsed.hostname or "").lower()
-	if host not in _ALLOWED_PHOTO_HOSTS and not host.endswith(".googleusercontent.com"):
-		return Response({"detail": "Untrusted photo host."}, status=502)
-
-	return HttpResponseRedirect(photo_uri)
+	return HttpResponseRedirect(uri)

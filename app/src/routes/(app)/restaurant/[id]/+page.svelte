@@ -9,6 +9,8 @@
 	import type { Pin, RestaurantDetail } from '$lib/types';
 	import { timeAgo } from '$lib/utils/time';
 	import { logSilent } from '$lib/utils/logger';
+	import RatingHearts from '$lib/components/RatingHearts.svelte';
+	import HeartIcon from '$lib/components/HeartIcon.svelte';
 
 	let restaurantId = $derived(Number(page.params.id));
 
@@ -82,15 +84,7 @@
 			<div class="flex items-center gap-3 px-5 py-3">
 				{#if restaurant.averageRating}
 					<div class="flex items-center gap-1">
-						<div class="flex text-rose-400">
-							{#each Array(5) as _, i}
-								{#if i < Math.round(restaurant.averageRating ?? 0)}
-									<svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-								{:else}
-									<svg class="h-4 w-4 text-cream-dark" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-								{/if}
-							{/each}
-						</div>
+						<RatingHearts value={restaurant.averageRating} size="lg" />
 						<span class="text-sm font-semibold text-ink">{restaurant.averageRating.toFixed(1)}</span>
 						<span class="text-xs text-ink-muted">({(restaurant.pinCount === 1 ? t('restaurant.reviewsCount') : t('restaurant.reviewsCountPlural')).replace('{count}', String(restaurant.pinCount))})</span>
 					</div>
@@ -175,7 +169,7 @@
 						<div class="rounded-card bg-white p-3 text-center shadow-card">
 							{#if restaurant.friendStats.ratingAvg !== null}
 								<div class="flex items-center justify-center gap-1 text-rose-400">
-									<svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+									<HeartIcon />
 									<span class="text-base font-bold text-ink">{restaurant.friendStats.ratingAvg}</span>
 								</div>
 							{:else}
@@ -243,15 +237,7 @@
 											<span class="text-xs text-ink-muted">{timeAgo(review.createdAt)}</span>
 										</div>
 										{#if review.rating}
-											<div class="mt-0.5 flex gap-0.5 text-rose-400">
-												{#each Array(5) as _, i}
-													{#if i < review.rating}
-														<svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-													{:else}
-														<svg class="h-3.5 w-3.5 text-cream-dark" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-													{/if}
-												{/each}
-											</div>
+											<RatingHearts value={review.rating} class="mt-0.5  gap-0.5" />
 										{/if}
 										<p class="mt-1.5 text-sm leading-relaxed text-ink-light">{review.comment}</p>
 									</div>

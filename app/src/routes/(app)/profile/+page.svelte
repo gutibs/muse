@@ -11,6 +11,7 @@
 	import { copyToClipboard } from '$lib/utils/clipboard';
 	import { logSilent } from '$lib/utils/logger';
 	import { LEGAL_URLS } from '$lib/legal';
+	import RatingHearts from '$lib/components/RatingHearts.svelte';
 
 	const LOCALE_TO_BCP47: Record<string, string> = { en: 'en-GB', es: 'es-AR', it: 'it-IT' };
 
@@ -379,15 +380,7 @@
 												<p class="text-xs text-ink-muted">{pin.restaurantDetail.city}</p>
 											{/if}
 											{#if pin.rating}
-												<div class="mt-0.5 flex text-rose-400">
-													{#each Array(5) as _, i}
-														{#if i < pin.rating}
-															<svg class="h-3 w-3" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-														{:else}
-															<svg class="h-3 w-3 text-cream-dark" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-														{/if}
-													{/each}
-												</div>
+												<RatingHearts value={pin.rating} size="sm" class="mt-0.5" />
 											{/if}
 										</div>
 										<span class="shrink-0 rounded-full px-2 py-0.5 text-xs font-medium
