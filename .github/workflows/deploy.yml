@@ -24,6 +24,18 @@ jobs:
           script: |
             set -e
             cd /home/ubuntu/muse
+
+            # Reclaim disk BEFORE anything else. Every deploy does `up --build`,
+            # which leaves the previous image dangling; nobody was collecting
+            # them and on 2026-08-04 the 6.8G root filled up completely, failing
+            # `git pull` with "No space left on device" — the deploy died before
+            # it could build or migrate.
+            # Placed while the containers are still UP on purpose: images backing
+            # a running container are protected, so this only removes orphans.
+            # Running it after `down` would delete postgis too and force an
+            # 853MB re-pull on every deploy.
+            sudo docker image prune -af || true
+
             git pull origin main
 
             # Backup lógico de la DB de PRODUCCIÓN (RDS) antes de cualquier restart.
