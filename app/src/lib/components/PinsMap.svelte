@@ -2,7 +2,7 @@
 	import { browser } from '$app/environment';
 	import type { Pin, Restaurant } from '$lib/types';
 	import { dietaryBadgesHtml } from '$lib/utils/dietary-badges';
-	import { createPinIcon, PIN_COLORS } from '$lib/utils/map';
+	import { createMap, createPinIcon, loadLeaflet, PIN_COLORS } from '$lib/utils/map';
 	import { buildRestaurantPopup, ownerFromUser, type PopupOwner } from '$lib/utils/map-popup';
 	import type L from 'leaflet';
 
@@ -132,34 +132,10 @@
 		let cancelled = false;
 		(async () => {
 			try {
-				const leaflet = await import('leaflet');
-				await import('leaflet/dist/leaflet.css');
+				Leaflet = await loadLeaflet();
 				if (cancelled || !mapContainer) return;
-				Leaflet = leaflet.default;
 
-				mapInstance = Leaflet.map(mapContainer, {
-					zoomControl: false,
-					attributionControl: false,
-					minZoom: 3,
-					maxBoundsViscosity: 1.0,
-					maxBounds: [
-						[-85, -180],
-						[85, 180],
-					],
-				}).setView([0, 0], 2);
-
-				Leaflet.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-					maxZoom: 19,
-					noWrap: true,
-				}).addTo(mapInstance);
-
-				Leaflet.control
-					.attribution({ position: 'bottomright', prefix: false })
-					.addAttribution(
-						'&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
-					)
-					.addTo(mapInstance);
-				Leaflet.control.zoom({ position: 'bottomright' }).addTo(mapInstance);
+				mapInstance = createMap(Leaflet, mapContainer);
 
 				markersLayer = Leaflet.layerGroup().addTo(mapInstance);
 				renderMarkers();

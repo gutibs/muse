@@ -9,6 +9,7 @@
 	import type { Cuisine, DietaryPreference, Pin, SharedList } from '$lib/types';
 	import { extractFirstDrfError } from '$lib/utils/api-error';
 	import { copyToClipboard } from '$lib/utils/clipboard';
+	import { absoluteUrl, shareLink } from '$lib/utils/share';
 	import { logSilent } from '$lib/utils/logger';
 	import { LEGAL_URLS } from '$lib/legal';
 	import RatingHearts from '$lib/components/RatingHearts.svelte';
@@ -87,10 +88,11 @@
 			const title = t('profile.someoneList').replace('{name}', authStore.user?.displayName || '');
 			const list = await pinsService.createSharedList({ title });
 			sharedLists = [...sharedLists, list];
-			const fullUrl = list.url.startsWith('http') ? list.url : `${window.location.origin}${list.url}`;
-			const ok = await copyToClipboard(fullUrl);
-			success = ok ? t('profile.linkCopiedClipboard') : t('profile.linkCopiedClipboard');
-			setTimeout(() => (success = ''), 3000);
+			const result = await shareLink({ url: list.url, title });
+			if (result !== 'cancelled') {
+				success = t('profile.linkCopiedClipboard');
+				setTimeout(() => (success = ''), 3000);
+			}
 		} catch (err) {
 			logSilent('profile.createShareLink', err);
 			error = t('profile.cantCreateLink');
@@ -110,8 +112,7 @@
 	}
 
 	async function copyLink(url: string) {
-		const fullUrl = url.startsWith('http') ? url : `${window.location.origin}${url}`;
-		await copyToClipboard(fullUrl);
+		await copyToClipboard(absoluteUrl(url));
 		success = t('profile.linkCopied');
 		setTimeout(() => (success = ''), 3000);
 	}

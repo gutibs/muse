@@ -30,8 +30,12 @@
 				// Look up the current user's pin for this restaurant (if any) so we
 				// can show an Edit / Add Pin button. The pins list endpoint
 				// already filters to the current user.
-				const res = await pinsService.list();
-				myPin = res.results.find((p) => p.restaurant === id) ?? null;
+				//
+				// listAll rather than list: searching only the first page meant
+				// that with 21+ pins an already-pinned restaurant offered "add
+				// pin", and tapping it got a 409 from the backend.
+				const pins = await pinsService.listAll();
+				myPin = pins.find((p) => p.restaurant === id) ?? null;
 			} catch (err) {
 				error = t('restaurant.cantLoad');
 				logSilent('restaurant:load', err);

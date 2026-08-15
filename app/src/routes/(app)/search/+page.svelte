@@ -4,6 +4,7 @@
 	import DietaryBadges from '$lib/components/DietaryBadges.svelte';
 	import PinsMap, { type MapItem } from '$lib/components/PinsMap.svelte';
 	import { t } from '$lib/i18n/index.svelte';
+	import { googleImportErrorKey, importPlace } from '$lib/services/google-import';
 	import { placesService, type PlaceSuggestion } from '$lib/services/places.service';
 	import { restaurantsService } from '$lib/services/restaurants.service';
 	import type { Cuisine, Restaurant } from '$lib/types';
@@ -127,35 +128,13 @@
 	async function importFromGoogle(suggestion: PlaceSuggestion) {
 		importingPlaceId = suggestion.placeId;
 		try {
-			const details = await placesService.details(suggestion.placeId);
-			const restaurant = await restaurantsService.fromGoogle({
-				placeId: details.placeId,
-				name: details.name,
-				address: details.address,
-				city: details.city,
-				country: details.country,
-				lat: details.lat,
-				lng: details.lng,
-				website: details.website,
-				phone: details.phone,
-				imageUrl: details.imageUrl,
-				openingHours: details.openingHours,
-			});
+			const restaurant = await importPlace(suggestion.placeId);
 			goto(`/restaurant/${restaurant.id}`);
 		} catch (err) {
-			if (err instanceof ApiError) {
-				if (err.status === 503) {
-					error = t('pin.googleNotConfigured');
-				} else if (err.status === 502) {
-					error = t('pin.googleUnavailable');
-				} else if (err.status === 429) {
-					error = t('search.tooManyRequests');
-				} else {
-					error = extractFirstDrfError(err, t('search.cantImport'));
-				}
-			} else {
-				error = t('common.networkError');
-			}
+			const key = googleImportErrorKey(err);
+			error = key
+				? t(key)
+				: extractFirstDrfError(err as ApiError, t('search.cantImport'));
 		} finally {
 			importingPlaceId = null;
 		}

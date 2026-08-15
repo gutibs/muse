@@ -1,14 +1,33 @@
 import { api } from './api.service';
 import type { Persona, Pin, PinCreate, PaginatedResponse, SharedList, SharedListPublic } from '$lib/types';
 
+type PinFilters = { status?: string; persona?: string; city?: string; page?: number };
+
+function pinsQuery(params?: PinFilters): string {
+	const query = new URLSearchParams();
+	if (params?.status) query.set('status', params.status);
+	if (params?.persona) query.set('persona', params.persona);
+	if (params?.city) query.set('city', params.city);
+	if (params?.page) query.set('page', String(params.page));
+	const qs = query.toString();
+	return `/pins/${qs ? `?${qs}` : ''}`;
+}
+
 export const pinsService = {
-	list(params?: { status?: string; persona?: string; city?: string }): Promise<PaginatedResponse<Pin>> {
-		const query = new URLSearchParams();
-		if (params?.status) query.set('status', params.status);
-		if (params?.persona) query.set('persona', params.persona);
-		if (params?.city) query.set('city', params.city);
-		const qs = query.toString();
-		return api.get(`/pins/${qs ? `?${qs}` : ''}`);
+	/** One page (20 rows). Use for infinite scroll, the way the feed does it. */
+	list(params?: PinFilters): Promise<PaginatedResponse<Pin>> {
+		return api.get(pinsQuery(params));
+	},
+
+	/**
+	 * Every pin matching the filters, following pagination.
+	 *
+	 * For screens that need the whole set rather than a page of it: the map
+	 * plots all of them, the restaurant screen looks for your pin among all of
+	 * them. Both used to read only the first 20.
+	 */
+	listAll(params?: Omit<PinFilters, 'page'>): Promise<Pin[]> {
+		return api.getAll<Pin>(pinsQuery(params));
 	},
 
 	get(id: number): Promise<Pin> {

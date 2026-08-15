@@ -20,8 +20,17 @@ export const restaurantsService = {
 		return api.post('/restaurants/', data);
 	},
 
-	fromGoogle(placeData: Record<string, unknown>): Promise<Restaurant> {
-		return api.post('/restaurants/from_google/', placeData);
+	/**
+	 * `placeId` is the only thing the backend reads — it re-fetches every field
+	 * from Google itself so a client cannot spoof name/address/coords and skip
+	 * admin approval. Typed accordingly: callers used to build an 11-field
+	 * payload that was discarded server-side.
+	 *
+	 * Prefer `importPlace` from `$lib/services/google-import` over calling this
+	 * directly; it carries the error mapping.
+	 */
+	fromGoogle(placeId: string): Promise<Restaurant> {
+		return api.post('/restaurants/from_google/', { placeId });
 	},
 
 	nearby(lat: number, lng: number, radius = 5): Promise<Restaurant[]> {

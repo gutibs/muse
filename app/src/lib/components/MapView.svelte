@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
 	import { getCurrentPosition } from '$lib/utils/geolocate';
+	import { createMap, loadLeaflet } from '$lib/utils/map';
 	import type L from 'leaflet';
 
 	let {
@@ -25,32 +26,12 @@
 		let cancelled = false;
 
 		(async () => {
-			const leaflet = await import('leaflet');
-			await import('leaflet/dist/leaflet.css');
+			const Leaflet = await loadLeaflet();
 
 			// Effect was torn down before Leaflet finished loading
 			if (cancelled || !mapContainer) return;
 
-			const Leaflet = leaflet.default;
-
-			instance = Leaflet.map(mapContainer, {
-				zoomControl: false,
-				attributionControl: false,
-				minZoom: 3,
-				maxBoundsViscosity: 1.0,
-				maxBounds: [[-85, -180], [85, 180]],
-			}).setView(center, zoom);
-
-			Leaflet.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-				maxZoom: 19,
-				noWrap: true,
-			}).addTo(instance);
-
-			Leaflet.control.attribution({ position: 'bottomright', prefix: false })
-				.addAttribution('&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>')
-				.addTo(instance);
-
-			Leaflet.control.zoom({ position: 'bottomright' }).addTo(instance);
+			instance = createMap(Leaflet, mapContainer, { center, zoom });
 
 			let userInteracted = false;
 			if (autoLocate) {

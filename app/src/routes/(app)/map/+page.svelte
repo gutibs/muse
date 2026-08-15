@@ -205,9 +205,10 @@
 		if (!browser) return;
 		mapRef = map;
 
-		const pinsRes = await pinsService.list().catch(() => ({ results: [] as Pin[] }));
-
-		const pins = pinsRes.results;
+		// listAll, not list: the map plots every pin, and reading a single page
+		// meant it drew at most 20 markers while the profile showed the real
+		// total right next to it.
+		const pins = await pinsService.listAll().catch(() => [] as Pin[]);
 
 		const leaflet = await import('leaflet');
 		const L = leaflet.default;
