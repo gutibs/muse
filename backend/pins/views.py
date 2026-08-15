@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 
 from pins.models import Persona, Pin, SharedList
+from pins.selectors import visible_pins
 from pins.serializers import (
 	PersonaSerializer,
 	PinSerializer,
@@ -16,26 +17,17 @@ class PinViewSet(viewsets.ModelViewSet):
 	serializer_class = PinSerializer
 
 	def get_queryset(self):
-		qs = (
-			Pin.objects.filter(user=self.request.user)
-			.select_related("restaurant")
-			.prefetch_related("personas", "restaurant__cuisines")
-		)
 		# Filters are applied for any action (list/retrieve/etc); for retrieve
 		# the per-pk lookup short-circuits these, so there's no behavior change
 		# for non-list calls. `?status=all` is treated as "no filter" so the
 		# frontend can pass it explicitly without a separate code path.
-		status_filter = self.request.query_params.get("status")
-		persona = self.request.query_params.get("persona")
-		city = self.request.query_params.get("city")
-
-		if status_filter and status_filter != "all":
-			qs = qs.filter(status=status_filter)
-		if persona:
-			qs = qs.filter(personas__slug=persona)
-		if city:
-			qs = qs.filter(restaurant__city__icontains=city)
-		return qs
+		params = self.request.query_params
+		return visible_pins(
+			self.request.user,
+			status=params.get("status"),
+			persona=params.get("persona"),
+			city=params.get("city"),
+		)
 
 	def create(self, request, *args, **kwargs):
 		# (user, restaurant) is unique. If a pin already exists, surface that as
