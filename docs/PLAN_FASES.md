@@ -30,12 +30,19 @@ Estas condicionan todo lo demás y no se revisan por feature.
    escribe dos veces con dos sistemas de i18n — el mecanismo exacto que hizo divergir
    los textos legales.
 
-3. **Las fotos cacheadas viven en S3 detrás de CloudFront, con TTL de 30 días.**
-   No en el disco del EC2: el contenedor `backend` de `docker-compose.aws.yml` no
-   declara volumes y el deploy hace `down --remove-orphans` + `up -d`, así que todo
-   lo escrito al filesystem se borra en cada push a main. El TTL de 30 días no es
-   una elección de performance: los Google Maps Platform Terms permiten cachear
-   Place IDs indefinidamente pero el resto del contenido hasta 30 días.
+3. **Las fotos cacheadas viven en un volumen nombrado del EC2, con TTL de 30 días.**
+   El problema del disco del EC2 no era el disco: era que el contenedor `backend`
+   no declaraba volumes, así que el `down --remove-orphans` + `up -d` del deploy
+   borraba todo lo escrito. Un volumen nombrado lo resuelve —igual que
+   `muse_pgdata` con la base— a costo cero, y nginx lo sirve en `/media/`.
+   Descartados **S3 y CloudFront por ahora**: el catálogo entero del beta son
+   ~300 MB sobre 20 GiB ya pagos, y a este volumen un CDN sale lo mismo que servir
+   directo (~USD 1/mes las dos opciones). S3 se justifica cuando haya más de una
+   instancia compartiendo el storage, no antes; el cambio son ~20 líneas de
+   settings más `django-storages`.
+   El TTL de 30 días no es una elección de performance: los Google Maps Platform
+   Terms permiten cachear Place IDs indefinidamente pero el resto del contenido
+   hasta 30 días. **Vigilar el disco del EC2**, que ya se llenó una vez.
 
 4. **Redis entra en el bloque de cimientos, no cuando haga falta una cola.**
    Hoy no hay bloque `CACHES` en `settings.py`, así que Django cae a `LocMemCache`
@@ -73,16 +80,19 @@ importador tiene el guard `and not city` y la view no, así que con dos componen
 
 Consumidores: `places/views.py`, `google_import.py`, y después el importador.
 
-### 0.2 — Infra: Redis + S3/CloudFront
+### 0.2 — Infra: Redis y almacenamiento de media
 
 - Bloque `CACHES` en `settings.py` + `redis` en `requirements/base.txt` + servicio en
   `docker-compose.aws.yml` y `docker-compose.dev.yml`, con `maxmemory-policy
-  allkeys-lru` y TTL explícito por clave.
-- `boto3` + `django-storages`, bucket S3 y distribución CloudFront.
-- **Arreglar de paso los avatares**, que ya están rotos en prod: `MEDIA_ROOT`
-  (`settings.py:111`) sólo se sirve con `DEBUG` (`config/urls.py:15-16`) y
-  `default-aws.conf` no tiene `location /media/`. Con S3 el problema desaparece.
-- `settings.APP_PUBLIC_URL` como única fuente de la base pública.
+  allkeys-lru` y TTL explícito por clave. Redis como container en el mismo EC2, no
+  ElastiCache: ~USD 10/mes que a este volumen no se justifican, y migrar es cambiar
+  `REDIS_URL`.
+- Volumen nombrado `muse_media` + `location /media/` en nginx.
+- **Arreglar de paso los avatares**, rotos en prod por dos motivos a la vez:
+  `MEDIA_ROOT` sólo se sirve con `DEBUG` (`config/urls.py:15-16`) y `default-aws.conf`
+  no tenía `location /media/`. Y `MEDIA_URL` estaba sin barra inicial, así que las URLs
+  salían relativas.
+- `settings.API_PUBLIC_URL` como única fuente de la base pública de la API.
 
 ### 0.3 — `accounts/services/visibility.py` y `pins/selectors.py`
 

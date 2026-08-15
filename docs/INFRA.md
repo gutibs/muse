@@ -16,13 +16,17 @@ Referenciado desde `CLAUDE.md`. Leer antes de desplegar, tocar AWS o diagnostica
   `.env` — cero código. Ojo: el deploy hace `down` + `up -d`, así que la caché se vacía
   en cada push. Es caché, se repuebla sola; el efecto visible es que el primer minuto
   después de un deploy vuelve a pegarle a Google.
-- **S3 + CloudFront** para media (fotos de restaurantes y avatares). Obligatorio en
-  prod, no opcional: el contenedor `backend` no declara volumes y el deploy lo recrea,
-  así que **todo lo escrito a su filesystem se pierde en cada push a main** — por eso
-  los avatares estaban rotos. Credenciales por rol de instancia EC2; las
-  `AWS_ACCESS_KEY_ID`/`SECRET` del `.env.example` son sólo para probar desde una
-  máquina local. Sin `AWS_STORAGE_BUCKET_NAME` seteada, Django cae al filesystem local
-  (que es lo correcto en dev, y lo que rompe en prod).
+- **Media** (avatares, y después las fotos de Places cacheadas): volumen nombrado
+  `muse_media` en el disco del EC2, montado read-only en nginx, que lo sirve en
+  `/media/`. **No** hay S3 ni CloudFront, y no hacen falta: el catálogo entero del beta
+  son ~300 MB sobre 20 GiB ya pagos, y a este volumen un CDN cuesta lo mismo que servir
+  directo (~USD 1/mes las dos opciones). S3 se justifica el día que haya más de una
+  instancia compartiéndolo.
+  Los avatares estaban rotos en prod por dos razones que se arreglaron juntas: el
+  contenedor no declaraba ningún volume (el deploy hace `down` + `up -d`, y sin volumen
+  nombrado eso borra el filesystem) y `default-aws.conf` no tenía `location /media/`,
+  así que `MEDIA_ROOT` sólo se servía con `DEBUG`. **Vigilar el disco**: ya se llenó una
+  vez, y ahora las fotos cacheadas crecen ahí.
 
 ## Deploy
 

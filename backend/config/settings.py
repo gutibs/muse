@@ -107,42 +107,18 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-MEDIA_URL = "media/"
+# Leading slash matters: without it Django builds relative media URLs, which
+# resolve differently depending on the page they are rendered from. Part of
+# why avatars did not load in prod — the other part was that nginx had no
+# `location /media/` at all.
+MEDIA_URL = "/media/"
+# Served by nginx from the `muse_media` named volume in prod (see
+# docker-compose.aws.yml). A named volume rather than object storage on
+# purpose: it survives the deploy's `down` + `up -d` exactly like the Postgres
+# one does, and the whole photo catalogue is a few hundred MB on a disk that
+# is already paid for. S3 becomes worthwhile when there is more than one
+# instance to share it between, not before.
 MEDIA_ROOT = BASE_DIR / "media"
-
-# --- Media storage ---------------------------------------------------------
-# S3 when a bucket is configured, local filesystem otherwise (dev and tests).
-# Not a preference: the backend container in docker-compose.aws.yml declares
-# no volumes and the deploy runs `down --remove-orphans` + `up -d`, so the
-# container filesystem is wiped on every push to main. Avatars written there
-# are already lost today.
-#
-# Credentials come from the EC2 instance role when available — boto3 picks
-# them up with no configuration — so AWS_ACCESS_KEY_ID/SECRET only need to be
-# set for local testing against a real bucket.
-AWS_STORAGE_BUCKET_NAME = os.environ.get("AWS_STORAGE_BUCKET_NAME", "")
-AWS_S3_REGION_NAME = os.environ.get("AWS_S3_REGION_NAME", "us-east-2")
-# CloudFront distribution domain. Serving through it rather than straight from
-# S3 keeps egress on the cheaper path (S3 → CloudFront is free).
-AWS_S3_CUSTOM_DOMAIN = os.environ.get("AWS_S3_CUSTOM_DOMAIN", "")
-# Public objects: these are restaurant photos and avatars, not private files,
-# and signed URLs would defeat CDN caching.
-AWS_QUERYSTRING_AUTH = False
-AWS_DEFAULT_ACL = None
-AWS_S3_FILE_OVERWRITE = False
-AWS_S3_OBJECT_PARAMETERS = {"CacheControl": "public, max-age=86400"}
-
-if AWS_STORAGE_BUCKET_NAME:
-	_default_storage = {"BACKEND": "storages.backends.s3.S3Storage"}
-else:
-	_default_storage = {"BACKEND": "django.core.files.storage.FileSystemStorage"}
-
-STORAGES = {
-	"default": _default_storage,
-	# Static files stay on disk: they are baked into the image at build time
-	# by collectstatic and served by nginx, so they never outlive a deploy.
-	"staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
-}
 
 # --- Cache -----------------------------------------------------------------
 # Without this Django falls back to LocMemCache, which is per-process. With

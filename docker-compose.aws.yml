@@ -49,6 +49,13 @@ services:
     # local del contenedor en lugar de a RDS (fue el bug de la migración).
     environment:
       REDIS_URL: redis://redis:6379/0
+    # Volumen nombrado, igual que muse_pgdata: sobrevive al `down` + `up -d`
+    # del deploy. Sin esto —que era como estaba— todo lo escrito al filesystem
+    # del contenedor se perdía en cada push a main, que es por qué los avatares
+    # estaban rotos. No hace falta S3 a este volumen: el catálogo entero del
+    # beta son ~300 MB sobre un disco de 20 GiB que ya está pago.
+    volumes:
+      - muse_media:/app/media
     depends_on:
       db:
         condition: service_healthy
@@ -66,6 +73,9 @@ services:
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt:ro
       - /var/www/certbot:/var/www/certbot:ro
+      # Sólo lectura: nginx sirve /media/ directo desde el volumen en vez de
+      # hacer pasar cada foto por Django.
+      - muse_media:/usr/share/nginx/media:ro
     depends_on:
       - backend
     restart: unless-stopped
@@ -73,3 +83,4 @@ services:
 volumes:
   muse_pgdata:
   muse_pgbackups:
+  muse_media:
