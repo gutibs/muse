@@ -13,7 +13,11 @@ export interface PopupOwner {
 }
 
 export interface PopupOptions {
-	restaurant: Pick<Restaurant, 'id' | 'name' | 'city' | 'averageRating' | 'cuisinesDetail'>;
+	// averageRating and cuisinesDetail are optional because the body already
+	// treats them as absent-tolerant, and the public share payload does not
+	// carry them. Requiring them in the type only forced callers to fake them.
+	restaurant: Pick<Restaurant, 'id' | 'name' | 'city'> &
+		Partial<Pick<Restaurant, 'averageRating' | 'cuisinesDetail'>>;
 	/**
 	 * If present, rating renders as `pin.rating/5` (user's own rating).
 	 * If absent and `restaurant.averageRating` is non-null, renders as the

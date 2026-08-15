@@ -13,30 +13,15 @@ and the race-safe persistence.
 from __future__ import annotations
 
 import logging
-from collections.abc import Callable
 
 from django.contrib.gis.geos import Point
 from django.db import IntegrityError
 
 from places.services import google_places
 from restaurants.models import Restaurant
+from restaurants.services.google_place_parser import FIELD_MASK, parse_place
 
 logger = logging.getLogger(__name__)
-
-
-_FIELD_MASK = ",".join(
-	[
-		"id",
-		"displayName",
-		"formattedAddress",
-		"addressComponents",
-		"location",
-		"websiteUri",
-		"internationalPhoneNumber",
-		"regularOpeningHours",
-		"photos",
-	]
-)
 
 
 class GoogleImportError(Exception):
@@ -63,69 +48,37 @@ def fetch_place_details(place_id: str) -> dict:
 	exception type for its callers.
 	"""
 	try:
-		return google_places.details(place_id, _FIELD_MASK)
+		return google_places.details(place_id, FIELD_MASK)
 	except google_places.GooglePlacesError as exc:
 		raise GoogleImportError(exc.message, status_code=exc.status_code) from exc
 
 
-def normalize_place_data(
-	payload: dict,
-	*,
-	photo_url_builder: Callable[[str], str] | None = None,
-) -> dict:
-	"""Map a Google Places response to Restaurant kwargs.
+def restaurant_kwargs(payload: dict) -> dict:
+	"""Map a Google Places response to Restaurant constructor kwargs.
 
-	Defensive truncation against Google occasionally returning strings
-	longer than our column limits. `photo_url_builder` lets the caller
-	produce an absolute URL to our own photo proxy without coupling this
-	module to `request.build_absolute_uri`.
+	Normalization and truncation live in `google_place_parser`; what stays
+	here is the part only a persisting caller can decide — that a place
+	without coordinates is a 400 rather than a row with a null location.
 	"""
-	location = payload.get("location") or {}
-	lat = location.get("latitude")
-	lng = location.get("longitude")
+	parsed = parse_place(payload)
+	lat, lng = parsed["lat"], parsed["lng"]
 	if lat is None or lng is None:
 		raise GoogleImportError("Place has no location.", status_code=400)
 
-	city = ""
-	country = ""
-	for comp in payload.get("addressComponents", []):
-		types = comp.get("types", [])
-		if "locality" in types and not city:
-			city = comp.get("longText", "")
-		elif "administrative_area_level_1" in types and not city:
-			city = comp.get("longText", "")
-		elif "country" in types:
-			country = comp.get("longText", "")
-
-	photo_url = ""
-	photos = payload.get("photos") or []
-	if photos and photo_url_builder is not None:
-		photo_name = photos[0].get("name")
-		if photo_name:
-			photo_url = photo_url_builder(photo_name)
-
-	hours = payload.get("regularOpeningHours") or {}
-	name = ((payload.get("displayName") or {}).get("text", "") or "Unknown")[:200]
-
 	return {
-		"name": name,
+		"name": parsed["name"] or "Unknown",
 		"location": Point(float(lng), float(lat), srid=4326),
-		"address": (payload.get("formattedAddress", "") or "")[:300],
-		"city": city[:100],
-		"country": country[:100],
-		"website": (payload.get("websiteUri", "") or "")[:500],
-		"phone": (payload.get("internationalPhoneNumber", "") or "")[:30],
-		"image_url": photo_url[:2000],
-		"opening_hours": hours.get("weekdayDescriptions", []) or [],
+		"address": parsed["address"],
+		"city": parsed["city"],
+		"country": parsed["country"],
+		"website": parsed["website"],
+		"phone": parsed["phone"],
+		"image_url": parsed["image_url"],
+		"opening_hours": parsed["opening_hours"],
 	}
 
 
-def import_from_google_place_id(
-	place_id: str,
-	user,
-	*,
-	photo_url_builder: Callable[[str], str] | None = None,
-) -> tuple[Restaurant, bool]:
+def import_from_google_place_id(place_id: str, user) -> tuple[Restaurant, bool]:
 	"""Find or create a Restaurant from a Google placeId.
 
 	Returns ``(restaurant, created)``. Race-safe: two concurrent calls
@@ -153,7 +106,7 @@ def import_from_google_place_id(
 	if returned_id and returned_id != place_id:
 		raise GoogleImportError("Invalid placeId.", status_code=400)
 
-	fields = normalize_place_data(payload, photo_url_builder=photo_url_builder)
+	fields = restaurant_kwargs(payload)
 
 	try:
 		restaurant = Restaurant.objects.create(

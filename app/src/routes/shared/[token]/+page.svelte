@@ -99,7 +99,9 @@
 					</div>
 				{:else}
 					<ul class="h-full space-y-2 overflow-y-auto px-5 pb-6">
-						{#each data.pins as pin (pin.id)}
+						<!-- Keyed by restaurant, not pin: the public payload withholds the
+						     pin id, and (user, restaurant) is unique so it is just as stable. -->
+						{#each data.pins as pin (pin.restaurantDetail.id)}
 							<li class="flex overflow-hidden rounded-card bg-white shadow-card">
 								{#if pin.restaurantDetail.imageUrl}
 									<img src={pin.restaurantDetail.imageUrl} alt={pin.restaurantDetail.name} class="h-32 w-24 shrink-0 object-cover" loading="lazy" />

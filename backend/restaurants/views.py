@@ -145,15 +145,8 @@ class RestaurantViewSet(viewsets.ModelViewSet):
 		if not place_id:
 			return Response({"detail": "placeId is required."}, status=status.HTTP_400_BAD_REQUEST)
 
-		def photo_url_for(name: str) -> str:
-			# Absolute URL so it passes URLField validation when persisted.
-			# Stays in the view because it depends on the request host.
-			return request.build_absolute_uri(f"/api/v1/places/photo/?ref={name}")
-
 		try:
-			restaurant, created = import_from_google_place_id(
-				place_id, request.user, photo_url_builder=photo_url_for
-			)
+			restaurant, created = import_from_google_place_id(place_id, request.user)
 		except GoogleImportError as exc:
 			return Response({"detail": exc.message}, status=exc.status_code)
 

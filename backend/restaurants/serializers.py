@@ -100,6 +100,10 @@ class RestaurantSerializer(serializers.ModelSerializer):
 			"google_place_id",
 			"average_rating",
 			"pin_count",
+			# Writable until now, which meant the same column could hold either
+			# our own photo proxy URL or anything a client felt like sending.
+			# It is only ever set from a parsed Google payload.
+			"image_url",
 		)
 
 	def get_lat(self, obj):

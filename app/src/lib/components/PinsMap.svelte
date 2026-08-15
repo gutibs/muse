@@ -9,10 +9,21 @@
 	/**
 	 * Map item: usually a `Pin`, but search results pass restaurant-only items
 	 * (no pin, just averageRating). Both shapes are handled by `popupFor`.
+	 *
+	 * Typed as what the map actually reads rather than as the full `Pin` and
+	 * `Restaurant`. The share page renders the same markers from the narrower
+	 * anonymous payload (see pins/serializers_public.py), and demanding the
+	 * full types there would mean inventing fields the backend deliberately
+	 * withholds.
 	 */
+	export type MapRestaurant = Pick<Restaurant, 'id' | 'name' | 'city' | 'lat' | 'lng'> &
+		Partial<Pick<Restaurant, 'averageRating' | 'cuisinesDetail' | 'tagsDetail'>>;
+
+	export type MapPin = Pick<Pin, 'rating' | 'status'> & { restaurantDetail: MapRestaurant };
+
 	export type MapItem =
-		| { kind: 'pin'; pin: Pin; owner?: PopupOwner | null }
-		| { kind: 'restaurant'; restaurant: Restaurant };
+		| { kind: 'pin'; pin: MapPin; owner?: PopupOwner | null }
+		| { kind: 'restaurant'; restaurant: MapRestaurant };
 
 	/**
 	 * `accent` accepts either a fixed color name or a per-item function. The
@@ -61,13 +72,15 @@
 		return PIN_COLORS[key];
 	}
 
-	function coordsFor(item: MapItem): { lat: number; lng: number; restaurant: Restaurant } | null {
+	function coordsFor(
+		item: MapItem
+	): { lat: number; lng: number; restaurant: MapRestaurant } | null {
 		const restaurant = item.kind === 'pin' ? item.pin.restaurantDetail : item.restaurant;
 		if (!restaurant?.lat || !restaurant?.lng) return null;
 		return { lat: restaurant.lat, lng: restaurant.lng, restaurant };
 	}
 
-	function popupFor(item: MapItem, restaurant: Restaurant): string {
+	function popupFor(item: MapItem, restaurant: MapRestaurant): string {
 		const dietaryHtml = showDietary ? dietaryBadgesHtml(restaurant.tagsDetail) : undefined;
 		const statusLabel = statusLabelFor?.(item);
 		if (item.kind === 'pin') {

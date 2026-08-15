@@ -112,8 +112,15 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# Email — real SMTP in prod, console backend in dev so invitations still log output.
+# Public base of the SPA — used to build shareable links and invitations.
 APP_PUBLIC_URL = os.environ.get("APP_PUBLIC_URL", "http://localhost:5174")
+# Public base of this API. Separate from APP_PUBLIC_URL because in dev they
+# are different origins, and because URLs built from it get persisted (see
+# restaurants.services.google_place_parser.photo_url_for) — deriving them
+# from the incoming request would bake that request's host into the row.
+API_PUBLIC_URL = os.environ.get("API_PUBLIC_URL", "http://localhost:8001")
+
+# Email — real SMTP in prod, console backend in dev so invitations still log output.
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "Muse <no-reply@lovemuse.app>")
 EMAIL_BACKEND = os.environ.get(
 	"EMAIL_BACKEND",
@@ -172,6 +179,10 @@ REST_FRAMEWORK = {
 		# Nominatim policy is 1 req/sec absolute. We stay well under: a
 		# user can pick a location ~once per minute realistically.
 		"reverse_geocode": "60/hour",
+		# Anonymous and legitimately bursty: one link pasted into a group
+		# chat gets opened by everyone at once. Higher than `anon` on
+		# purpose, and per-IP because there is no user to key on.
+		"shared_list_public": "300/hour",
 	},
 }
 

@@ -27,6 +27,7 @@ from rest_framework.views import APIView
 
 from places.geo import parse_lat_lng
 from places.services import google_places
+from restaurants.services import google_place_parser
 
 logger = logging.getLogger(__name__)
 
@@ -267,64 +268,15 @@ def place_details(request, place_id: str):
 	if not google_places.is_configured():
 		return _not_configured()
 
-	fields = ",".join(
-		[
-			"id",
-			"displayName",
-			"formattedAddress",
-			"addressComponents",
-			"location",
-			"websiteUri",
-			"internationalPhoneNumber",
-			"regularOpeningHours",
-			"photos",
-			"primaryTypeDisplayName",
-		]
-	)
-
 	try:
-		p = google_places.details(place_id, fields)
+		payload = google_places.details(place_id, google_place_parser.FIELD_MASK)
 	except google_places.GooglePlacesError as exc:
 		return Response({"detail": exc.message}, status=exc.status_code)
 
-	city = ""
-	country = ""
-	for comp in p.get("addressComponents", []):
-		types = comp.get("types", [])
-		if "locality" in types:
-			city = comp.get("longText", "")
-		elif "administrative_area_level_1" in types and not city:
-			city = comp.get("longText", "")
-		elif "country" in types:
-			country = comp.get("longText", "")
-
-	photo_url = ""
-	photos = p.get("photos") or []
-	if photos:
-		photo_name = photos[0].get("name")
-		if photo_name:
-			# Absolute URL so it passes URLField validation when persisted.
-			photo_url = request.build_absolute_uri(f"/api/v1/places/photo/?ref={photo_name}")
-
-	location = p.get("location") or {}
-	hours = p.get("regularOpeningHours") or {}
-
-	return Response(
-		{
-			"place_id": p.get("id"),
-			"name": (p.get("displayName") or {}).get("text", ""),
-			"address": p.get("formattedAddress", ""),
-			"city": city,
-			"country": country,
-			"lat": location.get("latitude"),
-			"lng": location.get("longitude"),
-			"website": p.get("websiteUri", ""),
-			"phone": p.get("internationalPhoneNumber", ""),
-			"image_url": photo_url,
-			"opening_hours": hours.get("weekdayDescriptions", []),
-			"type": (p.get("primaryTypeDisplayName") or {}).get("text", ""),
-		}
-	)
+	# Parsing and truncation live in the parser, shared with the importer, so
+	# this endpoint and `from_google` can never disagree about the same place.
+	parsed = google_place_parser.parse_place(payload)
+	return Response({k: v for k, v in parsed.items() if k != "photo_ref"})
 
 
 class ReverseGeocodeView(APIView):

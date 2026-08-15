@@ -1,14 +1,15 @@
 from django.db import IntegrityError, transaction
 from rest_framework import generics, permissions, status, viewsets
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 
 from pins.models import Persona, Pin, SharedList
 from pins.serializers import (
 	PersonaSerializer,
 	PinSerializer,
-	SharedListPublicSerializer,
 	SharedListSerializer,
 )
+from pins.serializers_public import SharedListPublicSerializer
 
 
 class PinViewSet(viewsets.ModelViewSet):
@@ -77,6 +78,12 @@ class SharedListPublicView(generics.RetrieveAPIView):
 	serializer_class = SharedListPublicSerializer
 	permission_classes = (permissions.AllowAny,)
 	authentication_classes = ()
+	# Its own scope: this used to fall back to the global anonymous throttle,
+	# which is shared with every other unauthenticated surface. A share link
+	# posted in a group chat is legitimately hit by many people at once, so it
+	# needs a limit of its own rather than borrowing someone else's.
+	throttle_classes = (ScopedRateThrottle,)
+	throttle_scope = "shared_list_public"
 	lookup_field = "token"
 
 	def get_queryset(self):
