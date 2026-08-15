@@ -16,6 +16,15 @@ services:
       timeout: 3s
       retries: 30
 
+  redis:
+    image: redis:7-alpine
+    command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru --save ""
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
   backend:
     build:
       context: ./backend
@@ -26,11 +35,14 @@ services:
     environment:
       DB_HOST: db
       DB_PORT: 5432
+      REDIS_URL: redis://redis:6379/0
       DJANGO_ALLOWED_HOSTS: "localhost,127.0.0.1,10.0.2.2"
       CORS_ALLOWED_ORIGINS: "http://localhost:5174,https://localhost,http://localhost,capacitor://localhost"
       CSRF_TRUSTED_ORIGINS: "http://localhost:5174,https://localhost,http://localhost,capacitor://localhost"
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     ports:
       - "8001:8000"

@@ -20,6 +20,24 @@ services:
       retries: 30
     restart: unless-stopped
 
+  # Caché y throttling. Container en el mismo EC2 en vez de ElastiCache: a este
+  # volumen no justifica los ~USD 10/mes del nodo más chico, y migrar después
+  # es cambiar REDIS_URL en el .env — cero código.
+  #
+  # maxmemory acotado a propósito: el t3.small tiene 2 GiB y también corre
+  # Django y nginx. Postgres vive en RDS, así que no compite por esta memoria.
+  # allkeys-lru porque todo lo que guardamos es descartable: si se desaloja,
+  # se vuelve a pedir.
+  redis:
+    image: redis:7-alpine
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru --save ""
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
   backend:
     build:
       context: ./backend
@@ -29,8 +47,12 @@ services:
     # DB_HOST/DB_PORT salen del .env (apuntan a RDS). NO agregar acá un
     # `environment: DB_HOST: db`: pisaría el .env y mandaría el backend a la DB
     # local del contenedor en lugar de a RDS (fue el bug de la migración).
+    environment:
+      REDIS_URL: redis://redis:6379/0
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     restart: unless-stopped
 
