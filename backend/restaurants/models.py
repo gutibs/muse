@@ -84,6 +84,12 @@ class Restaurant(models.Model):
 
 	class Meta:
 		db_table = "restaurants_restaurant"
+		# Required, not cosmetic: the list endpoint paginates, and paginating an
+		# unordered queryset lets PostgreSQL return rows in any order it likes —
+		# so the same row could appear on two pages, or on none. Name over
+		# created_at because this is a catalogue people browse, and `id` breaks
+		# the tie so the order is total.
+		ordering = ["name", "id"]
 
 	def __str__(self):
 		return f"{self.name} ({self.city})" if self.city else self.name
