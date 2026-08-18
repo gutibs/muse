@@ -18,6 +18,7 @@ from django.contrib.gis.geos import Point
 from django.db import IntegrityError
 
 from places.services import google_places
+from places.services.place_details import get_details
 from restaurants.models import Restaurant
 from restaurants.services.google_place_parser import FIELD_MASK, parse_place
 
@@ -43,12 +44,13 @@ normalize_place_id = google_places.normalize_place_id
 def fetch_place_details(place_id: str) -> dict:
 	"""Hit Google Places API for the field set we care about.
 
-	Delegates to places.services.google_places (the single HTTP client) and
-	re-raises its failures as GoogleImportError so this module keeps one
+	Delegates to places.services.place_details, which serves the 30-day cache
+	when it can and falls through to the single HTTP client when it cannot,
+	and re-raises its failures as GoogleImportError so this module keeps one
 	exception type for its callers.
 	"""
 	try:
-		return google_places.details(place_id, FIELD_MASK)
+		return get_details(place_id, FIELD_MASK)
 	except google_places.GooglePlacesError as exc:
 		raise GoogleImportError(exc.message, status_code=exc.status_code) from exc
 

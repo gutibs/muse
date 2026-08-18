@@ -27,6 +27,7 @@ from rest_framework.views import APIView
 
 from places.geo import parse_lat_lng
 from places.services import google_places
+from places.services import place_details as details_cache
 from restaurants.services import google_place_parser
 
 logger = logging.getLogger(__name__)
@@ -269,7 +270,7 @@ def place_details(request, place_id: str):
 		return _not_configured()
 
 	try:
-		payload = google_places.details(place_id, google_place_parser.FIELD_MASK)
+		payload = details_cache.get_details(place_id, google_place_parser.FIELD_MASK)
 	except google_places.GooglePlacesError as exc:
 		return Response({"detail": exc.message}, status=exc.status_code)
 
