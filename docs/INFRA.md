@@ -28,6 +28,35 @@ Referenciado desde `CLAUDE.md`. Leer antes de desplegar, tocar AWS o diagnostica
   así que `MEDIA_ROOT` sólo se servía con `DEBUG`. **Vigilar el disco**: ya se llenó una
   vez, y ahora las fotos cacheadas crecen ahí.
 
+## Web pública
+
+`lovemuse.app` sirve tres cosas, todas desde la imagen de nginx:
+
+- **La landing** (`nginx/landing/`) en `/` y los textos legales en `/privacy.html`,
+  `/gdpr.html`, `/pdpo.html`, `/terms.html`, `/community.html`, `/cookies.html`,
+  `/contact.html`. Es la única copia publicada de esos textos (la app linkea acá).
+- **La API y el admin** de Django, por `proxy_pass` al contenedor `backend`.
+- **Una sola pantalla de la SPA**: `/shared/<token>`. `nginx/Dockerfile.aws` compila
+  `app/` en un stage de Node y copia el `build/` a `/usr/share/nginx/app`; el location
+  de `/shared/` devuelve el `index.html` y el router del cliente resuelve la ruta.
+  Antes esto era `landing/shared.html`, 318 líneas de JS vanilla que reimplementaban
+  la misma pantalla y quedaban atrás en cada cambio de la app.
+
+**El resto de la app no se sirve por web**: `/feed`, `/login`, `/profile` y compañía
+dan 404 a propósito — no hay `try_files $uri /index.html` general. Muse se usa desde
+el APK. Si algún día se publica otra ruta (`/u/`, `/vote/`), va con su propio
+`location`, no abriendo el fallback.
+
+Dos consecuencias del stage de Node:
+
+- El build de la imagen de nginx ahora corre `npm ci` + `vite build`. Con la caché
+  de capas es rápido, pero un deploy sin caché suma ese tiempo al de `gdal` y `pip`.
+- `.github/workflows/deploy.yml` incluye `app/src/**` y los archivos de config del
+  frontend en el filtro de paths. **No** incluye `app/android/` ni `app/ios/`: cambian
+  en cada release de APK y no afectan nada de lo que se sirve por web.
+- `.dockerignore` (raíz) mantiene `node_modules`, `app/android/` y `app/ios/` fuera del
+  contexto de build. Sin eso el deploy manda ~300 MB extra al daemon en cada push.
+
 ## Deploy
 
 Push a `main` → GitHub Actions → SSH al EC2.
