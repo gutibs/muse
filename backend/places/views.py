@@ -359,11 +359,13 @@ def place_photo(request):
 	call the first time and none after that — a list of 20 restaurants used to
 	be 20 billed calls on every scroll. Still throttled: a miss does go out.
 
+	No comprueba `is_configured()` antes de mirar el caché a propósito: una foto
+	que ya está en disco no necesita a Google para servirse, y el chequeo por
+	delante hacía que una key ausente, rotada o sin cuota dejara la app entera
+	sin fotos. Si hay que salir a buscarla, el cliente devuelve el mismo 503.
+
 	Query: ref (photo resource name)
 	"""
-	if not google_places.is_configured():
-		return _not_configured()
-
 	ref = request.query_params.get("ref", "")
 	try:
 		# The service validates the ref shape and that the resolved URL points

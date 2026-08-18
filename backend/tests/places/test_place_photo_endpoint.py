@@ -80,3 +80,30 @@ def test_photo_endpoint_stays_public():
 def test_invalid_ref_is_rejected():
 	res = APIClient().get(URL, {"ref": "../../etc/passwd"})
 	assert res.status_code == 400
+
+
+@pytest.mark.django_db
+def test_cached_photo_is_served_even_without_the_api_key(settings):
+	"""Una foto ya guardada no necesita a Google para servirse.
+
+	Encontrado probando en vivo: la view chequeaba `is_configured()` antes de
+	mirar el caché, así que con la key ausente —o rotada, o con la cuota
+	agotada— devolvía 503 aunque el archivo estuviera en disco. En producción
+	eso es quedarse sin ninguna foto por un problema que ya no nos afecta.
+	"""
+	client = APIClient()
+	with _google_serves_photo():
+		client.get(URL, {"ref": REF})
+
+	settings.GOOGLE_PLACES_API_KEY = ""
+	res = client.get(URL, {"ref": REF})
+
+	assert res.status_code == 302
+	assert res["Location"].startswith("/media/place-photos/")
+
+
+@pytest.mark.django_db
+def test_uncached_photo_without_the_api_key_still_fails_cleanly(settings):
+	settings.GOOGLE_PLACES_API_KEY = ""
+	res = APIClient().get(URL, {"ref": REF})
+	assert res.status_code == 503
