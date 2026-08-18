@@ -8,7 +8,10 @@ class I18n {
 	locale = $state<Locale>('en');
 
 	constructor() {
-		if (typeof localStorage !== 'undefined') {
+		// `typeof localStorage !== 'undefined'` no alcanza: Node 25 define el
+		// global sin implementarlo, así que la guarda pasaba y `getItem`
+		// reventaba con "is not a function".
+		if (typeof localStorage?.getItem === 'function') {
 			const saved = localStorage.getItem(LOCALE_KEY) as Locale | null;
 			if (saved && translations[saved]) {
 				this.locale = saved;
@@ -29,7 +32,7 @@ class I18n {
 
 	setLocale(locale: Locale) {
 		this.locale = locale;
-		if (typeof localStorage !== 'undefined') {
+		if (typeof localStorage?.setItem === 'function') {
 			localStorage.setItem(LOCALE_KEY, locale);
 		}
 	}
