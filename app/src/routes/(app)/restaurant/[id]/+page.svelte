@@ -19,6 +19,10 @@
 	let loading = $state(true);
 	let error = $state('');
 
+	// Google puede mandar más de un autor; se muestra el primero, que es el de
+	// la foto que efectivamente servimos (el parser toma photos[0]).
+	let photoAuthor = $derived(restaurant?.photoAttribution?.[0] ?? null);
+
 	$effect(() => {
 		const id = restaurantId;
 		if (!id) return;
@@ -65,6 +69,20 @@
 				<button onclick={() => history.back()} class="absolute left-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-black/30 text-white active:scale-95" aria-label={t('common.back')}>
 					<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
 				</button>
+				{#if photoAuthor}
+					<!-- Crédito del autor de la foto: los Google Maps Platform Terms
+					     exigen mostrarlo junto a la foto que servimos desde nuestro
+					     propio storage. Arriba a la derecha para no chocar con el
+					     nombre del restaurante, que va abajo. -->
+					<a
+						href={photoAuthor.uri}
+						target="_blank"
+						rel="noopener noreferrer"
+						class="absolute right-4 top-4 rounded-full bg-black/30 px-2 py-1 text-[11px] text-white/90 active:opacity-70"
+					>
+						{t('restaurant.photoBy').replace('{author}', photoAuthor.displayName)}
+					</a>
+				{/if}
 				<div class="absolute bottom-4 left-5 right-5">
 					<h1 class="text-xl font-bold text-white drop-shadow">{restaurant.name}</h1>
 					<p class="text-sm text-white/80">

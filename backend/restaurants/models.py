@@ -69,6 +69,11 @@ class Restaurant(models.Model):
 		validators=[MinValueValidator(1), MaxValueValidator(5)],
 	)
 	image_url = models.URLField(max_length=2000, blank=True)
+	# Nombre del recurso de la foto en Places ('places/<id>/photos/<id>'). Lo
+	# devuelve el parser desde siempre y se descartaba: `image_url` lo lleva
+	# embebido en el query string, así que quien necesitaba el ref lo parseaba
+	# de una URL. Guardarlo aparte es el dato, no una reconstrucción frágil.
+	photo_ref = models.CharField(max_length=1000, blank=True)
 	website = models.URLField(max_length=500, blank=True)
 	phone = models.CharField(max_length=30, blank=True)
 	google_place_id = models.CharField(max_length=255, blank=True, unique=True, null=True)
