@@ -37,6 +37,7 @@
 	import { authStore } from '$lib/stores/auth.store.svelte';
 	import { logSilent } from '$lib/utils/logger';
 	import RatingHearts from '$lib/components/RatingHearts.svelte';
+	import PinCard from '$lib/components/PinCard.svelte';
 
 	$effect(() => {
 		if (authStore.isAuthenticated && cuisines.length === 0) {
@@ -316,49 +317,35 @@
 				{/if}
 				{#each results as r (r.id)}
 					<li>
-						<button
-							type="button"
-							onclick={() => viewRestaurant(r)}
-							class="flex w-full overflow-hidden rounded-card bg-white text-left shadow-card active:scale-[0.98]"
-						>
-							{#if r.imageUrl}
-								<img
-									src={r.imageUrl}
-									alt={r.name}
-									class="h-28 w-24 shrink-0 object-cover"
-									loading="lazy"
-								/>
+						<PinCard onclick={() => viewRestaurant(r)} imageUrl={r.imageUrl} imageAlt={r.name}>
+							<p class="truncate text-sm font-semibold text-ink">{r.name}</p>
+							<p class="flex flex-wrap items-center gap-1 text-xs text-ink-muted">
+								{#if r.city}<span>{r.city}</span>{/if}
+								{#if r.cuisinesDetail?.length}
+									<span>·</span>
+									<span>{r.cuisinesDetail.map((c) => c.name).join(', ')}</span>
+								{/if}
+								{#if r.priceLevel}
+									<span>·</span>
+									<span>{priceLabel(r.priceLevel)}</span>
+								{/if}
+							</p>
+							{#if r.averageRating}
+								<div class="flex items-center gap-1.5">
+									<RatingHearts value={Math.round(r.averageRating ?? 0)} />
+									<span class="text-xs text-ink-muted">{r.averageRating.toFixed(1)}</span>
+									<span class="text-xs text-ink-muted">({r.pinCount})</span>
+								</div>
+							{:else}
+								<p class="text-xs italic text-ink-muted">{t('search.notRatedYet')}</p>
 							{/if}
-							<div class="flex min-w-0 flex-1 flex-col justify-center gap-1 p-3">
-								<p class="truncate text-sm font-semibold text-ink">{r.name}</p>
-								<p class="flex flex-wrap items-center gap-1 text-xs text-ink-muted">
-									{#if r.city}<span>{r.city}</span>{/if}
-									{#if r.cuisinesDetail?.length}
-										<span>·</span>
-										<span>{r.cuisinesDetail.map((c) => c.name).join(', ')}</span>
-									{/if}
-									{#if r.priceLevel}
-										<span>·</span>
-										<span>{priceLabel(r.priceLevel)}</span>
-									{/if}
-								</p>
-								{#if r.averageRating}
-									<div class="flex items-center gap-1.5">
-										<RatingHearts value={Math.round(r.averageRating ?? 0)} />
-										<span class="text-xs text-ink-muted">{r.averageRating.toFixed(1)}</span>
-										<span class="text-xs text-ink-muted">({r.pinCount})</span>
-									</div>
-								{:else}
-									<p class="text-xs italic text-ink-muted">{t('search.notRatedYet')}</p>
-								{/if}
-								{#if r.address}
-									<p class="truncate text-xs text-ink-muted">{r.address}</p>
-								{/if}
-								{#if r.tagsDetail?.length}
-									<DietaryBadges tags={r.tagsDetail} />
-								{/if}
-							</div>
-						</button>
+							{#if r.address}
+								<p class="truncate text-xs text-ink-muted">{r.address}</p>
+							{/if}
+							{#if r.tagsDetail?.length}
+								<DietaryBadges tags={r.tagsDetail} />
+							{/if}
+						</PinCard>
 					</li>
 				{/each}
 

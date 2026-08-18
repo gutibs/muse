@@ -7,6 +7,8 @@
 	import type { Pin, Profile } from '$lib/types';
 	import { ApiError } from '$lib/types';
 	import RatingHearts from '$lib/components/RatingHearts.svelte';
+	import PinCard from '$lib/components/PinCard.svelte';
+	import PinStatusBadge from '$lib/components/PinStatusBadge.svelte';
 
 	let userId = $derived(Number(page.params.userId));
 
@@ -160,17 +162,17 @@
 					{:else}
 						<ul class="h-full space-y-2 overflow-y-auto px-5 pb-6">
 							{#each filteredPins as pin (pin.id)}
-								<li class="flex overflow-hidden rounded-card bg-white shadow-card">
-									{#if pin.restaurantDetail.imageUrl}
-										<img src={pin.restaurantDetail.imageUrl} alt={pin.restaurantDetail.name} class="h-28 w-24 shrink-0 object-cover" loading="lazy" />
-									{/if}
-									<div class="flex min-w-0 flex-1 flex-col justify-center gap-1 p-3">
+								<li>
+									<PinCard
+										imageUrl={pin.restaurantDetail.imageUrl}
+										imageAlt={pin.restaurantDetail.name}
+									>
 										<div class="flex items-start justify-between gap-2">
 											<p class="truncate text-sm font-semibold text-ink">{pin.restaurantDetail.name}</p>
-											<span class="shrink-0 rounded-full px-2 py-0.5 text-xs font-medium
-												{pin.status === 'visited' ? 'bg-jade/10 text-jade' : 'bg-cream-dark text-ink-muted'}">
-												{pin.status === 'visited' ? t('users.rated') : t('users.onTheList')}
-											</span>
+											<PinStatusBadge
+												status={pin.status}
+												label={pin.status === 'visited' ? t('users.rated') : t('users.onTheList')}
+											/>
 										</div>
 										{#if pin.restaurantDetail.city}
 											<p class="text-xs text-ink-muted">{pin.restaurantDetail.city}</p>
@@ -183,7 +185,7 @@
 										{#if pin.comment}
 											<p class="line-clamp-2 text-xs italic text-ink-light">"{pin.comment}"</p>
 										{/if}
-									</div>
+									</PinCard>
 								</li>
 							{/each}
 						</ul>
