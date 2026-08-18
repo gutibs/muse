@@ -37,3 +37,31 @@ class PlaceDetailsCache(models.Model):
 
 	def __str__(self):
 		return f"{self.place_id} ({self.fetched_at:%Y-%m-%d})"
+
+
+class PlacePhoto(models.Model):
+	"""Los bytes de una foto de Places, guardados en nuestro propio storage.
+
+	`(photo_ref, width)` es la clave: el ancho define el archivo, así que pedir
+	otro tamaño es otra foto y no debe pisar la existente.
+	"""
+
+	photo_ref = models.CharField(max_length=1000)
+	width = models.PositiveIntegerField()
+	file = models.ImageField(upload_to="place-photos/")
+	# authorAttributions del payload de details. Los Google Maps Platform Terms
+	# exigen mostrar el autor de la foto junto con la foto.
+	attribution = models.JSONField(default=list, blank=True)
+	fetched_at = models.DateTimeField()
+
+	class Meta:
+		constraints = [
+			models.UniqueConstraint(
+				fields=["photo_ref", "width"],
+				name="uniq_place_photo_key",
+			)
+		]
+		indexes = [models.Index(fields=["fetched_at"], name="place_photo_fetched_idx")]
+
+	def __str__(self):
+		return f"{self.photo_ref} @{self.width}px"

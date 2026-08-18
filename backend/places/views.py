@@ -26,11 +26,19 @@ from rest_framework.throttling import AnonRateThrottle, ScopedRateThrottle, User
 from rest_framework.views import APIView
 
 from places.geo import parse_lat_lng
-from places.services import google_places
+from places.services import google_places, place_photos
 from places.services import place_details as details_cache
 from restaurants.services import google_place_parser
 
 logger = logging.getLogger(__name__)
+
+# Cómo mucho vive una respuesta nuestra en el cliente. Ninguna de estas
+# respuestas traía Cache-Control, así que ni el WebView de Capacitor ni nginx
+# podían reusar nada y cada render volvía a pegarle al backend.
+# La foto es un 302 a un archivo con nombre estable; los detalles son datos
+# normalizados de un lugar, que cambian de tanto en tanto.
+PHOTO_REDIRECT_MAX_AGE = 24 * 60 * 60
+DETAILS_MAX_AGE = 60 * 60
 
 # Country/region words a user might type at the end of a city query to
 # disambiguate (e.g. "London UK" → restrict to GB). Mapped to ISO-3166-1
@@ -277,7 +285,9 @@ def place_details(request, place_id: str):
 	# Parsing and truncation live in the parser, shared with the importer, so
 	# this endpoint and `from_google` can never disagree about the same place.
 	parsed = google_place_parser.parse_place(payload)
-	return Response({k: v for k, v in parsed.items() if k != "photo_ref"})
+	response = Response({k: v for k, v in parsed.items() if k != "photo_ref"})
+	response["Cache-Control"] = f"public, max-age={DETAILS_MAX_AGE}"
+	return response
 
 
 class ReverseGeocodeView(APIView):
@@ -342,22 +352,28 @@ class ReverseGeocodeView(APIView):
 @permission_classes([AllowAny])
 @throttle_classes([PlacesAnonThrottle, PlacesThrottle])
 def place_photo(request):
-	"""Redirect to the signed Google URL for a place photo.
+	"""Redirect to our own copy of a place photo, fetching it once if needed.
 
-	Public: <img src> tags can't send Authorization headers. Only returns a
-	302 to a Google-hosted CDN URL, so there's no private data to leak.
-	Throttled to stop abuse of our Google quota.
+	Public: <img src> tags can't send Authorization headers. The redirect now
+	points at our media volume instead of Google, so a photo costs one Places
+	call the first time and none after that — a list of 20 restaurants used to
+	be 20 billed calls on every scroll. Still throttled: a miss does go out.
 
 	Query: ref (photo resource name)
 	"""
 	if not google_places.is_configured():
 		return _not_configured()
 
+	ref = request.query_params.get("ref", "")
 	try:
 		# The service validates the ref shape and that the resolved URL points
-		# at Google-owned storage before we hand the user a redirect.
-		uri = google_places.photo_uri(request.query_params.get("ref", ""))
+		# at Google-owned storage before anything is downloaded or stored.
+		photo = place_photos.get_or_fetch(ref, attributions=place_photos.attributions_for_ref(ref))
 	except google_places.GooglePlacesError as exc:
 		return Response({"detail": exc.message}, status=exc.status_code)
 
-	return HttpResponseRedirect(uri)
+	response = HttpResponseRedirect(photo.file.url)
+	# Sin esto el WebView de Capacitor vuelve a pedir el redirect en cada
+	# render, aunque el archivo destino sí se cachee.
+	response["Cache-Control"] = f"public, max-age={PHOTO_REDIRECT_MAX_AGE}"
+	return response
