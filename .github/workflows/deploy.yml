@@ -21,6 +21,7 @@ on:
       - 'app/svelte.config.js'
       - 'app/vite.config.ts'
       - '.dockerignore'
+      - '.github/workflows/test.yml'
 
 jobs:
   deploy:
