@@ -17,7 +17,8 @@ compartir por link público.
 muse/
 ├── app/          # SvelteKit + Capacitor
 ├── backend/      # Django + DRF
-│   ├── tests/    # pytest + factory_boy (17 archivos, 58 tests, 35 críticos)
+│   ├── tests/    # pytest + factory_boy (18 archivos en disco, 51 tests, 35 críticos)
+│   │             # ojo: feed/test_prune_activity.py no está commiteado
 │   └── scripts/  # hooks custom de pre-commit
 ├── nginx/        # Config prod
 └── Makefile
@@ -27,6 +28,9 @@ muse/
 - `make setup` — primera vez (Docker + npm install)
 - `make dev` — backend en Docker (PostGIS+Django) + frontend local (HMR)
 - Tests backend: `docker compose -f docker-compose.dev.yml run --rm backend pytest tests/`
+  - **`make test` NO corre esto**: su target usa `python manage.py test` (runner de Django),
+    que ignora `pytest.ini` y los marcadores `@pytest.mark.critical`. Si querés la suite de
+    verdad, usá el comando de arriba.
 - Pre-commit: `pre-commit install` la primera vez. Después corre solo en cada commit.
 
 ---
@@ -166,24 +170,37 @@ el código real hoy o existió hasta hace poco — no son hipotéticos.
   solo lugar (preferentemente el serializer, que es por donde entra HTTP).
 
 ## Reimplementar Leaflet o el ícono de rating en cada vista
-- Ya existen `lib/components/PinsMap.svelte`, `lib/utils/escape-html.ts` y
-  `lib/utils/map-popup.ts`. **Usalos**; no agregues una vista con su propio
-  bootstrap de Leaflet ni otra copia de `escapeHtml`.
-- Para rating: `RatingHearts.svelte` es el display de sólo lectura,
-  `RatingStars.svelte` el input, `HeartIcon.svelte` el glifo. El path del SVG
-  llegó a estar pegado en 17 lugares — no lo vuelvas a pegar.
+- **Rating: resuelto.** `RatingHearts.svelte` es el display de sólo lectura,
+  `RatingStars.svelte` el input, `HeartIcon.svelte` el glifo — único lugar con el
+  `<path>` del SVG. `escapeHtml` también está en un solo lugar
+  (`lib/utils/escape-html.ts`). El path del SVG llegó a estar pegado en 17 lugares:
+  no lo vuelvas a pegar.
+- **Leaflet: resuelto.** `lib/utils/map.ts` es el único lugar que carga la librería
+  (`loadLeaflet`, que además trae el CSS) y el único que crea mapas con los defaults
+  del proyecto (`createMap`, con la URL de tiles de cartocdn y la atribución de
+  CARTO/OSM). `PinsMap.svelte`, `MapView.svelte`, `LocationPicker.svelte` y
+  `map/+page.svelte` pasan todos por ahí. Antes eran tres bootstraps con la URL de
+  tiles pegada en cada uno, y `LocationPicker` había derivado sin `minZoom`,
+  `maxBounds`, `noWrap` ni atribución. **No hagas `import('leaflet')` a mano en una
+  vista nueva** — pedí el namespace a `loadLeaflet()`.
 
-## Frontend que solo lee la primera página (VIGENTE, 2 lugares)
-- `profile/+page.svelte:125` y `restaurant/[id]/+page.svelte:34` llaman
-  `pinsService.list()` y usan sólo `res.results`, sin seguir la paginación. El
-  backend pagina con PAGE_SIZE=20.
-- El de `restaurant/[id]` es el que muerde primero: busca el pin propio del
-  restaurante dentro de la primera página. Con 21+ pins, un restaurante que ya
-  pineaste muestra "Agregar a mis pins" en vez de "Editar"; al tocarlo, el
-  backend responde 409 porque el pin existe. El 409 ahora está bien formado
-  (trae `pinId`), pero el frontend no lo usa para redirigir.
-- Si agregás listados largos, **paginá o usá infinite scroll** desde el
-  principio.
+## Frontend que solo lee la primera página (resuelto, con una excepción deliberada)
+- El backend pagina con PAGE_SIZE=20. Hay **dos** formas de consumir un listado y
+  la elección es explícita:
+  - `pinsService.list()` → una página (`PaginatedResponse`). Para infinite scroll,
+    como lo hace `feed/+page.svelte`.
+  - `pinsService.listAll()` → todos los resultados, siguiendo `next` vía
+    `api.getAll` (con tope de páginas para no colgar la UI ante una respuesta rota).
+    Para pantallas que necesitan el set completo.
+- `map/+page.svelte` y `restaurant/[id]/+page.svelte` usan `listAll()`. Antes leían
+  sólo la primera página: el mapa dibujaba 20 markers como máximo, y `restaurant/[id]`
+  buscaba tu pin dentro de esos 20 — con 21+ pins te mostraba "Agregar a mis pins"
+  en vez de "Editar" y el backend contestaba 409 al tocarlo.
+- `profile/+page.svelte:125` usa `list()` **a propósito**: muestra la primera página
+  y el total real sale de `res.count`, que el backend calcula sobre el filtro
+  completo. No es el bug de arriba.
+- Si agregás un listado nuevo, elegí una de las dos y dejá dicho por qué. Lo que no
+  va es leer `res.results` de una sola página y tratarlo como si fuera todo.
 
 ## CharField libre cuando hay un set finito de valores
 - Ya resuelto para dietary: `Profile.dietary_preferences` es M2M a
@@ -257,84 +274,38 @@ Cuando agregues un service nuevo:
 
 # Infraestructura
 
-## Producción (estado actual)
-- **EC2** `t3.small` Ubuntu 24.04 — IP fija `3.129.56.80`, disco raíz 20 GiB
-  (era 8 GiB y se llenó el 2026-08-04: el deploy murió en el `git pull` y el
-  sitio quedó caído. Si volvés a rozar el límite, mirá `/var/lib/containerd`.)
-- **RDS** `db.t3.micro` PostgreSQL 16 — endpoint `database-1.c1yuu8ceyjpj.us-east-2.rds.amazonaws.com`
-- **SG EC2** (`muse-ec2-sg`): 22 (0.0.0.0/0 — intencional para GitHub Actions), 80, 443
-- **SG RDS** (`muse-rds-sg`): 5432 solo desde `muse-ec2-sg`
-- **Dominio y SSL**: `lovemuse.app` con Certbot, servido por nginx (`nginx/default-aws.conf`).
-- **Deploy**: push a `main` → GitHub Actions → SSH al EC2. El orden importa:
-  **`build` primero, con los contenedores todavía arriba; recién después
-  `down` + `up -d`.** Al revés (que era como estaba), cualquier fallo del build
-  dejaba producción caída. `set -e` corta antes del `down`, así que un build
-  roto es un deploy en rojo con el sitio intacto.
-  - Bug conocido de docker-compose 1.29.2: hacer `down && up`, nunca solo `up`.
-  - `command_timeout: 30m` en la acción SSH: un build sin cache no entra en los
-    10 minutos por defecto y la sesión se corta a mitad de camino.
-  - El prune de imágenes va **al final y con `--filter until=720h`**. Un
-    `docker image prune -af` sin filtro se lleva las capas intermedias sin tag
-    de las que depende el cache del builder clásico (compose v1 no usa
-    BuildKit) y fuerza un build completo en el deploy siguiente.
-- **Secrets en GitHub**: `EC2_HOST`, `EC2_SSH_KEY`
-- **Vars de entorno**: en `/home/ubuntu/muse/.env` en el server (no en el repo)
-- **Pendiente**: la imagen del backend instala `requirements/dev.txt` (pytest,
-  ipython, debug-toolbar viajan a producción y pesan ~1.75 GB).
+Producción corre en **EC2 + RDS en AWS**, dominio `lovemuse.app`, deploy por GitHub Actions
+al hacer push a `main`. El detalle —IPs, endpoints, security groups, secrets y los tres
+gotchas del deploy que ya rompieron el sitio— está en **`docs/INFRA.md`**. Leelo antes de
+desplegar o de diagnosticar una caída.
 
-## APK
-- Build prod: `npm run build:apk-prod` (usa `.env.capacitor-prod` → `lovemuse.app`)
-- NUNCA `build:apk` para distribución (apunta a `muse.dothecode.com`, dev URL)
-- **El APK V1.0.0 compilado es anterior al borrado de cuenta.** Play Store lo
-  exige para toda app con registro, así que hace falta rebuildear antes de
-  publicar (sería `V1.1.0`: feature visible al usuario).
-
-### Versionado APK — convención `V<major>.<minor>.<patch>`
-Toda release del APK lleva un version humano en formato `V<major>.<minor>.<patch>`:
-- **`major`** (ej: `0` → `1`) — release mayor: rompe compatibilidad o pivote de producto.
-- **`minor`** (ej: `0` → `1`) — important release: feature visible al usuario, cambio de
-  endpoint, cambio de assets que afecta UX (icono, splash, naming).
-- **`patch`** (ej: `0` → `1`) — bugfix sobre el `minor` actual.
-
-Cómo aplicarla en cada build:
-1. Antes de buildear, **leer `app/android/app/build.gradle`** para ver el `versionName` actual.
-2. Decidir el siguiente número según las reglas de arriba (no inventar saltos: `V0.1.3` después
-   de `V0.1.2`, no `V0.2.0` salvo que el cambio sea claramente "important").
-3. Actualizar **en el mismo commit**:
-   - `app/android/app/build.gradle` → `versionName "V0.1.0"` y `versionCode N+1` (entero
-     monotónico, lo exige Play Store).
-   - `app/package.json` → `"version": "0.1.0"` (sin la `V`, npm exige semver).
-4. Buildear con `npm run build:apk-prod` desde `app/`.
-
-Regla derivada: el `versionName` es la fuente de verdad humana. Si el celu de un usuario muestra
-"V0.1.0" pero el APK actual es "V0.1.2", hay un APK viejo instalado — desinstalar y reinstalar
-antes de seguir diagnosticando.
-
-### Iconos de launcher (Android)
-- Source de marca: `app/src/lib/assets/logo_muse.png`.
-- Asset destino: `app/android/app/src/main/res/mipmap-{ldpi,mdpi,hdpi,xhdpi,xxhdpi,xxxhdpi}/`
-  con `ic_launcher.png`, `ic_launcher_round.png` y `ic_launcher_foreground.png`.
-- Background del adaptive icon: `app/src/main/res/values/ic_launcher_background.xml` (hoy `#FFFFFF`).
-- Si actualizás el logo, regenerá los 18 assets — no los edites a mano densidad por densidad.
+Lo único que hay que saber de memoria: **en el deploy, `build` va primero, con los
+contenedores todavía arriba, y recién después `down` + `up -d`.** Al revés, un build roto
+deja producción caída.
 
 ---
 
-# Diagnóstico de bugs: con evidencia, no por adivinación
+# APK / Android
 
-Regla dura. Si un usuario reporta un error:
-1. **Antes** de proponer la causa, juntar evidencia concreta del flujo que el usuario está viendo:
-   logs del servidor, response real del endpoint, mensaje de consola, network tab, payload exacto.
-2. Reproducir el caso si se puede (`curl` al endpoint con los mismos datos, abrir el flujo en local).
-3. Solo después de tener evidencia, decir "el bug es X". Hasta entonces son hipótesis y se etiquetan
-   como tales ("posible causa", "hipótesis a verificar").
+El procedimiento completo de release —elegir el número de versión, los dos archivos que hay
+que actualizar en el mismo commit, el build contra producción y la regeneración de los 24
+iconos de launcher— está en la skill **`/release-apk`** de este proyecto
+(`.claude/skills/release-apk/`). Invocala cuando toque compilar o publicar.
 
-**Anti-patrones explícitos que esto prohíbe:**
-- Decir "Encontrado" cuando solo hiciste una inferencia plausible.
-- Asumir que el cliente está usando un APK viejo, una caché vieja, o env equivocado, sin
-  verificar (preguntando o inspeccionando lo que efectivamente está corriendo).
-- Saltar a "ya sé qué es" porque el síntoma se parece a un bug anterior conocido.
-- Cerrar un ticket con "no puedo reproducir" sin mostrar qué pasos se ejecutaron.
+Lo único que hay que saber de memoria: **para distribución siempre `npm run build:apk-prod`,
+nunca `build:apk`** — el segundo apunta a `muse.dothecode.com`, que es la URL de dev.
 
-**Por qué:** las inferencias rápidas mandan al usuario a perseguir un fantasma. Cuesta menos
-preguntar "¿qué versión tenés instalada?" o pedir el log que reescribir un fix sobre una causa
-errónea.
+---
+
+# Diagnóstico de bugs
+
+Aplica la regla de evidencia global (ver `~/.claude/CLAUDE.md`): sin log, response real o
+consola, es hipótesis y se etiqueta como tal.
+
+Lo específico de Muse, que es donde más se falla:
+
+- **No asumas que el usuario tiene un APK viejo, caché vieja o el env equivocado.** Puede ser
+  cualquiera de las tres y es tentador cerrarlo así. Preguntá qué `versionName` muestra la app
+  y comparalo con el `versionName` actual de `build.gradle` antes de tocar código.
+- Si el síntoma se parece a un bug conocido del audit, verificá que sea el mismo. Los de
+  paginación y los tres bootstraps de Leaflet se parecen entre sí y no son lo mismo.

@@ -33,7 +33,11 @@ backend/media/
 *.md
 !CLAUDE.md
 !docs/**/*.md
+!.claude/skills/**/*.md
 
 # Build artifacts
 *.apk
 muse-tester-build.apk
+
+# Ajustes locales de Claude Code (por máquina, no van al repo)
+.claude/settings.local.json

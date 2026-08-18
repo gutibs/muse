@@ -1,0 +1,30 @@
+name: Lint
+
+# Sin filtro de `paths` a propósito: el punto de este workflow es que NADA entre
+# a main sin pasar por los hooks. `pre-commit` local sólo mira los archivos
+# staged de cada commit, así que un archivo viejo que nunca pasó por el hook, un
+# commit con --no-verify, o una regla nueva de ruff quedan sin chequear hasta que
+# alguien corre `pre-commit run --all-files` a mano. Acá corre sobre todo el repo.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # gitleaks necesita el historial para escanear commits, no sólo el árbol.
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          # Misma versión que backend/Dockerfile (python:3.13-slim) y que el
+          # target-version de ruff en backend/pyproject.toml.
+          python-version: '3.13'
+
+      - uses: pre-commit/action@v3.0.1
+        with:
+          extra_args: --all-files
