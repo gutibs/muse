@@ -14,7 +14,7 @@
 	import { authStore } from '$lib/stores/auth.store.svelte';
 	import type { Pin } from '$lib/types';
 	import { getOtherUser } from '$lib/utils/friendship';
-	import { createPinIcon, PIN_COLORS } from '$lib/utils/map';
+	import { createPinIcon, loadLeaflet, PIN_COLORS } from '$lib/utils/map';
 	import { buildRestaurantPopup } from '$lib/utils/map-popup';
 	import type L from 'leaflet';
 
@@ -210,8 +210,9 @@
 		// total right next to it.
 		const pins = await pinsService.listAll().catch(() => [] as Pin[]);
 
-		const leaflet = await import('leaflet');
-		const L = leaflet.default;
+		// Through loadLeaflet like every other map screen: this one imported the
+		// module on its own and skipped the CSS import the helper does.
+		const L = await loadLeaflet();
 
 		const markersById = new Map<number, L.Marker>();
 		allMarkers = [];
