@@ -9,6 +9,10 @@ on:
       - 'nginx/Dockerfile.aws'
       - 'nginx/landing/**'
       - 'docker-compose.aws.yml'
+      # El cron de mantenimiento se instala en cada deploy desde este
+      # archivo. Sin esta ruta, agregarle una tarea no llega al servidor
+      # hasta que alguien toque otra cosa por casualidad.
+      - 'deploy/**'
       - '.github/workflows/deploy.yml'
       # La imagen de nginx ahora compila la SPA para servir /shared/<token>.
       # Sin estas rutas, un cambio en la pantalla compartida no llegaba nunca a
