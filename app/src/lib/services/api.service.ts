@@ -2,6 +2,17 @@ import { ApiError, AuthError, type PaginatedResponse } from '$lib/types';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
+// Sin VITE_API_BASE_URL, API_BASE queda relativo y en desarrollo eso significa
+// pedirle la API al dev server de Vite: 404 en todo, y la UI sólo muestra
+// "Something went wrong". Vite lee los env desde `app/`, así que el archivo que
+// falta es `app/.env` — no el de la raíz del repo, aunque la variable esté ahí.
+if (import.meta.env.DEV && !import.meta.env.VITE_API_BASE_URL) {
+	console.warn(
+		'[muse] Falta VITE_API_BASE_URL: la API se va a pedir a este mismo host y todo va a fallar.\n' +
+			'       Arreglo: cp app/.env.example app/.env  (y reiniciar vite)'
+	);
+}
+
 let getAccessToken: () => string | null = () => null;
 let getRefreshToken: () => string | null = () => null;
 let setTokens: (access: string, refresh: string) => void = () => {};

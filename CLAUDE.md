@@ -26,6 +26,11 @@ muse/
 
 ## Desarrollo local
 - `make setup` — primera vez (Docker + npm install)
+- **`cp app/.env.example app/.env`** la primera vez. Vite resuelve `envDir`
+  contra `app/`, así que el `.env` de la raíz —que configura el backend— no lo
+  lee. Sin ese archivo el frontend le pide la API al dev server de Vite y todas
+  las pantallas muestran "Something went wrong" con el backend perfectamente
+  sano. `api.service.ts` avisa por consola si falta.
 - `make dev` — backend en Docker (PostGIS+Django) + frontend local (HMR)
 - Tests backend: `docker compose -f docker-compose.dev.yml run --rm backend pytest tests/`
   - **`make test` NO corre esto**: su target usa `python manage.py test` (runner de Django),
