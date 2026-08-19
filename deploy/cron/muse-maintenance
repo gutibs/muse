@@ -1,0 +1,26 @@
+# Mantenimiento periódico de Muse. Lo instala el deploy en /etc/cron.d/, así
+# que este archivo es la única fuente: editarlo acá, no en el servidor.
+#
+# Por qué existe: los dos comandos estaban escritos para correr desde un cron
+# que nadie había creado. `prune_activity` no había corrido nunca —al
+# instalarlo, el 2026-08-19, borró 202 filas— y el caché de Places, que ahora
+# guarda ~180 KB por foto en el disco del EC2, tampoco se limpiaba.
+#
+# El horario es UTC (el EC2 corre en Etc/UTC) y cae de madrugada del domingo,
+# que es cuando menos tráfico hay.
+#
+# Rutas absolutas a propósito: cron corre con un PATH mínimo y no encuentra
+# docker-compose por su cuenta.
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+# min hora díames mes díasem usuario  comando
+
+# Caché de Google Places: borra lo que pasó los 30 días que permiten los
+# Google Maps Platform Terms, con los archivos de las fotos. Semanal alcanza:
+# el TTL es de 30 días y el volumen de escritura es bajo.
+15 4 * * 0 root cd /home/ubuntu/muse && /usr/bin/docker-compose -f docker-compose.aws.yml exec -T backend python manage.py prune_place_cache 2>&1 | logger -t muse-prune-places
+
+# Feed: 90 días de actividad. El comando rechaza un --days menor a 1, así que
+# una variable vacía acá no puede vaciar la tabla.
+45 4 * * 0 root cd /home/ubuntu/muse && /usr/bin/docker-compose -f docker-compose.aws.yml exec -T backend python manage.py prune_activity 2>&1 | logger -t muse-prune-activity

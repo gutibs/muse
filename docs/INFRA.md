@@ -57,6 +57,24 @@ Dos consecuencias del stage de Node:
 - `.dockerignore` (raíz) mantiene `node_modules`, `app/android/` y `app/ios/` fuera del
   contexto de build. Sin eso el deploy manda ~300 MB extra al daemon en cada push.
 
+## Mantenimiento programado
+
+`deploy/cron/muse-maintenance` se instala en `/etc/cron.d/` en cada deploy. El
+archivo del repo es la única fuente: editarlo en el servidor no sirve, el
+próximo deploy lo pisa.
+
+- **Domingos 04:15 UTC** — `prune_place_cache`: borra los details y las fotos
+  que pasaron los 30 días de los Google Maps Platform Terms, con sus archivos.
+  Las fotos pesan ~180 KB cada una y viven en el volumen `muse_media`, sobre el
+  disco del EC2 que ya se llenó una vez.
+- **Domingos 04:45 UTC** — `prune_activity`: 90 días de feed.
+
+Los dos comandos estaban escritos para correr desde un cron que no existía.
+`prune_activity` no había corrido nunca: al instalarlo el 2026-08-19 borró 202
+filas de una sentada.
+
+Para ver si corrieron: `journalctl -t muse-prune-places -t muse-prune-activity`.
+
 ## Deploy
 
 Push a `main` → GitHub Actions → SSH al EC2.

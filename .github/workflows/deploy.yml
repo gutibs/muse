@@ -137,6 +137,14 @@ jobs:
               exit 1
             fi
 
+            # Cron de mantenimiento. Se reinstala en cada deploy para que el
+            # archivo del repo sea la única fuente: si alguien lo edita a mano
+            # en el server, el próximo deploy lo pisa. `install` es idempotente
+            # y deja dueño y permisos que cron exige (root:root 644); un
+            # archivo con otros permisos lo ignora en silencio.
+            sudo install -m 644 -o root -g root \
+              deploy/cron/muse-maintenance /etc/cron.d/muse-maintenance
+
             # Recolección de imágenes viejas, sólo con el deploy ya sano.
             # El filtro `until` es lo importante: `prune -af` a secas se lleva
             # las capas intermedias sin tag de las que depende el cache del
