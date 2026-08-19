@@ -65,12 +65,31 @@ def _current_photo_ref(place_id: str) -> str:
 	return photos[0].get("name") or ""
 
 
+def _file_is_usable(photo: PlacePhoto) -> bool:
+	"""Que la fila tenga nombre de archivo no significa que el archivo esté.
+
+	`bool(photo.file)` sólo mira si el campo guarda un nombre. Si los bytes no
+	están —el volumen se perdió, alguien limpió el directorio, o la fila vino en
+	un dump sin los archivos, que es como se descubrió esto— servir el redirect
+	manda al cliente a un 404 durante los 30 días que dura el TTL.
+	"""
+	if not photo.file:
+		return False
+	try:
+		return photo.file.storage.exists(photo.file.name)
+	except (OSError, ValueError, NotImplementedError) as exc:
+		# Un storage remoto puede fallar al consultar. Ante la duda se vuelve a
+		# bajar la foto: es una llamada de más, no una imagen rota.
+		logger.warning("No se pudo verificar el archivo de %s: %s", photo.place_id, exc)
+		return False
+
+
 def get_or_fetch(place_id: str, *, width: int = DEFAULT_WIDTH) -> PlacePhoto:
 	"""La foto guardada del lugar, bajándola de Google si no está o si venció."""
 	bare_id = google_places.validated_place_id(place_id)
 
 	existing = PlacePhoto.objects.filter(place_id=bare_id, width=width).first()
-	if existing and existing.file and existing.fetched_at > timezone.now() - CACHE_TTL:
+	if existing and _file_is_usable(existing) and existing.fetched_at > timezone.now() - CACHE_TTL:
 		return existing
 
 	# Siempre se vuelve a preguntar cuál es el ref vigente: el que quedó

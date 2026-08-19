@@ -207,3 +207,26 @@ def test_purge_expired_only_removes_stale_rows():
 
 	assert place_photos.purge_expired() == 1
 	assert PlacePhoto.objects.count() == 1
+
+
+@pytest.mark.django_db
+def test_a_row_whose_file_is_missing_is_refetched():
+	"""Una fila sin bytes en disco no es un hit.
+
+	Aparece al restaurar un dump de producción en local: las filas vienen en el
+	backup, los archivos viven en el volumen del servidor. `bool(photo.file)`
+	es verdadero igual, así que el endpoint devolvía un 302 a un 404 y encima
+	sin salir a Google, o sea sin forma de recuperarse hasta que venciera el
+	TTL de 30 días.
+	"""
+	_cache_details()
+	with _google_serves() as get:
+		photo = place_photos.get_or_fetch(PLACE_ID)
+		photo.file.storage.delete(photo.file.name)
+		calls = get.call_count
+
+		recuperada = place_photos.get_or_fetch(PLACE_ID)
+		assert get.call_count > calls, "Tiene que volver a bajarla"
+
+	assert recuperada.file.storage.exists(recuperada.file.name)
+	assert PlacePhoto.objects.count() == 1

@@ -10,12 +10,16 @@ es local: es la única defensa entre un comando de conveniencia y borrar los
 datos de todos los usuarios.
 """
 
+from urllib.parse import urlsplit
+
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from accounts.models import ConsentRecord, EmailInvitation, Profile
+from places.models import PlacePhoto
+from restaurants.models import Restaurant
 
 # La base local corre en Docker: `db` desde el contenedor, localhost desde el
 # host. Cualquier otra cosa —un endpoint de RDS, por ejemplo— no es local.
@@ -69,10 +73,32 @@ class Command(BaseCommand):
 			# consentimiento (GDPR/PDPO). Fuera de producción no prueba nada.
 			consentimientos = ConsentRecord.objects.update(ip_address=None)
 
+			# `image_url` se guarda absoluta (se construye con API_PUBLIC_URL),
+			# así que un snapshot llega con las 26 URLs apuntando a
+			# lovemuse.app: el entorno local le pediría las fotos a producción
+			# y gastaría su caché y su cuota. Reapuntarlas es lo que hace que
+			# probar en local sea de verdad local.
+			# Las fotos cacheadas son filas que apuntan a archivos del volumen
+			# del servidor, y el dump no los trae. Dejarlas es dejar registros
+			# que prometen bytes que no existen; se vuelven a bajar solas.
+			fotos_borradas = PlacePhoto.objects.all().delete()[0]
+
+			base_local = settings.API_PUBLIC_URL.rstrip("/")
+			fotos = 0
+			for restaurante in Restaurant.objects.exclude(image_url="").iterator():
+				partes = urlsplit(restaurante.image_url)
+				if not partes.path.endswith("/places/photo/"):
+					continue  # imagen externa cargada a mano: no es nuestra
+				restaurante.image_url = f"{base_local}{partes.path}?{partes.query}"[:2000]
+				restaurante.save(update_fields=["image_url"])
+				fotos += 1
+
 		self.stdout.write(
 			self.style.SUCCESS(
 				f"Anonimizados: {usuarios} usuarios, {perfiles} perfiles, "
 				f"{invitaciones} invitaciones, {consentimientos} consentimientos.\n"
+				f"{fotos} image_url reapuntadas a {base_local}\n"
+				f"{fotos_borradas} fotos cacheadas descartadas (los archivos no vienen en el dump)\n"
 				f"Todas las cuentas quedaron con la contraseña: {DEV_PASSWORD}"
 			)
 		)
