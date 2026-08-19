@@ -27,6 +27,19 @@ from tests.factories import RestaurantFactory
 			"https://bar-nacional.sevenrooms.com/reservations",
 			Restaurant.ReservationProvider.SEVENROOMS,
 		),
+		# Los tres de abajo entraron con evidencia de venues reales del
+		# catálogo, no por catálogo teórico: Woki es el que usan Anchoita y
+		# Trescha en Buenos Aires, Tock el de Yardbird en Hong Kong, y
+		# CoverManager aparece en la región. Sin ellos, un link legítimo de
+		# esos proveedores cae en la cola de revisión.
+		("https://www.wokiapp.com/restaurante/bar-nacional", Restaurant.ReservationProvider.WOKI),
+		("https://www.exploretock.com/bar-nacional/", Restaurant.ReservationProvider.TOCK),
+		(
+			"https://www.covermanager.com/reserve/module_restaurant/bar-nacional",
+			Restaurant.ReservationProvider.COVERMANAGER,
+		),
+		# Meitre da un subdominio por restaurante, no un path.
+		("https://barnacional.meitre.com/", Restaurant.ReservationProvider.MEITRE),
 	],
 )
 def test_known_providers_are_approved(url, provider):

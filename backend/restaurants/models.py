@@ -53,6 +53,9 @@ class Restaurant(models.Model):
 		QUANDOO = "quandoo", "Quandoo"
 		TABLECHECK = "tablecheck", "TableCheck"
 		MEITRE = "meitre", "Meitre"
+		WOKI = "woki", "Woki"
+		TOCK = "tock", "Tock"
+		COVERMANAGER = "covermanager", "CoverManager"
 		DIRECT = "direct", "Restaurant's own site"
 		OTHER = "other", "Other"
 

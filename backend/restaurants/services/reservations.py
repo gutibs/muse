@@ -43,6 +43,13 @@ KNOWN_PROVIDERS: dict[str, str] = {
 	"quandoo.com": Restaurant.ReservationProvider.QUANDOO,
 	"tablecheck.com": Restaurant.ReservationProvider.TABLECHECK,
 	"meitre.com": Restaurant.ReservationProvider.MEITRE,
+	# Los tres de abajo salieron de mirar qué usan de verdad los venues del
+	# catálogo, no de un catálogo de proveedores: Woki es argentino y lo usan
+	# dos de los restaurantes con más pins, Tock lo usa Yardbird en Hong Kong,
+	# y CoverManager aparece en la región.
+	"wokiapp.com": Restaurant.ReservationProvider.WOKI,
+	"exploretock.com": Restaurant.ReservationProvider.TOCK,
+	"covermanager.com": Restaurant.ReservationProvider.COVERMANAGER,
 }
 
 ALLOWED_SCHEMES = frozenset({"http", "https"})
