@@ -33,6 +33,21 @@ muse/
     verdad, usá el comando de arriba.
 - Pre-commit: `pre-commit install` la primera vez. Después corre solo en cada commit.
 
+## Probar con datos reales
+- `make prod-snapshot` — baja el último backup de producción, lo restaura en la
+  base local y **anonimiza los usuarios en el mismo paso** (emails a
+  `@local.test`, contraseña `local-dev-1234` para todas las cuentas). Te deja
+  los ~550 restaurantes y sus pins reales sin datos personales encima.
+- **No apuntar el entorno local a RDS.** `pytest --create-db` crea y borra
+  bases, un `migrate` distraído modifica producción, y los seeds de demo
+  insertarían 500 restaurantes falsos en el catálogo real. El script y
+  `anonymise_local_data` abortan si `DB_HOST` no es local.
+- Tests que hablan con Google de verdad: `pytest -m integration`. Se saltean
+  solos sin `GOOGLE_PLACES_API_KEY`, así que CI queda verde sin credenciales.
+  Existen porque la suite entera estuvo en verde mientras las fotos no
+  funcionaban en producción: los mocks devolvían lo que el código esperaba y
+  Google no.
+
 ---
 
 # Reglas chequeadas por tooling

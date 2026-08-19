@@ -43,6 +43,11 @@ superuser:
 shell:
 	docker compose -f docker-compose.dev.yml exec backend python manage.py shell
 
+# Trae el último backup de produccion a la base local, anonimizado.
+# NO apunta el entorno local a RDS: ver el comentario del script.
+prod-snapshot:
+	./scripts/prod-snapshot.sh
+
 # Build de produccion del frontend
 build:
 	cd app && npm run build
