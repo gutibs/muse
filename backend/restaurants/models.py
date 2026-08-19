@@ -69,6 +69,11 @@ class Restaurant(models.Model):
 		validators=[MinValueValidator(1), MaxValueValidator(5)],
 	)
 	image_url = models.URLField(max_length=2000, blank=True)
+	# Nombre del recurso de la foto en Places ('places/<id>/photos/<id>'). Lo
+	# devuelve el parser desde siempre y se descartaba: `image_url` lo lleva
+	# embebido en el query string, así que quien necesitaba el ref lo parseaba
+	# de una URL. Guardarlo aparte es el dato, no una reconstrucción frágil.
+	photo_ref = models.CharField(max_length=1000, blank=True)
 	website = models.URLField(max_length=500, blank=True)
 	phone = models.CharField(max_length=30, blank=True)
 	google_place_id = models.CharField(max_length=255, blank=True, unique=True, null=True)
@@ -84,6 +89,12 @@ class Restaurant(models.Model):
 
 	class Meta:
 		db_table = "restaurants_restaurant"
+		# Required, not cosmetic: the list endpoint paginates, and paginating an
+		# unordered queryset lets PostgreSQL return rows in any order it likes —
+		# so the same row could appear on two pages, or on none. Name over
+		# created_at because this is a catalogue people browse, and `id` breaks
+		# the tie so the order is total.
+		ordering = ["name", "id"]
 
 	def __str__(self):
 		return f"{self.name} ({self.city})" if self.city else self.name

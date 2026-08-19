@@ -107,13 +107,45 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-MEDIA_URL = "media/"
+# Leading slash matters: without it Django builds relative media URLs, which
+# resolve differently depending on the page they are rendered from. Part of
+# why avatars did not load in prod — the other part was that nginx had no
+# `location /media/` at all.
+MEDIA_URL = "/media/"
+# Served by nginx from the `muse_media` named volume in prod (see
+# docker-compose.aws.yml). A named volume rather than object storage on
+# purpose: it survives the deploy's `down` + `up -d` exactly like the Postgres
+# one does, and the whole photo catalogue is a few hundred MB on a disk that
+# is already paid for. S3 becomes worthwhile when there is more than one
+# instance to share it between, not before.
 MEDIA_ROOT = BASE_DIR / "media"
+
+# --- Cache -----------------------------------------------------------------
+# Without this Django falls back to LocMemCache, which is per-process. With
+# 3 gunicorn workers that made every throttle scope count roughly three times
+# its configured rate, and reset on each deploy. Redis fixes the throttles and
+# is what the Google Places cache will live in.
+REDIS_URL = os.environ.get("REDIS_URL", "")
+if REDIS_URL:
+	CACHES = {
+		"default": {"BACKEND": "django.core.cache.backends.redis.RedisCache", "LOCATION": REDIS_URL}
+	}
+else:
+	# Tests and any environment without Redis. Explicit rather than implicit
+	# so the fallback is a visible decision.
+	CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# Email — real SMTP in prod, console backend in dev so invitations still log output.
+# Public base of the SPA — used to build shareable links and invitations.
 APP_PUBLIC_URL = os.environ.get("APP_PUBLIC_URL", "http://localhost:5174")
+# Public base of this API. Separate from APP_PUBLIC_URL because in dev they
+# are different origins, and because URLs built from it get persisted (see
+# restaurants.services.google_place_parser.photo_url_for) — deriving them
+# from the incoming request would bake that request's host into the row.
+API_PUBLIC_URL = os.environ.get("API_PUBLIC_URL", "http://localhost:8001")
+
+# Email — real SMTP in prod, console backend in dev so invitations still log output.
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "Muse <no-reply@lovemuse.app>")
 EMAIL_BACKEND = os.environ.get(
 	"EMAIL_BACKEND",
@@ -172,6 +204,10 @@ REST_FRAMEWORK = {
 		# Nominatim policy is 1 req/sec absolute. We stay well under: a
 		# user can pick a location ~once per minute realistically.
 		"reverse_geocode": "60/hour",
+		# Anonymous and legitimately bursty: one link pasted into a group
+		# chat gets opened by everyone at once. Higher than `anon` on
+		# purpose, and per-IP because there is no user to key on.
+		"shared_list_public": "300/hour",
 	},
 }
 

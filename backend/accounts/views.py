@@ -6,7 +6,6 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, permissions, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 
@@ -24,7 +23,8 @@ from accounts.serializers import (
 from accounts.services.account_deletion import anonymise_user
 from accounts.services.email import EmailSendError, send_invitation_email
 from accounts.services.friendships import are_friends
-from pins.models import Pin
+from accounts.services.visibility import require_can_view
+from pins.selectors import visible_pins
 from pins.serializers import PinSerializer
 
 logger = logging.getLogger(__name__)
@@ -52,9 +52,11 @@ class InviteThrottle(UserRateThrottle):
 	scope = "invite"
 
 
-# Kept as a module-level alias: this name is referenced from views below and
-# from tests. The implementation moved to accounts.services.friendships, next
-# to friend_ids(), so every "who are my friends" question has one answer.
+# Kept as a module-level alias for the tests that still import it from here.
+# The implementation lives in accounts.services.friendships, next to
+# friend_ids(); the views themselves now go through
+# accounts.services.visibility, which answers the policy question rather than
+# the question of fact.
 _are_friends = are_friends
 
 
@@ -231,8 +233,7 @@ class PublicProfileView(generics.RetrieveAPIView):
 			User.objects.select_related("profile"),
 			pk=self.kwargs["user_id"],
 		)
-		if not _are_friends(self.request.user, user):
-			raise PermissionDenied("You are not friends with this user.")
+		require_can_view(self.request.user, user)
 		return user.profile
 
 
@@ -242,15 +243,12 @@ class UserPinsView(generics.ListAPIView):
 
 	def get_queryset(self):
 		user = get_object_or_404(User, pk=self.kwargs["user_id"])
-		if not _are_friends(self.request.user, user):
-			raise PermissionDenied("You are not friends with this user.")
-
-		qs = (
-			Pin.objects.filter(user=user)
-			.select_related("restaurant")
-			.prefetch_related("personas", "restaurant__cuisines")
+		require_can_view(self.request.user, user)
+		# Through the shared selector so `?status=all` means the same thing
+		# here as it does on /pins/ — it used to be passed through as a
+		# literal status and returned nothing.
+		return visible_pins(
+			self.request.user,
+			owner=user,
+			status=self.request.query_params.get("status"),
 		)
-		status_param = self.request.query_params.get("status")
-		if status_param:
-			qs = qs.filter(status=status_param)
-		return qs

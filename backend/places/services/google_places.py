@@ -158,3 +158,38 @@ def photo_uri(photo_ref: str) -> str:
 		raise GooglePlacesError("Untrusted photo host.")
 
 	return uri
+
+
+def download_photo(uri: str, max_bytes: int) -> tuple[bytes, str]:
+	"""Download the bytes of an already-resolved photo URL.
+
+	`photo_uri` is what proves the URL is Google-owned; this re-checks the host
+	anyway, because the two calls are separate and a caller could pass anything.
+	`max_bytes` is enforced against Content-Length and against what actually
+	arrives — a chunked response has no length header to trust.
+	"""
+	host = (urlparse(uri).hostname or "").lower()
+	if host not in _ALLOWED_PHOTO_HOSTS and not host.endswith(".googleusercontent.com"):
+		raise GooglePlacesError("Untrusted photo host.")
+
+	try:
+		r = requests.get(uri, timeout=TIMEOUT_SECONDS, stream=True)
+		r.raise_for_status()
+
+		declared = r.headers.get("Content-Length")
+		if declared and declared.isdigit() and int(declared) > max_bytes:
+			raise GooglePlacesError("Photo is too large.")
+
+		chunks: list[bytes] = []
+		total = 0
+		for chunk in r.iter_content(chunk_size=64 * 1024):
+			total += len(chunk)
+			if total > max_bytes:
+				raise GooglePlacesError("Photo is too large.")
+			chunks.append(chunk)
+	except requests.RequestException as exc:
+		logger.exception("Google Places photo download failed for %s", uri)
+		raise GooglePlacesError("Places API error.") from exc
+
+	content_type = (r.headers.get("Content-Type") or "").split(";")[0].strip().lower()
+	return b"".join(chunks), content_type

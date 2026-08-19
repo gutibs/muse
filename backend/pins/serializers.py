@@ -1,6 +1,5 @@
 from rest_framework import serializers
 
-from accounts.serializers import UserAnonymousSafeSerializer
 from pins.models import Persona, Pin, SharedList
 from restaurants.serializers import RestaurantSerializer
 
@@ -93,21 +92,6 @@ class SharedListSerializer(serializers.ModelSerializer):
 		return super().create(validated_data)
 
 
-class SharedListPublicSerializer(serializers.ModelSerializer):
-	# Email-free on purpose: this endpoint answers to anyone holding the link.
-	owner = UserAnonymousSafeSerializer(source="user", read_only=True)
-	pins = serializers.SerializerMethodField()
-
-	class Meta:
-		model = SharedList
-		fields = ("id", "title", "owner", "pins", "created_at")
-
-	def get_pins(self, obj):
-		qs = (
-			Pin.objects.filter(user=obj.user)
-			.select_related("restaurant")
-			.prefetch_related("personas", "restaurant__cuisines")
-		)
-		if obj.status_filter != "all":
-			qs = qs.filter(status=obj.status_filter)
-		return PinSerializer(qs, many=True).data
+# SharedListPublicSerializer used to live here and reuse PinSerializer, which
+# leaked every internal restaurant field to anyone holding a share link. The
+# anonymous payload now has its own module — see pins/serializers_public.py.

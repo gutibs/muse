@@ -2,17 +2,28 @@
 	import { browser } from '$app/environment';
 	import type { Pin, Restaurant } from '$lib/types';
 	import { dietaryBadgesHtml } from '$lib/utils/dietary-badges';
-	import { createPinIcon, PIN_COLORS } from '$lib/utils/map';
+	import { createMap, createPinIcon, loadLeaflet, PIN_COLORS } from '$lib/utils/map';
 	import { buildRestaurantPopup, ownerFromUser, type PopupOwner } from '$lib/utils/map-popup';
 	import type L from 'leaflet';
 
 	/**
 	 * Map item: usually a `Pin`, but search results pass restaurant-only items
 	 * (no pin, just averageRating). Both shapes are handled by `popupFor`.
+	 *
+	 * Typed as what the map actually reads rather than as the full `Pin` and
+	 * `Restaurant`. The share page renders the same markers from the narrower
+	 * anonymous payload (see pins/serializers_public.py), and demanding the
+	 * full types there would mean inventing fields the backend deliberately
+	 * withholds.
 	 */
+	export type MapRestaurant = Pick<Restaurant, 'id' | 'name' | 'city' | 'lat' | 'lng'> &
+		Partial<Pick<Restaurant, 'averageRating' | 'cuisinesDetail' | 'tagsDetail'>>;
+
+	export type MapPin = Pick<Pin, 'rating' | 'status'> & { restaurantDetail: MapRestaurant };
+
 	export type MapItem =
-		| { kind: 'pin'; pin: Pin; owner?: PopupOwner | null }
-		| { kind: 'restaurant'; restaurant: Restaurant };
+		| { kind: 'pin'; pin: MapPin; owner?: PopupOwner | null }
+		| { kind: 'restaurant'; restaurant: MapRestaurant };
 
 	/**
 	 * `accent` accepts either a fixed color name or a per-item function. The
@@ -61,13 +72,15 @@
 		return PIN_COLORS[key];
 	}
 
-	function coordsFor(item: MapItem): { lat: number; lng: number; restaurant: Restaurant } | null {
+	function coordsFor(
+		item: MapItem
+	): { lat: number; lng: number; restaurant: MapRestaurant } | null {
 		const restaurant = item.kind === 'pin' ? item.pin.restaurantDetail : item.restaurant;
 		if (!restaurant?.lat || !restaurant?.lng) return null;
 		return { lat: restaurant.lat, lng: restaurant.lng, restaurant };
 	}
 
-	function popupFor(item: MapItem, restaurant: Restaurant): string {
+	function popupFor(item: MapItem, restaurant: MapRestaurant): string {
 		const dietaryHtml = showDietary ? dietaryBadgesHtml(restaurant.tagsDetail) : undefined;
 		const statusLabel = statusLabelFor?.(item);
 		if (item.kind === 'pin') {
@@ -119,34 +132,10 @@
 		let cancelled = false;
 		(async () => {
 			try {
-				const leaflet = await import('leaflet');
-				await import('leaflet/dist/leaflet.css');
+				Leaflet = await loadLeaflet();
 				if (cancelled || !mapContainer) return;
-				Leaflet = leaflet.default;
 
-				mapInstance = Leaflet.map(mapContainer, {
-					zoomControl: false,
-					attributionControl: false,
-					minZoom: 3,
-					maxBoundsViscosity: 1.0,
-					maxBounds: [
-						[-85, -180],
-						[85, 180],
-					],
-				}).setView([0, 0], 2);
-
-				Leaflet.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-					maxZoom: 19,
-					noWrap: true,
-				}).addTo(mapInstance);
-
-				Leaflet.control
-					.attribution({ position: 'bottomright', prefix: false })
-					.addAttribution(
-						'&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
-					)
-					.addTo(mapInstance);
-				Leaflet.control.zoom({ position: 'bottomright' }).addTo(mapInstance);
+				mapInstance = createMap(Leaflet, mapContainer);
 
 				markersLayer = Leaflet.layerGroup().addTo(mapInstance);
 				renderMarkers();

@@ -8,6 +8,7 @@
 	import StatusToggle from '$lib/components/StatusToggle.svelte';
 	import TagCheckboxes from '$lib/components/TagCheckboxes.svelte';
 	import { t } from '$lib/i18n/index.svelte';
+	import { googleImportErrorKey, importPlace } from '$lib/services/google-import';
 	import { pinsService } from '$lib/services/pins.service';
 	import { placesService, type PlaceSuggestion } from '$lib/services/places.service';
 	import { restaurantsService } from '$lib/services/restaurants.service';
@@ -114,35 +115,14 @@
 		importingPlaceId = suggestion.placeId;
 		error = '';
 		try {
-			const details = await placesService.details(suggestion.placeId);
-			const restaurant = await restaurantsService.fromGoogle({
-				placeId: details.placeId,
-				name: details.name,
-				address: details.address,
-				city: details.city,
-				country: details.country,
-				lat: details.lat,
-				lng: details.lng,
-				website: details.website,
-				phone: details.phone,
-				imageUrl: details.imageUrl,
-				openingHours: details.openingHours,
-			});
-			selectedRestaurant = restaurant;
+			selectedRestaurant = await importPlace(suggestion.placeId);
 			creatingNew = false;
 			step = 2;
 		} catch (err) {
-			if (err instanceof ApiError) {
-				if (err.status === 503) {
-					error = t('pin.googleNotConfigured');
-				} else if (err.status === 502) {
-					error = t('pin.googleUnavailable');
-				} else {
-					error = t('pin.cantImport');
-				}
-			} else {
-				error = t('common.networkError');
-			}
+			// Now handles 429 too, which this screen silently reported as a
+			// generic "couldn't import" while the search screen named it.
+			const key = googleImportErrorKey(err);
+			error = key ? t(key) : t('pin.cantImport');
 		} finally {
 			importingPlaceId = null;
 		}

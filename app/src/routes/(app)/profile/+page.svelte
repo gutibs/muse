@@ -9,9 +9,12 @@
 	import type { Cuisine, DietaryPreference, Pin, SharedList } from '$lib/types';
 	import { extractFirstDrfError } from '$lib/utils/api-error';
 	import { copyToClipboard } from '$lib/utils/clipboard';
+	import { absoluteUrl, shareLink } from '$lib/utils/share';
 	import { logSilent } from '$lib/utils/logger';
 	import { LEGAL_URLS } from '$lib/legal';
 	import RatingHearts from '$lib/components/RatingHearts.svelte';
+	import PinCard from '$lib/components/PinCard.svelte';
+	import PinStatusBadge from '$lib/components/PinStatusBadge.svelte';
 
 	const LOCALE_TO_BCP47: Record<string, string> = { en: 'en-GB', es: 'es-AR', it: 'it-IT' };
 
@@ -87,10 +90,11 @@
 			const title = t('profile.someoneList').replace('{name}', authStore.user?.displayName || '');
 			const list = await pinsService.createSharedList({ title });
 			sharedLists = [...sharedLists, list];
-			const fullUrl = list.url.startsWith('http') ? list.url : `${window.location.origin}${list.url}`;
-			const ok = await copyToClipboard(fullUrl);
-			success = ok ? t('profile.linkCopiedClipboard') : t('profile.linkCopiedClipboard');
-			setTimeout(() => (success = ''), 3000);
+			const result = await shareLink({ url: list.url, title });
+			if (result !== 'cancelled') {
+				success = t('profile.linkCopiedClipboard');
+				setTimeout(() => (success = ''), 3000);
+			}
 		} catch (err) {
 			logSilent('profile.createShareLink', err);
 			error = t('profile.cantCreateLink');
@@ -110,8 +114,7 @@
 	}
 
 	async function copyLink(url: string) {
-		const fullUrl = url.startsWith('http') ? url : `${window.location.origin}${url}`;
-		await copyToClipboard(fullUrl);
+		await copyToClipboard(absoluteUrl(url));
 		success = t('profile.linkCopied');
 		setTimeout(() => (success = ''), 3000);
 	}
@@ -369,26 +372,27 @@
 					<ul class="space-y-2">
 						{#each myPins.slice(0, 5) as pin (pin.id)}
 							<li>
-								<a href={`/restaurant/${pin.restaurantDetail.id}`} class="flex overflow-hidden rounded-card bg-white shadow-card active:scale-[0.98]">
-									{#if pin.restaurantDetail.imageUrl}
-										<img src={pin.restaurantDetail.imageUrl} alt={pin.restaurantDetail.name} class="h-20 w-16 shrink-0 object-cover" loading="lazy" />
-									{/if}
-									<div class="flex min-w-0 flex-1 items-center justify-between gap-2 px-3 py-2">
-										<div class="min-w-0">
-											<p class="truncate text-sm font-semibold text-ink">{pin.restaurantDetail.name}</p>
-											{#if pin.restaurantDetail.city}
-												<p class="text-xs text-ink-muted">{pin.restaurantDetail.city}</p>
-											{/if}
-											{#if pin.rating}
-												<RatingHearts value={pin.rating} size="sm" class="mt-0.5" />
-											{/if}
-										</div>
-										<span class="shrink-0 rounded-full px-2 py-0.5 text-xs font-medium
-											{pin.status === 'visited' ? 'bg-jade/10 text-jade' : 'bg-cream-dark text-ink-muted'}">
-											{pin.status === 'visited' ? t('common.visited') : t('common.toVisit')}
-										</span>
+								<PinCard
+									href={`/restaurant/${pin.restaurantDetail.id}`}
+									imageUrl={pin.restaurantDetail.imageUrl}
+									imageAlt={pin.restaurantDetail.name}
+									imageClass="h-20 w-16"
+									contentClass="flex min-w-0 flex-1 items-center justify-between gap-2 px-3 py-2"
+								>
+									<div class="min-w-0">
+										<p class="truncate text-sm font-semibold text-ink">{pin.restaurantDetail.name}</p>
+										{#if pin.restaurantDetail.city}
+											<p class="text-xs text-ink-muted">{pin.restaurantDetail.city}</p>
+										{/if}
+										{#if pin.rating}
+											<RatingHearts value={pin.rating} size="sm" class="mt-0.5" />
+										{/if}
 									</div>
-								</a>
+									<PinStatusBadge
+										status={pin.status}
+										label={pin.status === 'visited' ? t('common.visited') : t('common.toVisit')}
+									/>
+								</PinCard>
 							</li>
 						{/each}
 					</ul>

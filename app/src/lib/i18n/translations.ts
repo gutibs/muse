@@ -170,6 +170,7 @@ const translations: Record<Locale, Record<string, string>> = {
 
 		// Restaurant
 		'restaurant.menu': 'Menu',
+		'restaurant.photoBy': 'Photo: {author}',
 		'restaurant.reviews': 'Reviews',
 		'restaurant.mustTry': 'Must Try',
 		'restaurant.noMenu': 'No menu available yet',
@@ -543,6 +544,7 @@ const translations: Record<Locale, Record<string, string>> = {
 		'friends.shareBody': '¡Hola! Estoy usando Muse para descubrir y guardar restaurantes con amigos. Descargala: https://lovemuse.app',
 
 		'restaurant.menu': 'Menú',
+		'restaurant.photoBy': 'Foto: {author}',
 		'restaurant.reviews': 'Reseñas',
 		'restaurant.mustTry': 'Imperdibles',
 		'restaurant.noMenu': 'Menú no disponible aún',
@@ -899,6 +901,7 @@ const translations: Record<Locale, Record<string, string>> = {
 		'friends.shareBody': 'Ciao! Sto usando Muse per scoprire e salvare ristoranti con gli amici. Scaricala: https://lovemuse.app',
 
 		'restaurant.menu': 'Menu',
+		'restaurant.photoBy': 'Foto: {author}',
 		'restaurant.reviews': 'Recensioni',
 		'restaurant.mustTry': 'Da Provare',
 		'restaurant.noMenu': 'Menu non ancora disponibile',

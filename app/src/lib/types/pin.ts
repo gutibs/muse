@@ -44,6 +44,32 @@ export interface SharedList {
 	createdAt: string;
 }
 
+// The share-link endpoint has its own narrower serializers on the backend
+// (pins/serializers_public.py) so that widening an internal serializer can
+// never widen the anonymous payload. These types mirror them exactly — if a
+// field is missing here, it is missing on purpose, not by oversight.
+export interface PublicRestaurant {
+	id: number;
+	name: string;
+	city: string;
+	district: string;
+	address: string;
+	imageUrl: string;
+	priceLevel: number | null;
+	// Non-null like on Restaurant: the backing column is NOT NULL, the
+	// serializer's None branch is defensive only.
+	lat: number;
+	lng: number;
+}
+
+export interface PublicPin {
+	restaurantDetail: PublicRestaurant;
+	personasDetail: Omit<Persona, 'id'>[];
+	status: PinStatus;
+	rating: number | null;
+	comment: string;
+}
+
 export interface SharedListPublic {
 	id: number;
 	title: string;
@@ -56,6 +82,6 @@ export interface SharedListPublic {
 		city: string;
 		isDeleted: boolean;
 	};
-	pins: Pin[];
+	pins: PublicPin[];
 	createdAt: string;
 }

@@ -13,6 +13,12 @@ export interface Tag {
 	kind: TagKind;
 }
 
+/** Autor de la foto de Google. Los términos exigen mostrarlo junto a la foto. */
+export interface PhotoAttribution {
+	displayName: string;
+	uri: string;
+}
+
 export interface Restaurant {
 	id: number;
 	name: string;
@@ -33,6 +39,8 @@ export interface Restaurant {
 	pinCount: number;
 	approvalStatus: 'pending' | 'approved' | 'rejected';
 	createdAt: string;
+	/** Sólo viene en el detalle: en el listado sería un lookup por fila. */
+	photoAttribution?: PhotoAttribution[];
 }
 
 export interface MenuItem {

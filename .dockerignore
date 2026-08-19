@@ -1,0 +1,18 @@
+# El contexto de build de nginx/Dockerfile.aws es la raíz del repo, y ahora
+# incluye `app/` para compilar la SPA. Sin esta lista el contexto se lleva los
+# ~300 MB de node_modules + los proyectos nativos de Capacitor al daemon en cada
+# deploy, sobre un t3.small.
+.git/
+**/node_modules/
+**/__pycache__/
+*.apk
+
+# Proyectos nativos: se compilan en la máquina de desarrollo, no acá.
+app/android/
+app/ios/
+
+# Artefactos de build locales: la imagen los regenera.
+app/build/
+app/.svelte-kit/
+backend/staticfiles/
+backend/media/

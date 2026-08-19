@@ -10,6 +10,18 @@ on:
       - 'nginx/landing/**'
       - 'docker-compose.aws.yml'
       - '.github/workflows/deploy.yml'
+      # La imagen de nginx ahora compila la SPA para servir /shared/<token>.
+      # Sin estas rutas, un cambio en la pantalla compartida no llegaba nunca a
+      # producción. Deliberadamente NO están `app/android/` ni `app/ios/`: cambian
+      # en cada release de APK y no tocan nada de lo que se sirve por web.
+      - 'app/src/**'
+      - 'app/static/**'
+      - 'app/package.json'
+      - 'app/package-lock.json'
+      - 'app/svelte.config.js'
+      - 'app/vite.config.ts'
+      - '.dockerignore'
+      - '.github/workflows/test.yml'
 
 jobs:
   deploy:

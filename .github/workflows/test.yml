@@ -1,0 +1,62 @@
+name: Tests
+
+# Los 121 tests del backend no corrían en ningún lado: `lint.yml` ejecuta los
+# hooks de pre-commit y `deploy.yml` despliega directo. La suite dependía de
+# que alguien se acordara de correrla en local antes de pushear, así que un
+# push a main con la mitad de los tests rotos se desplegaba igual.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # La imagen de dev ya trae gdal y las dependencias de GeoDjango. Correr
+      # el mismo contenedor que en local evita mantener una segunda receta de
+      # instalación acá, que es el clásico "en CI pasa y en mi máquina no".
+      - name: Preparar .env
+        run: cp .env.example .env
+
+      # `--create-db` no es opcional: pytest.ini trae `--reuse-db`, y con una
+      # migración nueva la base reusada queda con el schema al día pero sin lo
+      # que siembran las data migrations. Da rojos que no son del cambio.
+      - name: Correr pytest
+        run: |
+          docker compose -f docker-compose.dev.yml run --rm \
+            backend pytest tests/ --create-db -q
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - run: npm ci
+
+      # svelte-check es lo único que hoy mira las pantallas: los tests de
+      # componente cubren PinCard y RatingHearts, no las rutas que los usan.
+      - run: npm run check
+
+      - run: npm test
+
+  # Las cuatro regex de `default-aws.conf` deciden qué es la landing, qué es la
+  # SPA y qué es un 404. Un cambio de una letra puede exponer la app entera por
+  # web o dejar las listas compartidas rotas, y hasta acá sólo lo verificaba
+  # alguien pegándole con curl a mano.
+  nginx-routes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: ./nginx/test-routes.sh

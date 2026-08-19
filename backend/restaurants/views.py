@@ -9,6 +9,7 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
 from places.geo import KM_PER_DEGREE, parse_lat_lng, parse_radius_km
+from restaurants.filters import RestaurantFilterSet
 from restaurants.models import Cuisine, Restaurant, Tag
 from restaurants.serializers import (
 	CuisineSerializer,
@@ -27,6 +28,7 @@ logger = logging.getLogger(__name__)
 class RestaurantViewSet(viewsets.ModelViewSet):
 	serializer_class = RestaurantSerializer
 	http_method_names = ["get", "post", "patch"]
+	filterset_class = RestaurantFilterSet
 
 	def get_serializer_class(self):
 		if self.action == "retrieve":
@@ -34,10 +36,20 @@ class RestaurantViewSet(viewsets.ModelViewSet):
 		return RestaurantSerializer
 
 	def _base_queryset(self):
-		return Restaurant.objects.annotate(
-			average_rating=Avg("pins__rating"),
-			pin_count=Count("pins", distinct=True),
-		).prefetch_related("cuisines", "tags")
+		return (
+			Restaurant.objects.annotate(
+				average_rating=Avg("pins__rating"),
+				pin_count=Count("pins", distinct=True),
+			)
+			.prefetch_related("cuisines", "tags")
+			# Explicit, and not redundant with Meta.ordering: Django drops the
+			# model's default ordering on any queryset with an aggregate
+			# annotation, because those columns would have to join the GROUP BY.
+			# Without this the list endpoint paginates an unordered queryset and
+			# rows can repeat across pages or vanish. Verified in the generated
+			# SQL — the annotated query came out with no ORDER BY at all.
+			.order_by("name", "id")
+		)
 
 	def get_queryset(self):
 		qs = self._base_queryset()
@@ -46,32 +58,9 @@ class RestaurantViewSet(viewsets.ModelViewSet):
 			qs = qs.filter(approval_status=Restaurant.ApprovalStatus.APPROVED)
 		return qs
 
-	def get_queryset_filtered(self):
-		qs = self.get_queryset()
-		search = self.request.query_params.get("search")
-		city = self.request.query_params.get("city")
-		cuisine = self.request.query_params.get("cuisine")
-
-		if search:
-			qs = qs.filter(name__icontains=search)
-		if city:
-			qs = qs.filter(city__icontains=city)
-		if cuisine:
-			# Comma-separated slugs → match restaurants with ANY of them.
-			slugs = [s.strip() for s in cuisine.split(",") if s.strip()]
-			if slugs:
-				qs = qs.filter(cuisines__slug__in=slugs).distinct()
-
-		return qs
-
-	def list(self, request, *args, **kwargs):
-		queryset = self.get_queryset_filtered()
-		page = self.paginate_queryset(queryset)
-		if page is not None:
-			serializer = self.get_serializer(page, many=True)
-			return self.get_paginated_response(serializer.data)
-		serializer = self.get_serializer(queryset, many=True)
-		return Response(serializer.data)
+	# `list` is no longer overridden: the default ModelViewSet implementation
+	# runs filter_queryset() and paginates, which is exactly what the hand-rolled
+	# version did minus the filtering. Filters live in RestaurantFilterSet.
 
 	def create(self, request, *args, **kwargs):
 		"""Users suggest a restaurant; it starts as 'pending' until admin approves."""
@@ -120,8 +109,14 @@ class RestaurantViewSet(viewsets.ModelViewSet):
 		radius_km = parse_radius_km(request.query_params)
 
 		point = Point(lng, lat, srid=4326)
+		# Through filter_queryset so "near me" can be combined with the same
+		# filters as the list endpoint — it used to take the bare queryset, so
+		# any ?cuisine= or ?search= alongside ?lat= was silently ignored.
+		# Filtering happens before the [:50] slice, not after: otherwise the
+		# answer is "of the 50 nearest, the ones that match", which is not what
+		# anyone means by it.
 		qs = (
-			self.get_queryset()
+			self.filter_queryset(self.get_queryset())
 			.filter(location__dwithin=(point, radius_km / KM_PER_DEGREE))
 			.annotate(distance=Distance("location", point))
 			.order_by("distance")
@@ -145,15 +140,8 @@ class RestaurantViewSet(viewsets.ModelViewSet):
 		if not place_id:
 			return Response({"detail": "placeId is required."}, status=status.HTTP_400_BAD_REQUEST)
 
-		def photo_url_for(name: str) -> str:
-			# Absolute URL so it passes URLField validation when persisted.
-			# Stays in the view because it depends on the request host.
-			return request.build_absolute_uri(f"/api/v1/places/photo/?ref={name}")
-
 		try:
-			restaurant, created = import_from_google_place_id(
-				place_id, request.user, photo_url_builder=photo_url_for
-			)
+			restaurant, created = import_from_google_place_id(place_id, request.user)
 		except GoogleImportError as exc:
 			return Response({"detail": exc.message}, status=exc.status_code)
 

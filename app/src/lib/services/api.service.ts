@@ -1,4 +1,4 @@
-import { ApiError, AuthError } from '$lib/types';
+import { ApiError, AuthError, type PaginatedResponse } from '$lib/types';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
@@ -110,9 +110,46 @@ async function request<T>(path: string, options?: RequestInit, alreadyRetried = 
 	return response.json();
 }
 
+/** Max pages `getAll` will walk before giving up. At PAGE_SIZE=20 that is
+ * 2000 rows — far past any list a person actually has, and a guard against
+ * looping forever if the API ever returns a `next` that points at itself. */
+const MAX_PAGES = 100;
+
 export const api = {
 	get<T>(path: string): Promise<T> {
 		return request<T>(path);
+	},
+
+	/**
+	 * Follow `next` until the API runs out of pages and return every row.
+	 *
+	 * The backend paginates at 20. Before this existed, three screens read
+	 * `res.results` and stopped there: the map drew at most 20 markers while
+	 * the profile announced the real total next to it, and the restaurant
+	 * screen looked for your own pin inside the first page only — so with 21+
+	 * pins a place you had already pinned offered "add pin" and the backend
+	 * answered 409.
+	 *
+	 * Use it when the screen genuinely needs the whole set (a map, a filter, a
+	 * count). For long scrollable lists prefer real infinite scroll, the way
+	 * the feed does it.
+	 */
+	async getAll<T>(path: string): Promise<T[]> {
+		const separator = path.includes('?') ? '&' : '?';
+		const rows: T[] = [];
+		let page: number | null = 1;
+
+		for (let i = 0; page !== null && i < MAX_PAGES; i++) {
+			const res: PaginatedResponse<T> = await request<PaginatedResponse<T>>(
+				`${path}${separator}page=${page}`
+			);
+			rows.push(...res.results);
+			// DRF returns `next` as an absolute URL built from the request host,
+			// which is not the host we call from inside Capacitor. Take the page
+			// number out of it and rebuild the path ourselves instead.
+			page = res.next ? Number(new URL(res.next).searchParams.get('page')) || null : null;
+		}
+		return rows;
 	},
 	post<T>(path: string, body?: unknown): Promise<T> {
 		return request<T>(path, {

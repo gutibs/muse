@@ -4,6 +4,7 @@
 	import { placesService } from '$lib/services/places.service';
 	import { getCurrentPosition, GeoError } from '$lib/utils/geolocate';
 	import { logSilent } from '$lib/utils/logger';
+	import { createMap, createPinIcon, loadLeaflet, PIN_COLORS } from '$lib/utils/map';
 	import type L from 'leaflet';
 
 	let {
@@ -88,28 +89,24 @@
 
 		let instance: L.Map;
 
-		import('leaflet').then((leaflet) => {
-			import('leaflet/dist/leaflet.css');
-			const Leaflet = leaflet.default;
-
+		loadLeaflet().then((Leaflet) => {
 			const defaultCenter: [number, number] = lat && lng ? [lat, lng] : [51.505, -0.09];
 			const defaultZoom = lat && lng ? 16 : 3;
 
-			instance = Leaflet.map(mapContainer, {
+			// Through createMap like the other two maps. This one had drifted:
+			// no minZoom, no maxBounds, no noWrap and no attribution control, so
+			// it allowed infinite zoom-out, repeated the world horizontally and
+			// showed no CARTO/OSM credit. Zoom buttons stay off — the picker is
+			// small and pinch-to-zoom is the gesture here.
+			instance = createMap(Leaflet, mapContainer, {
+				center: defaultCenter,
+				zoom: defaultZoom,
 				zoomControl: false,
-				attributionControl: false,
-			}).setView(defaultCenter, defaultZoom);
-
-			Leaflet.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-				maxZoom: 19,
-			}).addTo(instance);
-
-			const icon = Leaflet.divIcon({
-				className: '',
-				html: '<div style="width:32px;height:32px;background:#8A7363;border:3px solid white;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.3);cursor:grab;"></div>',
-				iconSize: [32, 32],
-				iconAnchor: [16, 16],
 			});
+
+			// Was a hand-rolled divIcon duplicating createPinIcon, with a colour
+			// (#8A7363) that is not in PIN_COLORS.
+			const icon = createPinIcon(Leaflet, PIN_COLORS.toVisit, 32);
 
 			marker = Leaflet.marker(defaultCenter, { icon, draggable: true }).addTo(instance);
 
