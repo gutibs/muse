@@ -17,8 +17,7 @@ compartir por link público.
 muse/
 ├── app/          # SvelteKit + Capacitor
 ├── backend/      # Django + DRF
-│   ├── tests/    # pytest + factory_boy (18 archivos en disco, 51 tests, 35 críticos)
-│   │             # ojo: feed/test_prune_activity.py no está commiteado
+│   ├── tests/    # pytest + factory_boy (181 tests, 74 marcados @critical)
 │   └── scripts/  # hooks custom de pre-commit
 ├── nginx/        # Config prod
 └── Makefile
@@ -81,7 +80,7 @@ a `main` es porque alguien hizo `--no-verify` (no lo hagas).
   los uses para "probar el hook"; tomá un valor random que matchee el regex.
 
 ## Tests del path crítico (`backend/tests/`)
-35 tests marcados `@pytest.mark.critical`. Los que cubren invariantes que no
+74 tests marcados `@pytest.mark.critical`. Los que cubren invariantes que no
 podés romper sin romper el producto:
   - `are_friends` simétrico y solo cuenta `ACCEPTED`; `friend_ids` idem
   - `RegisterView` crea Profile vía signal, consume `EmailInvitation` y
@@ -91,7 +90,14 @@ podés romper sin romper el producto:
   - `SharedListPublicView` 404 en token inactivo/inválido y **no expone el
     email del dueño** (endpoint anónimo)
   - Borrado de cuenta: exige contraseña, anonimiza conservando reseñas,
-    borra el grafo social, invalida los JWT vigentes
+    borra el grafo social, invalida los JWT vigentes. **Los eventos de
+    analytics entran en ese contrato**: se les borra el user, no la fila
+  - El endpoint de analytics rechaza `save_to_map` (lo emite el servidor) y
+    las `props` fuera de la whitelist; `analytics_opt_out` corta los eventos
+    por los dos caminos
+  - `prune_events` consolida antes de borrar y sólo borra meses cerrados
+  - Una URL de reserva de dominio desconocido queda `pending` y no se
+    serializa
 - **Cualquier cambio en `accounts/`, `pins/`, `restaurants/from_google` debe correr la suite.**
   Si rompiste alguno, el bug está en tu cambio.
 - **Corré con `--create-db`.** `pytest.ini` trae `--reuse-db`: al agregar una
@@ -280,6 +286,9 @@ una segunda implementación al lado.
 | Amistades (simétrico, sólo ACCEPTED) | `accounts/services/friendships.py` | `are_friends(a, b)` y `friend_ids(user)`. No cuentan PENDING ni DECLINED. Reusalos en cualquier filtro nuevo de "datos de amigos" — el set de ids estuvo duplicado en dos módulos por no existir el helper. |
 | Borrado de cuenta (GDPR art. 17) | `accounts/services/account_deletion.py::anonymise_user` | Anonimiza, no borra: las reseñas sobreviven sin identidad (D-009). Atómico. |
 | Parseo de coordenadas de query params | `places/geo.py` | `parse_lat_lng` y `parse_radius_km`. Lanzan `ValidationError` de DRF → 400. |
+| Escribir un evento de analytics | `analytics/services/ingest.py::record_event` | Único punto de escritura. Filtra `props` contra una whitelist por evento y respeta `Profile.analytics_opt_out` (art. 21 GDPR). El endpoint público rechaza `save_to_map`: ese lo emite el servidor. |
+| Agregados y retención de analytics | `analytics/services/reports.py` y `retention.py` | `rollup_month` (idempotente, nunca baja un agregado) y `prune_events` (borra meses enteros después de consolidarlos). Los corre el cron de `deploy/cron/muse-maintenance`. |
+| Clasificar una URL de reserva | `restaurants/services/reservations.py` | Compara **host**, nunca la URL entera. Aprueba proveedor conocido, sitio oficial o dominio con el nombre del restaurante; el resto queda `pending` y no se serializa. |
 
 Cuando agregues un service nuevo:
 - Vive en `<app>/services/<scope>.py` (mismo patrón que los de arriba).
