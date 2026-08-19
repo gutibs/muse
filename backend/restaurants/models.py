@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.contrib.gis.db import models as gis_models
-from django.core.validators import MaxValueValidator, MinValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator, URLValidator
 from django.db import models
 
 
@@ -45,6 +45,22 @@ class Restaurant(models.Model):
 		APPROVED = "approved", "Approved"
 		REJECTED = "rejected", "Rejected"
 
+	class ReservationProvider(models.TextChoices):
+		OPENTABLE = "opentable", "OpenTable"
+		THEFORK = "thefork", "TheFork"
+		RESY = "resy", "Resy"
+		SEVENROOMS = "sevenrooms", "SevenRooms"
+		QUANDOO = "quandoo", "Quandoo"
+		TABLECHECK = "tablecheck", "TableCheck"
+		MEITRE = "meitre", "Meitre"
+		DIRECT = "direct", "Restaurant's own site"
+		OTHER = "other", "Other"
+
+	class ReservationStatus(models.TextChoices):
+		PENDING = "pending", "Pending Review"
+		APPROVED = "approved", "Approved"
+		REJECTED = "rejected", "Rejected"
+
 	name = models.CharField(max_length=200)
 	location = gis_models.PointField(srid=4326)
 	approval_status = models.CharField(
@@ -70,6 +86,27 @@ class Restaurant(models.Model):
 	)
 	image_url = models.URLField(max_length=2000, blank=True)
 	website = models.URLField(max_length=500, blank=True)
+	# La carga la puede hacer quien da de alta el restaurante, y el botón lo
+	# ve todo el mundo: hasta que `reservation_status` sea `approved` no se
+	# serializa. Ver `restaurants/services/reservations.py`.
+	reservation_url = models.URLField(
+		max_length=500,
+		blank=True,
+		# El default de Django acepta ftp y ftps. Acá el valor termina en un
+		# botón que abre el navegador del usuario: sólo http(s).
+		validators=[URLValidator(schemes=["http", "https"])],
+	)
+	reservation_provider = models.CharField(
+		max_length=20,
+		choices=ReservationProvider.choices,
+		blank=True,
+	)
+	reservation_status = models.CharField(
+		max_length=10,
+		choices=ReservationStatus.choices,
+		default=ReservationStatus.PENDING,
+		db_index=True,
+	)
 	phone = models.CharField(max_length=30, blank=True)
 	google_place_id = models.CharField(max_length=255, blank=True, unique=True, null=True)
 	opening_hours = models.JSONField(default=list, blank=True)
@@ -90,6 +127,48 @@ class Restaurant(models.Model):
 		# created_at because this is a catalogue people browse, and `id` breaks
 		# the tie so the order is total.
 		ordering = ["name", "id"]
+
+	# Valor de `reservation_url` tal como salió de la base. `None` significa
+	# "esta instancia no vino de la base", o sea que la URL es nueva y hay
+	# que clasificarla. Sin este snapshot habría que elegir entre
+	# reclasificar en cada save —pisando la aprobación manual del admin en el
+	# guardado siguiente— o no reclasificar nunca, que deja pasar una URL
+	# nueva sin revisar.
+	_reservation_url_at_load = None
+
+	@classmethod
+	def from_db(cls, db, field_names, values):
+		instance = super().from_db(db, field_names, values)
+		instance._reservation_url_at_load = instance.reservation_url
+		return instance
+
+	def save(self, *args, **kwargs):
+		"""Clasifica la URL de reserva cuando cambió.
+
+		Va en el modelo y no en el serializer —contra la regla general del
+		proyecto— porque este campo entra por tres puertas: la API, el admin
+		y el importador. Es derivación de campos, no validación de entrada:
+		la validación de que sea http(s) sigue levantando ValidationError.
+		"""
+		from restaurants.services.reservations import classify_reservation_url
+
+		changed = (
+			self._reservation_url_at_load is None
+			or self.reservation_url != self._reservation_url_at_load
+		)
+		if changed:
+			if self.reservation_url:
+				result = classify_reservation_url(
+					self.reservation_url, name=self.name, website=self.website
+				)
+				self.reservation_provider = result.provider
+				self.reservation_status = result.status
+			else:
+				self.reservation_provider = ""
+				self.reservation_status = self.ReservationStatus.PENDING
+
+		super().save(*args, **kwargs)
+		self._reservation_url_at_load = self.reservation_url
 
 	def __str__(self):
 		return f"{self.name} ({self.city})" if self.city else self.name

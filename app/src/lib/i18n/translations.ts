@@ -259,6 +259,10 @@ const translations: Record<Locale, Record<string, string>> = {
 
 		// Restaurant
 		'restaurant.editMyPin': 'Edit my pin',
+		'restaurant.directions': 'Directions',
+		'restaurant.book': 'Book a table',
+		'restaurant.reservationUrl': 'Reservation link',
+		'restaurant.reservationUrlHelp': 'OpenTable, TheFork, Resy or the restaurant\u2019s own booking page.',
 		'restaurant.addToMyPins': 'Add to my pins',
 		'restaurant.fromYourFriends': 'From your friends',
 		'restaurant.noFriendsVisited': 'No friends have visited yet — be the first!',
@@ -626,6 +630,10 @@ const translations: Record<Locale, Record<string, string>> = {
 		'pin.restaurantNamePlaceholder': 'Nombre del restaurante',
 
 		'restaurant.editMyPin': 'Editar mi pin',
+		'restaurant.directions': 'Cómo llegar',
+		'restaurant.book': 'Reservar mesa',
+		'restaurant.reservationUrl': 'Link de reserva',
+		'restaurant.reservationUrlHelp': 'OpenTable, TheFork, Resy o la página de reservas del restaurante.',
 		'restaurant.addToMyPins': 'Agregar a mis pins',
 		'restaurant.fromYourFriends': 'De tus amigos',
 		'restaurant.noFriendsVisited': 'Ningún amigo lo visitó aún — ¡sé el primero!',
@@ -983,6 +991,10 @@ const translations: Record<Locale, Record<string, string>> = {
 		'pin.restaurantNamePlaceholder': 'Nome del ristorante',
 
 		'restaurant.editMyPin': 'Modifica il mio pin',
+		'restaurant.directions': 'Indicazioni',
+		'restaurant.book': 'Prenota un tavolo',
+		'restaurant.reservationUrl': 'Link per prenotare',
+		'restaurant.reservationUrlHelp': 'OpenTable, TheFork, Resy o la pagina di prenotazione del ristorante.',
 		'restaurant.addToMyPins': 'Aggiungi ai miei pin',
 		'restaurant.fromYourFriends': 'Dai tuoi amici',
 		'restaurant.noFriendsVisited': 'Nessun amico ha visitato — sii il primo!',

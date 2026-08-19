@@ -49,6 +49,12 @@ class RestaurantSerializer(serializers.ModelSerializer):
 	longitude = serializers.FloatField(write_only=True, required=False)
 	lat = serializers.SerializerMethodField()
 	lng = serializers.SerializerMethodField()
+	# Se escribe cruda y se lee clasificada: `reservation` es None mientras la
+	# URL esté pendiente de revisión.
+	reservation_url = serializers.URLField(
+		write_only=True, required=False, allow_blank=True, max_length=500
+	)
+	reservation = serializers.SerializerMethodField()
 	cuisines = serializers.PrimaryKeyRelatedField(
 		queryset=Cuisine.objects.all(),
 		many=True,
@@ -86,6 +92,8 @@ class RestaurantSerializer(serializers.ModelSerializer):
 			"price_level",
 			"quality_level",
 			"website",
+			"reservation_url",
+			"reservation",
 			"phone",
 			"average_rating",
 			"pin_count",
@@ -106,6 +114,19 @@ class RestaurantSerializer(serializers.ModelSerializer):
 			# It is only ever set from a parsed Google payload.
 			"image_url",
 		)
+
+	def get_reservation(self, obj):
+		"""La URL de reserva sólo sale de acá cuando pasó la clasificación.
+
+		Es un dato que escribe un usuario y que se le muestra a todos los
+		demás como "reservá": mientras esté pendiente de revisión, para la
+		API no existe.
+		"""
+		if obj.reservation_status != Restaurant.ReservationStatus.APPROVED:
+			return None
+		if not obj.reservation_url:
+			return None
+		return {"url": obj.reservation_url, "provider": obj.reservation_provider}
 
 	def get_lat(self, obj):
 		return obj.location.y if obj.location else None

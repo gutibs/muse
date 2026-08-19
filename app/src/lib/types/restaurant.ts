@@ -19,6 +19,22 @@ export interface PhotoAttribution {
 	uri: string;
 }
 
+export type ReservationProvider =
+	| 'opentable'
+	| 'thefork'
+	| 'resy'
+	| 'sevenrooms'
+	| 'quandoo'
+	| 'tablecheck'
+	| 'meitre'
+	| 'direct'
+	| 'other';
+
+export interface Reservation {
+	url: string;
+	provider: ReservationProvider;
+}
+
 export interface Restaurant {
 	id: number;
 	name: string;
@@ -34,6 +50,12 @@ export interface Restaurant {
 	priceLevel: number | null;
 	qualityLevel: number | null;
 	website: string;
+	/**
+	 * Link de reserva, o `null` mientras esté pendiente de revisión. El
+	 * backend no lo manda hasta que el dominio pasó la clasificación: lo
+	 * escribe un usuario y se le muestra a todos los demás.
+	 */
+	reservation: Reservation | null;
 	phone: string;
 	averageRating: number | null;
 	pinCount: number;
@@ -102,4 +124,6 @@ export interface RestaurantCreate {
 	tagIds?: number[];
 	priceLevel?: number;
 	qualityLevel?: number;
+	/** Se guarda siempre; se muestra sólo si el dominio pasa la revisión. */
+	reservationUrl?: string;
 }
