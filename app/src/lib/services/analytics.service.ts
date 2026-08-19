@@ -38,10 +38,42 @@ const FLUSH_DELAY_MS = 5000;
 /** El backend rechaza batches de más de 50. */
 const MAX_BATCH = 20;
 
+/**
+ * Dónde se recuerda qué tarjetas ya se contaron.
+ *
+ * En `sessionStorage` y no sólo en memoria: el registro vivía en el módulo, y
+ * abrir una URL directo en la barra —una carga completa, no una navegación de
+ * la SPA— lo vaciaba, así que la misma tarjeta se contaba de nuevo. En el APK
+ * casi no pasa, porque la app se carga una vez; en web, cada recarga reabría
+ * la cuenta. `sessionStorage` sobrevive a la recarga y muere al cerrar la
+ * pestaña, que es lo que "una vez por sesión" quiere decir.
+ */
+const SEEN_KEY = 'muse_analytics_seen';
+
 let queue: QueuedEvent[] = [];
 let timer: ReturnType<typeof setTimeout> | null = null;
 let disabled = false;
-const seen = new Set<string>();
+let seen: Set<string> = loadSeen();
+
+function loadSeen(): Set<string> {
+	try {
+		const raw = sessionStorage.getItem(SEEN_KEY);
+		return new Set(raw ? (JSON.parse(raw) as string[]) : []);
+	} catch (err) {
+		// Storage lleno, deshabilitado o modo privado: se cuenta de más, que
+		// es mucho mejor que romper la pantalla por una métrica.
+		logSilent('analytics:loadSeen', err);
+		return new Set();
+	}
+}
+
+function persistSeen() {
+	try {
+		sessionStorage.setItem(SEEN_KEY, JSON.stringify([...seen]));
+	} catch (err) {
+		logSilent('analytics:persistSeen', err);
+	}
+}
 
 function scheduleFlush() {
 	if (timer !== null) return;
@@ -91,6 +123,7 @@ function trackViewOnce(name: EventName, restaurantId: number, surface: Surface) 
 	const key = `${name}:${restaurantId}`;
 	if (seen.has(key)) return;
 	seen.add(key);
+	persistSeen();
 	enqueue({ name, restaurant: restaurantId, props: { surface } });
 }
 
@@ -122,13 +155,23 @@ export function trackExternalActionClick(
 	enqueue({ name: 'external_action_click', restaurant: restaurantId, destination, props }, true);
 }
 
-/** Sólo para tests: la cola y el dedupe viven en el módulo. */
-export function __resetAnalytics() {
+/**
+ * Sólo para tests: reinicia el estado del módulo.
+ *
+ * `keepStorage` simula una recarga de página —el módulo arranca de cero pero
+ * `sessionStorage` sigue ahí— que es el caso que hacía contar dos veces.
+ */
+export function __resetAnalytics({ keepStorage = false } = {}) {
 	queue = [];
-	seen.clear();
 	disabled = false;
 	if (timer !== null) {
 		clearTimeout(timer);
 		timer = null;
 	}
+	if (keepStorage) {
+		seen = loadSeen();
+		return;
+	}
+	seen = new Set();
+	persistSeen();
 }

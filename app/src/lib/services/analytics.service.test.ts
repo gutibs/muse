@@ -16,6 +16,7 @@ describe('analytics service', () => {
 		vi.useFakeTimers();
 		post.mockReset();
 		post.mockResolvedValue({ accepted: 1 });
+		sessionStorage.clear();
 		__resetAnalytics();
 	});
 
@@ -31,6 +32,36 @@ describe('analytics service', () => {
 
 		expect(post).toHaveBeenCalledTimes(1);
 		expect(post.mock.calls[0][1].events).toHaveLength(1);
+	});
+
+	it('still remembers a counted card after a page reload', async () => {
+		// El registro vivía sólo en memoria del módulo, así que abrir una URL
+		// directo en la barra —una carga completa, no una navegación de la
+		// SPA— volvía a contar la misma tarjeta. En el APK casi no pasa; en
+		// web, cada F5 reabría la cuenta.
+		trackVenueCardView(7, 'feed');
+		await flushAnalytics();
+		post.mockClear();
+
+		__resetAnalytics({ keepStorage: true });
+
+		trackVenueCardView(7, 'feed');
+		await flushAnalytics();
+
+		expect(post).not.toHaveBeenCalled();
+	});
+
+	it('starts fresh in a new tab', () => {
+		trackVenueCardView(7, 'feed');
+		sessionStorage.clear();
+		__resetAnalytics({ keepStorage: true });
+		post.mockClear();
+
+		trackVenueCardView(7, 'feed');
+
+		expect(post).toHaveBeenCalledTimes(0); // encolado, todavía sin flush
+		void flushAnalytics();
+		expect(post).toHaveBeenCalledTimes(1);
 	});
 
 	it('batches views instead of posting one request each', async () => {
