@@ -13,6 +13,7 @@ from django.core.management.base import BaseCommand
 from places.services.place_details import CACHE_TTL
 from places.services.place_details import purge_expired as purge_details
 from places.services.place_photos import purge_expired as purge_photos
+from places.services.place_photos import purge_orphan_files
 
 
 class Command(BaseCommand):
@@ -23,9 +24,10 @@ class Command(BaseCommand):
 		# Las fotos se borran una por una a propósito: `queryset.delete()` no
 		# toca el storage y dejaría los archivos ocupando el disco del EC2.
 		photos = purge_photos()
+		huerfanos = purge_orphan_files()
 		self.stdout.write(
 			self.style.SUCCESS(
 				f"Deleted {details} cached details and {photos} photos "
-				f"older than {CACHE_TTL.days} days."
+				f"older than {CACHE_TTL.days} days, plus {huerfanos} orphan files."
 			)
 		)

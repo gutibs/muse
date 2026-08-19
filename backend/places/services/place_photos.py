@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import os
 from datetime import timedelta
 
 from django.core.files.base import ContentFile
@@ -151,3 +152,49 @@ def purge_expired() -> int:
 		photo.delete()
 		deleted += 1
 	return deleted
+
+
+# Un archivo recién escrito puede no tener su fila commiteada todavía. Sólo se
+# consideran huérfanos los que llevan un rato quietos.
+ORPHAN_MIN_AGE = timedelta(days=1)
+
+PHOTO_DIR = "place-photos"
+
+
+def purge_orphan_files() -> int:
+	"""Borra los archivos de fotos que ninguna fila referencia.
+
+	Django no sobrescribe un archivo existente: le agrega un sufijo. Así que un
+	archivo que quedó sin fila —una fila borrada sin su archivo, un guardado a
+	medias— no se reusa nunca y encima hace que la próxima descarga del mismo
+	lugar escriba una copia al lado, ocupando el doble. El disco del EC2 ya se
+	llenó una vez.
+	"""
+	from django.core.files.storage import default_storage
+
+	try:
+		_, archivos = default_storage.listdir(PHOTO_DIR)
+	except (FileNotFoundError, NotImplementedError):
+		return 0
+
+	referenciados = {
+		os.path.basename(name)
+		for name in PlacePhoto.objects.exclude(file="").values_list("file", flat=True)
+	}
+	limite = timezone.now() - ORPHAN_MIN_AGE
+
+	borrados = 0
+	for archivo in archivos:
+		if archivo in referenciados:
+			continue
+		ruta = f"{PHOTO_DIR}/{archivo}"
+		try:
+			if default_storage.get_modified_time(ruta) > limite:
+				continue  # demasiado nuevo para asegurar que sobra
+			default_storage.delete(ruta)
+		except (OSError, NotImplementedError) as exc:
+			logger.warning("No se pudo borrar el huérfano %s: %s", ruta, exc)
+			continue
+		borrados += 1
+
+	return borrados

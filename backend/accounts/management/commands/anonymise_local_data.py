@@ -81,7 +81,15 @@ class Command(BaseCommand):
 			# Las fotos cacheadas son filas que apuntan a archivos del volumen
 			# del servidor, y el dump no los trae. Dejarlas es dejar registros
 			# que prometen bytes que no existen; se vuelven a bajar solas.
-			fotos_borradas = PlacePhoto.objects.all().delete()[0]
+			fotos_borradas = 0
+			for foto in PlacePhoto.objects.all():
+				# El archivo primero: un `queryset.delete()` no toca el storage
+				# y deja los bytes huérfanos ocupando disco, con el agregado de
+				# que Django no sobrescribe un archivo existente —le pone un
+				# sufijo— así que la próxima descarga duplica en vez de pisar.
+				foto.file.delete(save=False)
+				foto.delete()
+				fotos_borradas += 1
 
 			base_local = settings.API_PUBLIC_URL.rstrip("/")
 			fotos = 0

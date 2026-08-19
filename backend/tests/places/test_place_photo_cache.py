@@ -230,3 +230,29 @@ def test_a_row_whose_file_is_missing_is_refetched():
 
 	assert recuperada.file.storage.exists(recuperada.file.name)
 	assert PlacePhoto.objects.count() == 1
+
+
+@pytest.mark.django_db
+def test_purge_orphan_files_removes_files_without_a_row():
+	"""Los archivos sin fila no se reusan nunca y hacen crecer el disco.
+
+	Django no sobrescribe: si el archivo existe, la próxima descarga escribe una
+	copia con sufijo al lado. Un huérfano de 180 KB se vuelve 360.
+	"""
+	from django.core.files.base import ContentFile
+	from django.core.files.storage import default_storage
+
+	_cache_details()
+	with _google_serves():
+		viva = place_photos.get_or_fetch(PLACE_ID)
+
+	huerfano = default_storage.save(f"{place_photos.PHOTO_DIR}/sobrante.jpg", ContentFile(JPEG))
+	# El guard de edad: recién escrito, todavía no se toca.
+	assert place_photos.purge_orphan_files() == 0
+
+	viejo = timezone.now() - place_photos.ORPHAN_MIN_AGE - timedelta(hours=1)
+	with patch("django.core.files.storage.FileSystemStorage.get_modified_time", return_value=viejo):
+		assert place_photos.purge_orphan_files() == 1
+
+	assert not default_storage.exists(huerfano)
+	assert default_storage.exists(viva.file.name), "La foto con fila no se toca"
