@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.core.cache import cache
 from django.shortcuts import render
 from django.urls import path
+from django.utils import timezone
 
 from analytics.models import Event, MonthlyVenueStat
 from analytics.services.reports import external_clicks_by_venue, summary
@@ -50,6 +51,9 @@ class EventAdmin(admin.ModelAdmin):
 			data = {
 				"summary": summary(),
 				"clicks": external_clicks_by_venue(),
+				# Con diez minutos de caché, un evento recién hecho no aparece
+				# al recargar. Sin esta marca eso se lee como "está roto".
+				"generated_at": timezone.now(),
 			}
 			cache.set(DASHBOARD_CACHE_KEY, data, DASHBOARD_CACHE_SECONDS)
 

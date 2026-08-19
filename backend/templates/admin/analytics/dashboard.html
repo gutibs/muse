@@ -2,6 +2,8 @@
 
 {% block content %}
 	<h1>Last 30 days</h1>
+	<p style="color:#666">Figures computed {{ generated_at|date:"Y-m-d H:i" }} (UTC) and cached for 10 minutes,
+	so an event you just triggered can take that long to show up.</p>
 	<ul style="display:flex;gap:2rem;list-style:none;padding:0;flex-wrap:wrap">
 		<li><strong style="font-size:2rem">{{ summary.saves }}</strong><br>saved to map</li>
 		<li><strong style="font-size:2rem">{{ summary.external_clicks }}</strong><br>external clicks</li>
