@@ -94,7 +94,8 @@ Each processing activity has a documented purpose and a specific legal basis.
 | P4 | Sending transactional emails (invitations, password resets, security alerts) | Account, Communications | (b) Performance of the contract / (c) Compliance with legal obligations for security alerts |
 | P5 | Showing your approximate/precise location on the map | Location | (a) Your **consent**, granted via the OS permission prompt and revocable at any time in OS settings |
 | P6 | Preventing abuse (rate-limiting, anti-spam, fraud detection) | IP address, technical data | (f) Our **legitimate interest** in operating a safe service, balanced against your rights — see §10 |
-| P7 | Improving the service, debugging, and aggregate analytics | Technical, error logs | (f) Our **legitimate interest** in maintaining and improving the product |
+| P7 | Improving the service, debugging, and error monitoring | Technical, error logs | (f) Our **legitimate interest** in maintaining and improving the product |
+| P7b | Measuring product usage per venue (which venues are opened, saved and clicked through to) to report interest back to restaurants and decide what to build | Usage events tied to your user id, venue, timestamp | (f) Our **legitimate interest**, with a right to object under art. 21. Raw events are deleted after 14 months; only per-venue monthly totals without user ids are kept |
 | P8 | Sending invitation emails to addresses you supply | Recipient email, your name | (f) Our **legitimate interest** and the recipient's reasonable expectation that you, as their contact, are introducing them to a service — see §10 |
 | P9 | Complying with legal obligations and lawful requests from authorities | All categories as required | (c) Compliance with a legal obligation to which we are subject |
 | P10 | Defending or establishing legal claims | All categories as required | (f) Our **legitimate interest** in protecting our rights |

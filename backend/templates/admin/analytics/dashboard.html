@@ -1,0 +1,42 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+	<h1>Last 30 days</h1>
+	<ul style="display:flex;gap:2rem;list-style:none;padding:0;flex-wrap:wrap">
+		<li><strong style="font-size:2rem">{{ summary.saves }}</strong><br>saved to map</li>
+		<li><strong style="font-size:2rem">{{ summary.external_clicks }}</strong><br>external clicks</li>
+		<li><strong style="font-size:2rem">{{ summary.detail_views }}</strong><br>venue pages opened</li>
+		<li><strong style="font-size:2rem">{{ summary.card_views }}</strong><br>cards seen</li>
+		<li><strong style="font-size:2rem">{{ summary.people }}</strong><br>people</li>
+	</ul>
+
+	<h2>External clicks per venue and month</h2>
+	<p style="max-width:52em">
+		<em>People</em> counts one tap per person, venue and day — that is the figure
+		to quote. <em>Taps</em> is the raw count, kept alongside so the question
+		"is that the same person five times?" has an answer. Months before the
+		current one come from the perpetual aggregates, which carry no user ids.
+	</p>
+	<table>
+		<thead>
+			<tr>
+				<th>Month</th><th>Venue</th><th>Destination</th>
+				<th>People (deduped)</th><th>Taps (raw)</th><th>Unique users</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% for row in clicks %}
+				<tr>
+					<td>{{ row.month|date:"Y-m" }}</td>
+					<td>{{ row.restaurant_name|default:"—" }}</td>
+					<td>{{ row.destination }}</td>
+					<td>{{ row.deduped_count }}</td>
+					<td>{{ row.count }}</td>
+					<td>{{ row.unique_users }}</td>
+				</tr>
+			{% empty %}
+				<tr><td colspan="6">No external clicks recorded yet.</td></tr>
+			{% endfor %}
+		</tbody>
+	</table>
+{% endblock %}

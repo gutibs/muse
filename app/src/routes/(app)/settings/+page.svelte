@@ -4,6 +4,22 @@
 	import { authStore } from '$lib/stores/auth.store.svelte';
 	import { authService } from '$lib/services/auth.service';
 	import { extractFirstDrfError } from '$lib/utils/api-error';
+	import { logSilent } from '$lib/utils/logger';
+
+	// Derecho de oposición del art. 21 GDPR. La política publicada promete que
+	// se puede ejercer, así que tiene que estar a mano y no enterrado.
+	let optingOut = $state(false);
+
+	async function toggleAnalyticsOptOut(value: boolean) {
+		optingOut = true;
+		try {
+			await authStore.updateProfile({ analyticsOptOut: value });
+		} catch (err) {
+			logSilent('settings:analyticsOptOut', err);
+		} finally {
+			optingOut = false;
+		}
+	}
 
 	// Change password
 	let changingPassword = $state(false);
@@ -167,6 +183,24 @@
 		<section class="mt-6">
 			<h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-ink-muted">{t('profile.language')}</h2>
 			<LanguagePicker />
+		</section>
+
+		<!-- Privacy -->
+		<section class="mt-6">
+			<h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-ink-muted">{t('settings.privacy')}</h2>
+			<div class="rounded-card bg-white p-4 shadow-card">
+				<label class="flex min-h-11 items-center justify-between gap-3">
+					<span class="text-sm font-medium text-ink">{t('settings.analyticsOptOut')}</span>
+					<input
+						type="checkbox"
+						class="h-6 w-6 shrink-0 accent-jade"
+						checked={authStore.user?.analyticsOptOut ?? false}
+						disabled={optingOut}
+						onchange={(e) => toggleAnalyticsOptOut(e.currentTarget.checked)}
+					/>
+				</label>
+				<p class="mt-1 text-xs text-ink-muted">{t('settings.analyticsOptOutHelp')}</p>
+			</div>
 		</section>
 
 		<!-- About section -->

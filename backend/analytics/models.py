@@ -58,3 +58,50 @@ class Event(models.Model):
 
 	def __str__(self):
 		return f"{self.name} · {self.restaurant or '—'} · {self.created_at:%Y-%m-%d}"
+
+
+class MonthlyVenueStat(models.Model):
+	"""Agregado mensual por venue, sin dato personal adentro.
+
+	Existe para que la retención no se lleve puesto el histórico de negocio:
+	los eventos crudos se borran a los 14 meses (llevan user_id), y esto
+	queda para siempre. El nombre del restaurante va copiado en la fila
+	porque el FK es SET_NULL: si el restaurante se borra, el número de un
+	mes cerrado no puede quedar sin dueño en el reporte.
+	"""
+
+	restaurant = models.ForeignKey(
+		"restaurants.Restaurant",
+		on_delete=models.SET_NULL,
+		null=True,
+		blank=True,
+		related_name="monthly_stats",
+	)
+	restaurant_name = models.CharField(max_length=200, blank=True)
+	# Primer día del mes.
+	month = models.DateField()
+	name = models.CharField(max_length=32, choices=Event.Name.choices)
+	destination = models.CharField(max_length=20, choices=Event.Destination.choices, blank=True)
+	# Bruto: un tap, un punto.
+	count = models.PositiveIntegerField(default=0)
+	# Un tap por persona, venue y día. Es el número que se muestra como
+	# principal: "cinco taps del mismo usuario en un rato" es una persona
+	# interesada, no cinco.
+	deduped_count = models.PositiveIntegerField(default=0)
+	# Personas distintas. Los eventos ya anonimizados no tienen a quién
+	# contar y quedan afuera de este número, nunca del bruto.
+	unique_users = models.PositiveIntegerField(default=0)
+
+	class Meta:
+		db_table = "analytics_monthly_venue_stat"
+		ordering = ["-month", "restaurant_name"]
+		constraints = [
+			models.UniqueConstraint(
+				fields=["restaurant", "restaurant_name", "month", "name", "destination"],
+				name="unique_monthly_venue_stat",
+			)
+		]
+		indexes = [models.Index(fields=["-month", "name"])]
+
+	def __str__(self):
+		return f"{self.restaurant_name} · {self.month:%Y-%m} · {self.name}"

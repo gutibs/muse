@@ -51,6 +51,11 @@ class Profile(models.Model):
 		blank=True,
 		related_name="profiles",
 	)
+	# Derecho de oposición (art. 21 GDPR). Con esto en True no se registra
+	# ningún evento de analytics de esta persona — ni los que manda la app ni
+	# los que emite el servidor. Lo prometen las políticas publicadas, así que
+	# tiene que ser verdad en el código.
+	analytics_opt_out = models.BooleanField(default=False)
 	# Set when the user exercises their right to erasure. The row stays so the
 	# person's reviews keep hanging off a valid FK (see D-009), but everything
 	# identifying is wiped. Anything rendering an author must treat a non-null

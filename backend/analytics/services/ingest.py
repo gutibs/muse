@@ -70,6 +70,19 @@ def clean_props(name: str, props: dict | None) -> dict:
 	return cleaned
 
 
+def is_opted_out(user) -> bool:
+	"""True si la persona ejerció su derecho de oposición (art. 21 GDPR).
+
+	Se consulta acá, en el único punto de escritura, y no en cada call site:
+	un evento que se escapa por una puerta lateral convierte en falsa una
+	promesa de la política de privacidad.
+	"""
+	if user is None or not user.is_authenticated:
+		return False
+	profile = getattr(user, "profile", None)
+	return bool(profile and profile.analytics_opt_out)
+
+
 def record_event(
 	*,
 	name: str,
@@ -77,8 +90,14 @@ def record_event(
 	restaurant=None,
 	destination: str = "",
 	props: dict | None = None,
-) -> Event:
-	"""Persiste un evento. `props` se filtra siempre contra la whitelist."""
+) -> Event | None:
+	"""Persiste un evento, o devuelve None si la persona se opuso.
+
+	`props` se filtra siempre contra la whitelist.
+	"""
+	if is_opted_out(user):
+		return None
+
 	return Event.objects.create(
 		name=name,
 		user=user,

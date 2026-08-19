@@ -260,6 +260,9 @@ const translations: Record<Locale, Record<string, string>> = {
 		// Restaurant
 		'restaurant.editMyPin': 'Edit my pin',
 		'restaurant.directions': 'Directions',
+		'settings.privacy': 'Privacy',
+		'settings.analyticsOptOut': 'Do not measure my usage',
+		'settings.analyticsOptOutHelp': 'We count which venues get opened, saved and tapped through to, so restaurants can be told how much interest they receive. Turn this on and nothing from this account is recorded.',
 		'restaurant.book': 'Book a table',
 		'restaurant.reservationUrl': 'Reservation link',
 		'restaurant.reservationUrlHelp': 'OpenTable, TheFork, Resy or the restaurant\u2019s own booking page.',
@@ -631,6 +634,9 @@ const translations: Record<Locale, Record<string, string>> = {
 
 		'restaurant.editMyPin': 'Editar mi pin',
 		'restaurant.directions': 'Cómo llegar',
+		'settings.privacy': 'Privacidad',
+		'settings.analyticsOptOut': 'No medir mi uso',
+		'settings.analyticsOptOutHelp': 'Contamos qué restaurantes se abren, se guardan y reciben clics, para poder decirle a cada uno cuánto interés genera. Si activás esto, no se registra nada de esta cuenta.',
 		'restaurant.book': 'Reservar mesa',
 		'restaurant.reservationUrl': 'Link de reserva',
 		'restaurant.reservationUrlHelp': 'OpenTable, TheFork, Resy o la página de reservas del restaurante.',
@@ -992,6 +998,9 @@ const translations: Record<Locale, Record<string, string>> = {
 
 		'restaurant.editMyPin': 'Modifica il mio pin',
 		'restaurant.directions': 'Indicazioni',
+		'settings.privacy': 'Privacy',
+		'settings.analyticsOptOut': 'Non misurare il mio utilizzo',
+		'settings.analyticsOptOutHelp': 'Contiamo quali ristoranti vengono aperti, salvati e cliccati, per poter dire a ciascuno quanto interesse riceve. Attivando questa opzione non viene registrato nulla di questo account.',
 		'restaurant.book': 'Prenota un tavolo',
 		'restaurant.reservationUrl': 'Link per prenotare',
 		'restaurant.reservationUrlHelp': 'OpenTable, TheFork, Resy o la pagina di prenotazione del ristorante.',

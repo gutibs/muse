@@ -50,6 +50,7 @@ class ProfileSerializer(serializers.ModelSerializer):
 			"favourite_cuisine_detail",
 			"dietary_preferences",
 			"dietary_preferences_detail",
+			"analytics_opt_out",
 			"stats",
 			"created_at",
 		)
