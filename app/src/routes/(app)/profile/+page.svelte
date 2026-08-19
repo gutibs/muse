@@ -14,6 +14,7 @@
 	import { LEGAL_URLS } from '$lib/legal';
 	import RatingHearts from '$lib/components/RatingHearts.svelte';
 	import PinCard from '$lib/components/PinCard.svelte';
+	import { trackVenueCardView } from '$lib/services/analytics.service';
 	import PinStatusBadge from '$lib/components/PinStatusBadge.svelte';
 
 	const LOCALE_TO_BCP47: Record<string, string> = { en: 'en-GB', es: 'es-AR', it: 'it-IT' };
@@ -374,6 +375,7 @@
 							<li>
 								<PinCard
 									href={`/restaurant/${pin.restaurantDetail.id}`}
+									onVisible={() => trackVenueCardView(pin.restaurantDetail.id, 'profile')}
 									imageUrl={pin.restaurantDetail.imageUrl}
 									imageAlt={pin.restaurantDetail.name}
 									imageClass="h-20 w-16"

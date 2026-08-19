@@ -1,9 +1,11 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import { trackVisibility } from '$lib/utils/track-visibility';
 
 	let {
 		href,
 		onclick,
+		onVisible,
 		imageUrl,
 		imageAlt = '',
 		imageClass = 'h-28 w-24',
@@ -14,6 +16,12 @@
 		href?: string;
 		/** Renders a `<button>`. Ignored when `href` is set. */
 		onclick?: () => void;
+		/**
+		 * Se llama una vez cuando la tarjeta estuvo de verdad en pantalla.
+		 * La tarjeta no sabe qué se hace con eso: la pantalla decide si lo
+		 * cuenta y con qué etiqueta.
+		 */
+		onVisible?: () => void;
 		imageUrl?: string | null;
 		imageAlt?: string;
 		/** Size of the thumbnail. Each screen uses its own. */
@@ -46,19 +54,24 @@
 {/snippet}
 
 {#if href}
-	<a {href} class="flex overflow-hidden rounded-card bg-white shadow-card active:scale-[0.98]">
+	<a
+		{href}
+		use:trackVisibility={{ onVisible }}
+		class="flex overflow-hidden rounded-card bg-white shadow-card active:scale-[0.98]"
+	>
 		{@render card()}
 	</a>
 {:else if onclick}
 	<button
 		type="button"
 		{onclick}
+		use:trackVisibility={{ onVisible }}
 		class="flex w-full overflow-hidden rounded-card bg-white text-left shadow-card active:scale-[0.98]"
 	>
 		{@render card()}
 	</button>
 {:else}
-	<div class="flex overflow-hidden rounded-card bg-white shadow-card">
+	<div use:trackVisibility={{ onVisible }} class="flex overflow-hidden rounded-card bg-white shadow-card">
 		{@render card()}
 	</div>
 {/if}

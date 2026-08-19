@@ -4,6 +4,7 @@
 	import Avatar from '$lib/components/Avatar.svelte';
 	import DietaryBadges from '$lib/components/DietaryBadges.svelte';
 	import { t } from '$lib/i18n/index.svelte';
+	import { trackVenueDetailView } from '$lib/services/analytics.service';
 	import { pinsService } from '$lib/services/pins.service';
 	import { restaurantsService } from '$lib/services/restaurants.service';
 	import type { Pin, RestaurantDetail } from '$lib/types';
@@ -31,6 +32,8 @@
 			error = '';
 			try {
 				restaurant = await restaurantsService.get(id);
+				// Después del fetch y no antes: si la ficha no cargó, nadie la vio.
+				trackVenueDetailView(id);
 				// Look up the current user's pin for this restaurant (if any) so we
 				// can show an Edit / Add Pin button. The pins list endpoint
 				// already filters to the current user.
