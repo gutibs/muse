@@ -7,7 +7,8 @@ value proposition. A hard delete would silently empty out every restaurant
 page the person ever contributed to.
 
 What survives: Pin rows (status, rating, comment, visited_at) and the User row
-they hang off, scrubbed of every identifying field.
+they hang off, scrubbed of every identifying field, plus the analytics events,
+kept for their per-venue counts with the user_id stripped.
 What is destroyed: profile fields, avatar file, friendships in both
 directions, invitations sent by and addressed to the user, feed activity,
 shared list links, and consent records.
@@ -20,6 +21,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from accounts.models import ConsentRecord, EmailInvitation, Friendship
+from analytics.models import Event
 from feed.models import Activity
 from pins.models import SharedList
 
@@ -46,6 +48,10 @@ def anonymise_user(user) -> None:
 	if original_email:
 		EmailInvitation.objects.filter(email__iexact=original_email).delete()
 	Activity.objects.filter(actor=user).delete()
+	# Los eventos de producto no se borran: se desidentifican. El FK es
+	# SET_NULL, pero acá el User nunca se borra —se anonimiza—, así que ese
+	# SET_NULL no se dispararía solo.
+	Event.objects.filter(user=user).update(user=None)
 	Activity.objects.filter(target_user=user).delete()
 	SharedList.objects.filter(user=user).delete()
 	ConsentRecord.objects.filter(user=user).delete()

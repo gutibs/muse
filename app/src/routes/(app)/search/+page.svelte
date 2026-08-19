@@ -38,6 +38,7 @@
 	import { logSilent } from '$lib/utils/logger';
 	import RatingHearts from '$lib/components/RatingHearts.svelte';
 	import PinCard from '$lib/components/PinCard.svelte';
+	import { trackVenueCardView } from '$lib/services/analytics.service';
 
 	$effect(() => {
 		if (authStore.isAuthenticated && cuisines.length === 0) {
@@ -317,7 +318,12 @@
 				{/if}
 				{#each results as r (r.id)}
 					<li>
-						<PinCard onclick={() => viewRestaurant(r)} imageUrl={r.imageUrl} imageAlt={r.name}>
+						<PinCard
+							onclick={() => viewRestaurant(r)}
+							onVisible={() => trackVenueCardView(r.id, 'search')}
+							imageUrl={r.imageUrl}
+							imageAlt={r.name}
+						>
 							<p class="truncate text-sm font-semibold text-ink">{r.name}</p>
 							<p class="flex flex-wrap items-center gap-1 text-xs text-ink-muted">
 								{#if r.city}<span>{r.city}</span>{/if}

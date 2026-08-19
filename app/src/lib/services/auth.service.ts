@@ -19,6 +19,7 @@ export type ProfileUpdatePayload = Partial<
 		| 'instagram'
 		| 'phone'
 		| 'favouriteCuisine'
+		| 'analyticsOptOut'
 		| 'dietaryPreferences'
 	>
 >;

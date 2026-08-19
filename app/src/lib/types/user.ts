@@ -27,6 +27,9 @@ export interface Profile {
 	dietaryPreferences: number[];
 	/** Hydrated detail (read-only); render this in the UI. */
 	dietaryPreferencesDetail: DietaryPreference[];
+	/** Derecho de oposición (art. 21 GDPR): con esto en true no se registra
+	 * ningún evento de uso de esta cuenta, ni desde la app ni desde el servidor. */
+	analyticsOptOut: boolean;
 	stats: UserStats;
 	createdAt: string;
 }

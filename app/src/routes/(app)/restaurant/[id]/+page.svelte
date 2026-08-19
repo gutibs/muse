@@ -4,11 +4,16 @@
 	import Avatar from '$lib/components/Avatar.svelte';
 	import DietaryBadges from '$lib/components/DietaryBadges.svelte';
 	import { t } from '$lib/i18n/index.svelte';
+	import {
+		trackExternalActionClick,
+		trackVenueDetailView,
+	} from '$lib/services/analytics.service';
 	import { pinsService } from '$lib/services/pins.service';
 	import { restaurantsService } from '$lib/services/restaurants.service';
 	import type { Pin, RestaurantDetail } from '$lib/types';
 	import { timeAgo } from '$lib/utils/time';
 	import { logSilent } from '$lib/utils/logger';
+	import { directionsUrl, openExternal } from '$lib/utils/external';
 	import RatingHearts from '$lib/components/RatingHearts.svelte';
 	import HeartIcon from '$lib/components/HeartIcon.svelte';
 
@@ -23,6 +28,27 @@
 	// la foto que efectivamente servimos (el parser toma photos[0]).
 	let photoAuthor = $derived(restaurant?.photoAttribution?.[0] ?? null);
 
+	function goToDirections() {
+		if (!restaurant) return;
+		trackExternalActionClick(restaurant.id, 'directions', { surface: 'restaurant' });
+		openExternal(directionsUrl(restaurant.lat, restaurant.lng));
+	}
+
+	function goToReservation() {
+		if (!restaurant?.reservation) return;
+		trackExternalActionClick(restaurant.id, 'reservation', {
+			surface: 'restaurant',
+			provider: restaurant.reservation.provider,
+		});
+		openExternal(restaurant.reservation.url);
+	}
+
+	function goToWebsite() {
+		if (!restaurant?.website) return;
+		trackExternalActionClick(restaurant.id, 'website', { surface: 'restaurant' });
+		openExternal(restaurant.website);
+	}
+
 	$effect(() => {
 		const id = restaurantId;
 		if (!id) return;
@@ -31,6 +57,8 @@
 			error = '';
 			try {
 				restaurant = await restaurantsService.get(id);
+				// Después del fetch y no antes: si la ficha no cargó, nadie la vio.
+				trackVenueDetailView(id);
 				// Look up the current user's pin for this restaurant (if any) so we
 				// can show an Edit / Add Pin button. The pins list endpoint
 				// already filters to the current user.
@@ -141,14 +169,40 @@
 				{/if}
 			</div>
 
+			<!-- Salidas externas. Son los únicos botones que sacan al usuario de
+			     la app, y los tres reportan el mismo evento con distinto destino. -->
+			<div class="flex gap-2 px-5 pb-4">
+				<button
+					type="button"
+					onclick={goToDirections}
+					class="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-card bg-jade px-3 py-3 text-sm font-semibold text-white shadow-card active:scale-[0.98]"
+				>
+					<svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+						<polygon points="3 11 22 2 13 21 11 13 3 11"/>
+					</svg>
+					{t('restaurant.directions')}
+				</button>
+				{#if restaurant.reservation}
+					<button
+						type="button"
+						onclick={goToReservation}
+						class="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-card bg-white px-3 py-3 text-sm font-semibold text-ink shadow-card active:scale-[0.98]"
+					>
+						<svg class="h-4 w-4 shrink-0 text-jade" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+							<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+						</svg>
+						{t('restaurant.book')}
+					</button>
+				{/if}
+			</div>
+
 			<!-- Info section: website + address -->
 			<div class="space-y-3 px-5 pb-4">
 				{#if restaurant.website}
-					<a
-						href={restaurant.website}
-						target="_blank"
-						rel="noopener"
-						class="flex items-center gap-3 rounded-card bg-white p-4 shadow-card active:scale-[0.98]"
+					<button
+						type="button"
+						onclick={goToWebsite}
+						class="flex w-full items-center gap-3 rounded-card bg-white p-4 text-left shadow-card active:scale-[0.98]"
 					>
 						<svg class="h-5 w-5 shrink-0 text-jade" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
 							<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
@@ -159,7 +213,7 @@
 						<svg class="h-4 w-4 shrink-0 text-ink-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 							<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
 						</svg>
-					</a>
+					</button>
 				{/if}
 				{#if restaurant.address}
 					<a

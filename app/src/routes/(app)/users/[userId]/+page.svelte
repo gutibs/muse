@@ -9,6 +9,7 @@
 	import RatingHearts from '$lib/components/RatingHearts.svelte';
 	import PinCard from '$lib/components/PinCard.svelte';
 	import PinStatusBadge from '$lib/components/PinStatusBadge.svelte';
+	import { trackVenueCardView } from '$lib/services/analytics.service';
 
 	let userId = $derived(Number(page.params.userId));
 
@@ -164,6 +165,7 @@
 							{#each filteredPins as pin (pin.id)}
 								<li>
 									<PinCard
+										onVisible={() => trackVenueCardView(pin.restaurantDetail.id, 'friend')}
 										imageUrl={pin.restaurantDetail.imageUrl}
 										imageAlt={pin.restaurantDetail.name}
 									>

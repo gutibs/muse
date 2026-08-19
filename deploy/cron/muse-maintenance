@@ -24,3 +24,13 @@ PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 # Feed: 90 días de actividad. El comando rechaza un --days menor a 1, así que
 # una variable vacía acá no puede vaciar la tabla.
 45 4 * * 0 root cd /home/ubuntu/muse && /usr/bin/docker-compose -f docker-compose.aws.yml exec -T backend python manage.py prune_activity 2>&1 | logger -t muse-prune-activity
+
+# Analytics: consolida el mes en curso y el anterior en el agregado por venue,
+# que es lo único que sobrevive a la retención. Diario y no semanal porque el
+# dashboard lee de acá para todo lo que no sea el mes corriente.
+30 3 * * * root cd /home/ubuntu/muse && /usr/bin/docker-compose -f docker-compose.aws.yml exec -T backend python manage.py rollup_analytics 2>&1 | logger -t muse-rollup-analytics
+
+# Y borra los eventos crudos que pasaron los 14 meses declarados en la
+# política de privacidad. Consolida antes de borrar; corre después del rollup
+# a propósito.
+0 5 * * 0 root cd /home/ubuntu/muse && /usr/bin/docker-compose -f docker-compose.aws.yml exec -T backend python manage.py prune_analytics 2>&1 | logger -t muse-prune-analytics

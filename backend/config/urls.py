@@ -10,6 +10,7 @@ urlpatterns = [
 	path("api/v1/", include("pins.urls")),
 	path("api/v1/", include("feed.urls")),
 	path("api/v1/", include("places.urls")),
+	path("api/v1/", include("analytics.urls")),
 ]
 
 if settings.DEBUG:

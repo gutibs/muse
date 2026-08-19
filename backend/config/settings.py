@@ -47,6 +47,7 @@ INSTALLED_APPS = [
 	"pins",
 	"feed",
 	"places",
+	"analytics",
 ]
 
 MIDDLEWARE = [
@@ -208,6 +209,12 @@ REST_FRAMEWORK = {
 		# chat gets opened by everyone at once. Higher than `anon` on
 		# purpose, and per-IP because there is no user to key on.
 		"shared_list_public": "300/hour",
+		# Ingesta de eventos: el cliente deduplica y manda en tandas de hasta
+		# 50, así que un usuario muy activo hace unas pocas requests por
+		# sesión. Holgado a propósito — perder eventos por throttle sesga el
+		# número que se le muestra a un tercero, y no hay nada caro detrás
+		# de este endpoint.
+		"analytics": "600/hour",
 	},
 }
 

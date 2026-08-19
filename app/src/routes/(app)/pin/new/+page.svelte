@@ -40,6 +40,7 @@
 	let newLat = $state<number | null>(null);
 	let newLng = $state<number | null>(null);
 	let newPriceLevel = $state(0);
+	let newReservationUrl = $state('');
 	let newQualityLevel = $state(0);
 	let newTagIds = $state<number[]>([]);
 
@@ -173,6 +174,7 @@
 					cuisines: newCuisineIds.length > 0 ? newCuisineIds : undefined,
 					tagIds: newTagIds.length > 0 ? newTagIds : undefined,
 					priceLevel: newPriceLevel || undefined,
+					reservationUrl: newReservationUrl.trim() || undefined,
 					qualityLevel: newQualityLevel || undefined,
 				});
 				restaurantId = restaurant.id;
@@ -370,6 +372,21 @@
 						class="w-full rounded-input border border-cream-dark bg-white px-4 py-3 text-base text-ink outline-none focus:border-jade"
 						placeholder={t('pin.city')}
 					/>
+				</div>
+
+				<div>
+					<label for="reservation-url" class="mb-1 block text-sm font-medium text-ink-light">
+						{t('restaurant.reservationUrl')}
+					</label>
+					<input
+						id="reservation-url"
+						type="url"
+						inputmode="url"
+						bind:value={newReservationUrl}
+						class="w-full rounded-input border border-cream-dark bg-white px-4 py-3 text-base text-ink outline-none focus:border-jade"
+						placeholder="https://"
+					/>
+					<p class="mt-1 text-xs text-ink-muted">{t('restaurant.reservationUrlHelp')}</p>
 				</div>
 
 				<!-- Cuisines (multi-select) -->
