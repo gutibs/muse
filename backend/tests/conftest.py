@@ -37,5 +37,7 @@ def _disable_throttles(settings):
 			"places": "10000/hour",
 			"invite": "10000/hour",
 			"reverse_geocode": "10000/hour",
+			"shared_list_public": "10000/hour",
+			"analytics": "10000/hour",
 		},
 	}
