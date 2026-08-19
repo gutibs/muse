@@ -85,10 +85,19 @@ jobs:
               sleep 2
             done
 
-            # --fake-initial recovers from partial-schema state left by previous failed
-            # deploys: tables that already exist get marked as migrated; missing ones
-            # are created normally. Safe on clean DBs too.
-            sudo docker-compose -f docker-compose.aws.yml exec -T backend python manage.py migrate --fake-initial
+            # NO migrar acá: el CMD de backend/Dockerfile.prod ya corre
+            # `migrate --fake-initial && gunicorn`, así que este paso lanzaba un
+            # segundo migrate en paralelo con el del contenedor. Mientras las
+            # migraciones eran instantáneas no se notaba; la primera que creó
+            # tablas nuevas (places.0001_initial) tardó lo suficiente para que
+            # los dos procesos se pisaran y el deploy muriera con
+            # `duplicate key ... places_placedetailscache_id_seq already exists`
+            # (2026-08-19), con la base ya migrada por el otro proceso.
+            #
+            # El migrate del contenedor es el que manda: si falla, gunicorn no
+            # arranca, el health check de abajo no ve el 401 y el deploy queda
+            # en rojo igual. Además cubre los reinicios del contenedor, que
+            # este paso no veía.
 
             # Post-deploy health check.
             # `up -d` returns success the moment containers are created, even if

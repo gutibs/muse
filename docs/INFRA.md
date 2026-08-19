@@ -63,7 +63,16 @@ Push a `main` → GitHub Actions → SSH al EC2.
 
 **El orden importa: `build` primero, con los contenedores todavía arriba; recién después `down` + `up -d`.** Al revés —que era como estaba— cualquier fallo del build dejaba producción caída. `set -e` corta antes del `down`, así que un build roto es un deploy en rojo con el sitio intacto.
 
-Tres detalles que ya mordieron:
+Cuatro detalles que ya mordieron:
+
+- **Las migraciones las corre el contenedor, no el deploy.** El `CMD` de
+  `backend/Dockerfile.prod` es `migrate --fake-initial && gunicorn`. El workflow
+  tenía además su propio paso de `migrate` después del `up -d`: dos procesos
+  migrando en paralelo. Con migraciones instantáneas no se notaba; la primera que
+  creó tablas (`places.0001_initial`, el 2026-08-19) tardó lo suficiente para que
+  se pisaran y el deploy murió con `duplicate key ... _id_seq already exists`
+  **con la base ya migrada correctamente por el otro proceso**. Si una migración
+  falla de verdad, gunicorn no arranca y el health check lo detecta igual.
 
 - **Bug de docker-compose 1.29.2**: hacer `down && up`, nunca sólo `up`.
 - **`command_timeout: 30m`** en la acción SSH. Un build sin cache no entra en los 10 minutos por defecto y la sesión se corta a mitad de camino.
