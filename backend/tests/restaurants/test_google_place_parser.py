@@ -67,8 +67,25 @@ def test_photo_url_uses_settings_not_request_host(settings):
 	"""The old builders used request.build_absolute_uri, so the host of
 	whichever request created the row got baked into image_url in the DB."""
 	settings.API_PUBLIC_URL = "https://lovemuse.app"
-	url = parser.photo_url_for("places/ChIJabc/photos/xyz")
-	assert url == "https://lovemuse.app/api/v1/places/photo/?ref=places/ChIJabc/photos/xyz"
+	url = parser.photo_url_for("ChIJabc")
+	assert url == "https://lovemuse.app/api/v1/places/photo/?place=ChIJabc"
+
+
+def test_photo_url_carries_the_place_id_not_the_photo_ref():
+	"""Los photo refs caducan; el place_id no.
+
+	Las URLs que llevaban el ref quedaron muertas en producción cuando los refs
+	vencieron (`400 INVALID_ARGUMENT`), y `image_url` está persistido: no había
+	forma de recuperarlas sin reescribir la columna.
+	"""
+	payload = {
+		"id": "ChIJabc",
+		"photos": [{"name": "places/ChIJabc/photos/xyz-que-va-a-vencer"}],
+	}
+	image_url = parser.parse_place(payload)["image_url"]
+
+	assert image_url.endswith("?place=ChIJabc")
+	assert "photos/" not in image_url
 
 
 def test_photo_url_tolerates_trailing_slash_in_setting(settings):

@@ -354,23 +354,25 @@ class ReverseGeocodeView(APIView):
 def place_photo(request):
 	"""Redirect to our own copy of a place photo, fetching it once if needed.
 
-	Public: <img src> tags can't send Authorization headers. The redirect now
-	points at our media volume instead of Google, so a photo costs one Places
-	call the first time and none after that — a list of 20 restaurants used to
-	be 20 billed calls on every scroll. Still throttled: a miss does go out.
+	Público: los `<img src>` no mandan Authorization. El redirect apunta a
+	nuestro volumen de media, así que una foto cuesta una llamada a Places la
+	primera vez y ninguna después — una lista de 20 restaurantes eran 20
+	llamadas facturadas en cada scroll.
 
 	No comprueba `is_configured()` antes de mirar el caché a propósito: una foto
-	que ya está en disco no necesita a Google para servirse, y el chequeo por
-	delante hacía que una key ausente, rotada o sin cuota dejara la app entera
-	sin fotos. Si hay que salir a buscarla, el cliente devuelve el mismo 503.
+	que ya está en disco no necesita a Google, y el chequeo por delante hacía
+	que una key ausente, rotada o sin cuota dejara la app entera sin fotos.
 
-	Query: ref (photo resource name)
+	Query: `place` (place_id). Se acepta `ref` por compatibilidad con clientes
+	que todavía tengan URLs viejas: ese ref puede estar vencido del lado de
+	Google, pero el place_id que lleva adentro sirve igual.
 	"""
-	ref = request.query_params.get("ref", "")
+	place_id = (request.query_params.get("place") or "").strip()
+	if not place_id:
+		place_id = place_photos.place_id_from_ref(request.query_params.get("ref", ""))
+
 	try:
-		# The service validates the ref shape and that the resolved URL points
-		# at Google-owned storage before anything is downloaded or stored.
-		photo = place_photos.get_or_fetch(ref, attributions=place_photos.attributions_for_ref(ref))
+		photo = place_photos.get_or_fetch(place_id)
 	except google_places.GooglePlacesError as exc:
 		return Response({"detail": exc.message}, status=exc.status_code)
 

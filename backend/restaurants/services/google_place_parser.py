@@ -18,6 +18,8 @@ from __future__ import annotations
 
 from django.conf import settings
 
+from places.services.google_places import normalize_place_id
+
 # Every field any caller needs. One mask: a caller that needs a new field
 # adds it here, and both the details endpoint and the importer see it.
 FIELD_MASK = ",".join(
@@ -48,16 +50,21 @@ _DISTRICT_TYPES = (
 )
 
 
-def photo_url_for(photo_ref: str) -> str:
-	"""Absolute URL to our own photo proxy for a Google photo resource name.
+def photo_url_for(place_id: str) -> str:
+	"""Absolute URL to our own photo proxy for a place.
 
-	Absolute because it gets persisted into `Restaurant.image_url`, a
-	URLField. Built from settings rather than `request.build_absolute_uri`
-	so the stored value does not depend on which host the request that
-	created the row happened to arrive on.
+	Se arma con el **place_id** y no con el nombre de recurso de la foto: ese
+	ref caduca, y esta URL se persiste en `Restaurant.image_url`. Las URLs que
+	llevaban el ref quedaron muertas en producción cuando los refs vencieron
+	(`400 INVALID_ARGUMENT`), y no había forma de recuperarlas sin reescribir
+	la columna.
+
+	Absoluta porque se persiste. Construida desde settings y no con
+	`request.build_absolute_uri` para que el valor guardado no dependa de por
+	qué host entró el request que creó la fila.
 	"""
 	base = getattr(settings, "API_PUBLIC_URL", "http://localhost:8001").rstrip("/")
-	return f"{base}/api/v1/places/photo/?ref={photo_ref}"
+	return f"{base}/api/v1/places/photo/?place={place_id}"
 
 
 def _components_by_type(payload: dict) -> dict[str, str]:
@@ -105,8 +112,11 @@ def parse_place(payload: dict) -> dict:
 	if photos:
 		photo_ref = photos[0].get("name", "") or ""
 
+	# El id llega como 'ChIJ...' o como 'places/ChIJ...' según el endpoint.
+	place_id = normalize_place_id(payload.get("id") or "")
+
 	return {
-		"place_id": payload.get("id") or "",
+		"place_id": place_id,
 		"name": ((payload.get("displayName") or {}).get("text", "") or "")[:200],
 		"address": (payload.get("formattedAddress", "") or "")[:300],
 		"city": _first_of(components, _CITY_TYPES)[:100],
@@ -117,7 +127,7 @@ def parse_place(payload: dict) -> dict:
 		"website": (payload.get("websiteUri", "") or "")[:500],
 		"phone": (payload.get("internationalPhoneNumber", "") or "")[:30],
 		"photo_ref": photo_ref,
-		"image_url": (photo_url_for(photo_ref) if photo_ref else "")[:2000],
+		"image_url": (photo_url_for(place_id) if (photo_ref and place_id) else "")[:2000],
 		"opening_hours": hours.get("weekdayDescriptions", []) or [],
 		"type": ((payload.get("primaryTypeDisplayName") or {}).get("text", "") or ""),
 	}

@@ -42,12 +42,19 @@ class PlaceDetailsCache(models.Model):
 class PlacePhoto(models.Model):
 	"""Los bytes de una foto de Places, guardados en nuestro propio storage.
 
-	`(photo_ref, width)` es la clave: el ancho define el archivo, así que pedir
-	otro tamaño es otra foto y no debe pisar la existente.
+	La clave es `(place_id, width)` y **no** el nombre de recurso de la foto:
+	los photo refs de Google caducan. Los que estaban guardados desde el import
+	devolvían `400 INVALID_ARGUMENT: The photo resource in the request is
+	invalid` (verificado contra la API el 2026-08-19), así que una clave basada
+	en el ref apunta a algo que deja de existir. El place_id no caduca.
+
+	`photo_ref` queda como registro de con qué ref se bajaron estos bytes —sirve
+	para diagnosticar—, nunca como clave ni como algo a reusar.
 	"""
 
-	photo_ref = models.CharField(max_length=1000)
+	place_id = models.CharField(max_length=255)
 	width = models.PositiveIntegerField()
+	photo_ref = models.CharField(max_length=1000, blank=True)
 	file = models.ImageField(upload_to="place-photos/")
 	# authorAttributions del payload de details. Los Google Maps Platform Terms
 	# exigen mostrar el autor de la foto junto con la foto.
@@ -57,11 +64,11 @@ class PlacePhoto(models.Model):
 	class Meta:
 		constraints = [
 			models.UniqueConstraint(
-				fields=["photo_ref", "width"],
+				fields=["place_id", "width"],
 				name="uniq_place_photo_key",
 			)
 		]
 		indexes = [models.Index(fields=["fetched_at"], name="place_photo_fetched_idx")]
 
 	def __str__(self):
-		return f"{self.photo_ref} @{self.width}px"
+		return f"{self.place_id} @{self.width}px"

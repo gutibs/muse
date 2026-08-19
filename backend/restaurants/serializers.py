@@ -3,7 +3,7 @@ from rest_framework import serializers
 
 from accounts.serializers import UserAnonymousSafeSerializer
 from accounts.services.friendships import friend_ids
-from places.services.place_photos import attributions_for_ref
+from places.services.place_photos import attributions_for_place
 from restaurants.models import Cuisine, MenuItem, Restaurant, Tag
 
 
@@ -171,13 +171,14 @@ class RestaurantDetailSerializer(RestaurantSerializer):
 	def get_photo_attribution(self, obj):
 		"""Autor de la foto, exigido por los términos de Google.
 
-		Sale del payload de details ya cacheado en vez de una segunda copia en
-		esta tabla. Sólo va en el detalle: en el listado sería un lookup por
-		fila, y la decisión fue mostrar el crédito con la foto grande.
+		Se resuelve por `google_place_id` desde el details ya cacheado, en vez
+		de guardar una segunda copia del dato en esta tabla. Sólo va en el
+		detalle: en el listado sería un lookup por fila, y la decisión fue
+		mostrar el crédito con la foto grande.
 		"""
-		if not obj.photo_ref:
+		if not obj.google_place_id or not obj.image_url:
 			return []
-		return attributions_for_ref(obj.photo_ref)
+		return attributions_for_place(obj.google_place_id)
 
 	def _friend_ids(self):
 		"""Cached per serializer instance: get_reviews and get_friend_stats

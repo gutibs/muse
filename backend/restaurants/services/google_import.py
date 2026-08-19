@@ -76,7 +76,6 @@ def restaurant_kwargs(payload: dict) -> dict:
 		"website": parsed["website"],
 		"phone": parsed["phone"],
 		"image_url": parsed["image_url"],
-		"photo_ref": parsed["photo_ref"],
 		"opening_hours": parsed["opening_hours"],
 	}
 

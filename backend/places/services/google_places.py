@@ -76,7 +76,7 @@ def normalize_place_id(place_id: str) -> str:
 	return place_id
 
 
-def _validated_place_id(place_id: str) -> str:
+def validated_place_id(place_id: str) -> str:
 	bare = normalize_place_id((place_id or "").strip())
 	if not bare or not _PLACE_ID_RE.match(bare):
 		raise GooglePlacesError("Invalid place id.", status_code=400)
@@ -110,7 +110,7 @@ def autocomplete(body: dict) -> list[dict]:
 def details(place_id: str, field_mask: str) -> dict:
 	"""GET a single place with the given field mask."""
 	key = _api_key()
-	bare_id = _validated_place_id(place_id)
+	bare_id = validated_place_id(place_id)
 	try:
 		r = requests.get(
 			f"{PLACES_API_BASE}/places/{bare_id}",

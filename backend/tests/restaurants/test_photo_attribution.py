@@ -11,6 +11,7 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from places.models import PlaceDetailsCache
+from restaurants.services.google_place_parser import FIELD_MASK
 from tests.factories import RestaurantFactory, UserFactory
 
 PLACE_ID = "ChIJN1t_tDeuEmsRUsoyG83frY4"
@@ -26,10 +27,13 @@ def _client():
 
 @pytest.mark.django_db
 def test_detail_exposes_the_photo_attribution():
-	restaurant = RestaurantFactory(photo_ref=REF, google_place_id=PLACE_ID)
+	restaurant = RestaurantFactory(
+		google_place_id=PLACE_ID,
+		image_url=f"https://lovemuse.app/api/v1/places/photo/?place={PLACE_ID}",
+	)
 	PlaceDetailsCache.objects.create(
 		place_id=PLACE_ID,
-		field_mask="id,photos",
+		field_mask=FIELD_MASK,
 		payload={"photos": [{"name": REF, "authorAttributions": ATTRIBUTIONS}]},
 		fetched_at=timezone.now(),
 	)
@@ -42,7 +46,7 @@ def test_detail_exposes_the_photo_attribution():
 
 @pytest.mark.django_db
 def test_restaurant_without_photo_has_an_empty_attribution():
-	restaurant = RestaurantFactory(photo_ref="", image_url="")
+	restaurant = RestaurantFactory(google_place_id=None, image_url="")
 
 	res = _client().get(f"/api/v1/restaurants/{restaurant.id}/")
 
@@ -54,7 +58,10 @@ def test_restaurant_without_photo_has_an_empty_attribution():
 def test_list_does_not_carry_the_attribution():
 	# Un lookup por fila en un listado paginado es un N+1; la decisión de
 	# producto fue mostrar el crédito sólo en el detalle.
-	RestaurantFactory(photo_ref=REF)
+	RestaurantFactory(
+		google_place_id=PLACE_ID,
+		image_url=f"https://lovemuse.app/api/v1/places/photo/?place={PLACE_ID}",
+	)
 
 	res = _client().get("/api/v1/restaurants/")
 
