@@ -1,12 +1,14 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import PersonaChips from '$lib/components/PersonaChips.svelte';
+	import TagChips from '$lib/components/TagChips.svelte';
 	import RatingStars from '$lib/components/RatingStars.svelte';
 	import StatusToggle from '$lib/components/StatusToggle.svelte';
 	import { t } from '$lib/i18n/index.svelte';
 	import { pinsService } from '$lib/services/pins.service';
-	import type { Persona, Pin, PinStatus } from '$lib/types';
+	import { restaurantsService } from '$lib/services/restaurants.service';
+	import type { Pin, PinStatus, Tag } from '$lib/types';
+	import { AXES } from '$lib/utils/taxonomy';
 	import { extractFirstDrfError } from '$lib/utils/api-error';
 	import { logSilent } from '$lib/utils/logger';
 
@@ -19,9 +21,9 @@
 	let status = $state<PinStatus>('visited');
 	let rating = $state(0);
 	let comment = $state('');
-	let selectedPersonas = $state<number[]>([]);
+	let selectedTags = $state<number[]>([]);
 
-	let personas = $state<Persona[]>([]);
+	let tags = $state<Tag[]>([]);
 
 	let saving = $state(false);
 	let deleting = $state(false);
@@ -31,7 +33,7 @@
 	$effect(() => {
 		if (!pinId) return;
 		loadPin();
-		loadPersonas();
+		loadTags();
 	});
 
 	async function loadPin() {
@@ -43,7 +45,7 @@
 			status = p.status;
 			rating = p.rating ?? 0;
 			comment = p.comment ?? '';
-			selectedPersonas = (p.personasDetail ?? []).map((per) => per.id);
+			selectedTags = (p.tagsDetail ?? []).map((tag) => tag.id);
 		} catch (err) {
 			loadError = t('pin.cantLoad');
 			logSilent('pin:edit:load', err);
@@ -52,12 +54,15 @@
 		}
 	}
 
-	async function loadPersonas() {
+	async function loadTags() {
 		try {
-			personas = await pinsService.personas();
+			// Los tres ejes en una sola tanda: pedir uno por eje serían tres
+			// requests para dos docenas de filas.
+			const all = await restaurantsService.tags();
+			tags = all.filter((tag) => (AXES as readonly string[]).includes(tag.kind));
 		} catch (err) {
-			personas = [];
-			logSilent('pin:edit:personas', err);
+			tags = [];
+			logSilent('pin:edit:tags', err);
 		}
 	}
 
@@ -70,7 +75,7 @@
 				status,
 				rating: status === 'visited' ? rating : undefined,
 				comment: comment || '',
-				personaIds: selectedPersonas,
+				tagIds: selectedTags,
 			});
 			goto(`/restaurant/${pin.restaurant}`);
 		} catch (err) {
@@ -154,11 +159,8 @@
 					></textarea>
 				</div>
 
-				{#if personas.length > 0}
-					<div>
-						<span class="mb-2 block text-sm font-medium text-ink-light">{t('pin.occasion')}</span>
-						<PersonaChips {personas} bind:selected={selectedPersonas} />
-					</div>
+				{#if tags.length > 0}
+					<TagChips {tags} grouped bind:selected={selectedTags} />
 				{/if}
 
 				<button

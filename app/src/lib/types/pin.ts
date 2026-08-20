@@ -1,14 +1,6 @@
-import type { Restaurant } from './restaurant';
+import type { Restaurant, Tag } from './restaurant';
 
 export type PinStatus = 'visited' | 'to_visit';
-
-export interface Persona {
-	id: number;
-	name: string;
-	slug: string;
-	icon: string;
-	color: string;
-}
 
 export interface Pin {
 	id: number;
@@ -18,7 +10,7 @@ export interface Pin {
 	rating: number | null;
 	comment: string;
 	visitedAt: string | null;
-	personasDetail: Persona[];
+	tagsDetail: Tag[];
 	createdAt: string;
 	updatedAt: string;
 }
@@ -29,7 +21,7 @@ export interface PinCreate {
 	rating?: number;
 	comment?: string;
 	visitedAt?: string;
-	personaIds?: number[];
+	tagIds?: number[];
 }
 
 export type SharedListFilter = 'all' | 'visited' | 'to_visit';
@@ -64,7 +56,7 @@ export interface PublicRestaurant {
 
 export interface PublicPin {
 	restaurantDetail: PublicRestaurant;
-	personasDetail: Omit<Persona, 'id'>[];
+	tagsDetail: Omit<Tag, 'id'>[];
 	status: PinStatus;
 	rating: number | null;
 	comment: string;

@@ -3,7 +3,7 @@
 	import { page } from '$app/state';
 	import LevelSelector from '$lib/components/LevelSelector.svelte';
 	import LocationPicker from '$lib/components/LocationPicker.svelte';
-	import PersonaChips from '$lib/components/PersonaChips.svelte';
+	import TagChips from '$lib/components/TagChips.svelte';
 	import RatingStars from '$lib/components/RatingStars.svelte';
 	import StatusToggle from '$lib/components/StatusToggle.svelte';
 	import TagCheckboxes from '$lib/components/TagCheckboxes.svelte';
@@ -12,7 +12,8 @@
 	import { pinsService } from '$lib/services/pins.service';
 	import { placesService, type PlaceSuggestion } from '$lib/services/places.service';
 	import { restaurantsService } from '$lib/services/restaurants.service';
-	import type { Cuisine, Persona, PinStatus, Restaurant, Tag } from '$lib/types';
+	import type { Cuisine, PinStatus, Restaurant, Tag } from '$lib/types';
+	import { AXES } from '$lib/utils/taxonomy';
 	import { ApiError } from '$lib/types';
 	import { extractFirstDrfError } from '$lib/utils/api-error';
 	import { logSilent } from '$lib/utils/logger';
@@ -48,18 +49,19 @@
 	let status = $state<PinStatus>('visited');
 	let rating = $state(0);
 	let comment = $state('');
-	let selectedPersonas = $state<number[]>([]);
+	let selectedTags = $state<number[]>([]);
 
 	// Reference data
 	let cuisines = $state<Cuisine[]>([]);
-	let personas = $state<Persona[]>([]);
 	let tags = $state<Tag[]>([]);
+	// Un solo fetch del catálogo, repartido según para qué sirve cada eje.
+	let axisTags = $derived(tags.filter((tag) => (AXES as readonly string[]).includes(tag.kind)));
+	let dietaryTags = $derived(tags.filter((tag) => tag.kind === 'dietary'));
 
 	// Load reference data
 	$effect(() => {
 		restaurantsService.cuisines().then((c) => (cuisines = c));
-		restaurantsService.tags().then((t) => (tags = t));
-		pinsService.personas().then((p) => (personas = p));
+		restaurantsService.tags().then((all) => (tags = all));
 	});
 
 	// If we got here from `/restaurant/<id>` → "Add to my pins", the restaurant
@@ -192,7 +194,7 @@
 				status,
 				rating: status === 'visited' ? rating : undefined,
 				comment: comment || undefined,
-				personaIds: selectedPersonas.length > 0 ? selectedPersonas : undefined,
+				tagIds: selectedTags.length > 0 ? selectedTags : undefined,
 			});
 
 			goto('/map');
@@ -403,11 +405,14 @@
 				<!-- Price ($) -->
 				<LevelSelector label={t('pin.price')} variant="price" bind:value={newPriceLevel} />
 
-				<!-- Tags -->
-				{#if tags.length > 0}
+				<!-- Atributos del local. El vibe NO va acá: es la opinión de quien
+				     guarda el lugar, y se pregunta en el paso 2 junto con la
+				     ocasión. Antes esta lista traía la tabla entera de tags y
+				     ofrecía "vegetarian" como si fuera un ambiente. -->
+				{#if dietaryTags.length > 0}
 					<div>
-						<span class="mb-2 block text-sm font-medium text-ink-light">{t('pin.vibe')}</span>
-						<TagCheckboxes {tags} bind:selected={newTagIds} />
+						<span class="mb-2 block text-sm font-medium text-ink-light">{t('pin.dietaryOptions')}</span>
+						<TagCheckboxes tags={dietaryTags} bind:selected={newTagIds} />
 					</div>
 				{/if}
 
@@ -461,12 +466,9 @@
 					></textarea>
 				</div>
 
-				<!-- Personas -->
-				{#if personas.length > 0}
-					<div>
-						<span class="mb-2 block text-sm font-medium text-ink-light">{t('pin.occasion')}</span>
-						<PersonaChips {personas} bind:selected={selectedPersonas} />
-					</div>
+				<!-- Los tres ejes del pin: vibe, ocasión y características -->
+				{#if axisTags.length > 0}
+					<TagChips tags={axisTags} grouped bind:selected={selectedTags} />
 				{/if}
 
 				<!-- Submit -->

@@ -4,7 +4,10 @@ export interface Cuisine {
 	slug: string;
 }
 
-export type TagKind = 'dietary' | 'general' | 'highlight';
+/** `vibe`, `occasion` y `scene` son los tres ejes con los que alguien
+ * describe un lugar al guardarlo; los otros tres son atributos del
+ * restaurante en sí. */
+export type TagKind = 'dietary' | 'general' | 'highlight' | 'vibe' | 'occasion' | 'scene';
 
 export interface Tag {
 	id: number;

@@ -1,12 +1,12 @@
 import { api } from './api.service';
-import type { Persona, Pin, PinCreate, PaginatedResponse, SharedList, SharedListPublic } from '$lib/types';
+import type { Pin, PinCreate, PaginatedResponse, SharedList, SharedListPublic } from '$lib/types';
 
-type PinFilters = { status?: string; persona?: string; city?: string; page?: number };
+type PinFilters = { status?: string; tag?: string; city?: string; page?: number };
 
 function pinsQuery(params?: PinFilters): string {
 	const query = new URLSearchParams();
 	if (params?.status) query.set('status', params.status);
-	if (params?.persona) query.set('persona', params.persona);
+	if (params?.tag) query.set('tag', params.tag);
 	if (params?.city) query.set('city', params.city);
 	if (params?.page) query.set('page', String(params.page));
 	const qs = query.toString();
@@ -46,9 +46,7 @@ export const pinsService = {
 		return api.delete(`/pins/${id}/`);
 	},
 
-	personas(): Promise<Persona[]> {
-		return api.get('/personas/');
-	},
+
 
 	// Shared lists
 	sharedLists(): Promise<SharedList[]> {

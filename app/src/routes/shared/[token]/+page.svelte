@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { tagLabel } from '$lib/utils/taxonomy';
 	import { page } from '$app/state';
 	import Avatar from '$lib/components/Avatar.svelte';
 	import PinsMap, { type MapItem } from '$lib/components/PinsMap.svelte';
@@ -126,11 +127,11 @@
 									{#if pin.comment}
 										<p class="line-clamp-2 text-xs italic text-ink-light">"{pin.comment}"</p>
 									{/if}
-									{#if pin.personasDetail?.length}
+									{#if pin.tagsDetail?.length}
 										<div class="flex flex-wrap gap-1">
-											{#each pin.personasDetail as persona}
+											{#each pin.tagsDetail as tag}
 												<span class="rounded-full bg-cream-dark px-2 py-0.5 text-xs text-ink-muted">
-													{persona.icon} {persona.name}
+													{tagLabel(tag)}
 												</span>
 											{/each}
 										</div>

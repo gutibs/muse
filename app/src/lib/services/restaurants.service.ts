@@ -1,5 +1,5 @@
 import { api } from './api.service';
-import type { Cuisine, Tag, Restaurant, RestaurantCreate, RestaurantDetail, PaginatedResponse } from '$lib/types';
+import type { Cuisine, Tag, TagKind, Restaurant, RestaurantCreate, RestaurantDetail, PaginatedResponse } from '$lib/types';
 
 export const restaurantsService = {
 	list(params?: { search?: string; city?: string; cuisine?: string; page?: number }): Promise<PaginatedResponse<Restaurant>> {
@@ -41,7 +41,12 @@ export const restaurantsService = {
 		return api.get('/cuisines/');
 	},
 
-	tags(): Promise<Tag[]> {
-		return api.get('/tags/');
+	/**
+	 * Catálogo de etiquetas. Sin `kind` vienen todas, incluidas las dietary
+	 * y las de sistema — que es por lo que la pantalla de vibe llegó a
+	 * ofrecer `vegetarian` y `gluten-free`.
+	 */
+	tags(kind?: TagKind): Promise<Tag[]> {
+		return api.get(kind ? `/tags/?kind=${kind}` : '/tags/');
 	},
 };

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { tagLabel } from '$lib/utils/taxonomy';
 	import Avatar from '$lib/components/Avatar.svelte';
 	import { feedService } from '$lib/services/feed.service';
 	import { t } from '$lib/i18n/index.svelte';
@@ -124,12 +125,12 @@
 									<p class="mt-1 text-xs italic text-ink-muted">"{activity.pin.comment}"</p>
 								{/if}
 
-								<!-- Personas -->
-								{#if activity.pin?.personasDetail?.length}
+								<!-- Etiquetas del pin (vibe / ocasión / características) -->
+								{#if activity.pin?.tagsDetail?.length}
 									<div class="mt-1.5 flex flex-wrap gap-1">
-										{#each activity.pin.personasDetail as persona}
+										{#each activity.pin.tagsDetail as tag}
 											<span class="rounded-full bg-cream-dark px-2 py-0.5 text-xs text-ink-muted">
-												{persona.icon} {persona.name}
+												{tagLabel(tag)}
 											</span>
 										{/each}
 									</div>
