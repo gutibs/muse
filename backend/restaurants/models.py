@@ -21,6 +21,14 @@ class Tag(models.Model):
 		DIETARY = "dietary", "Dietary"
 		GENERAL = "general", "General"
 		HIGHLIGHT = "highlight", "Highlight"
+		# Los tres ejes con los que la gente describe un lugar. Viven en un
+		# solo modelo, distinguidos por kind, y no en tres: así un filtro
+		# puede cruzarlos y una etiqueta nueva no necesita una tabla nueva.
+		# `occasion` reemplaza al modelo Persona, que era esto mismo en otra
+		# app y sin forma de combinarse con el resto.
+		VIBE = "vibe", "Vibe"
+		OCCASION = "occasion", "Occasion"
+		SCENE = "scene", "Scene"
 
 	name = models.CharField(max_length=80, unique=True)
 	slug = models.SlugField(max_length=80, unique=True)

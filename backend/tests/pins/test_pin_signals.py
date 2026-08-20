@@ -1,7 +1,7 @@
 """Pin signals: Activity(UPDATED) only fires for meaningful changes.
 
 Pre-fix, any .save() emitted UPDATED — including saves that only touched
-personas (M2M, which doesn't even change Pin fields) and re-saves with no
+tags (M2M, which doesn't even change Pin fields) and re-saves with no
 diff. Result: feed got noisy with "X updated their pin" repeated for
 cosmetic edits. Fix in C-006: pre_save snapshots tracked fields, post_save
 compares.
@@ -10,7 +10,8 @@ compares.
 import pytest
 
 from feed.models import Activity
-from pins.models import Persona, Pin
+from pins.models import Pin
+from restaurants.models import Tag
 from tests.factories import PinFactory, RestaurantFactory, UserFactory
 
 
@@ -41,19 +42,19 @@ def test_pin_create_emits_pinned_or_rated():
 
 @pytest.mark.critical
 @pytest.mark.django_db
-def test_pin_update_personas_does_not_emit_activity():
+def test_pin_update_tags_does_not_emit_activity():
 	"""M2M edits + save() with no tracked-field change → no UPDATED row."""
 	user = UserFactory()
 	pin = PinFactory(user=user, restaurant=RestaurantFactory())
-	persona = Persona.objects.create(name="Date night", slug="date-night")
+	tag = Tag.objects.get(slug="date-night")
 
 	count_before = Activity.objects.count()
-	pin.personas.add(persona)
+	pin.tags.add(tag)
 	pin.save()
 
 	assert (
 		Activity.objects.count() == count_before
-	), "Adding a persona + re-saving must not produce an UPDATED feed row"
+	), "Adding a tag + re-saving must not produce an UPDATED feed row"
 
 
 @pytest.mark.critical

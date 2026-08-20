@@ -52,14 +52,17 @@ class PublicRestaurantSerializer(serializers.Serializer):
 		return obj.location.x if obj.location else None
 
 
-class PublicPersonaSerializer(serializers.Serializer):
-	"""Occasion chips. Display only — no id, which is a database key the
-	shared page has no use for."""
+class PublicTagSerializer(serializers.Serializer):
+	"""Tag chips on a shared list. Display only — no id, which is a database
+	key the shared page has no use for.
+
+	`kind` sí viaja: sin él la página pública no puede agrupar por eje, y es
+	un dato del catálogo, no del dueño de la lista.
+	"""
 
 	name = serializers.CharField(read_only=True)
 	slug = serializers.CharField(read_only=True)
-	icon = serializers.CharField(read_only=True)
-	color = serializers.CharField(read_only=True)
+	kind = serializers.CharField(read_only=True)
 
 
 class PublicPinSerializer(serializers.Serializer):
@@ -71,7 +74,7 @@ class PublicPinSerializer(serializers.Serializer):
 	"""
 
 	restaurant_detail = PublicRestaurantSerializer(source="restaurant", read_only=True)
-	personas_detail = PublicPersonaSerializer(source="personas", many=True, read_only=True)
+	tags_detail = PublicTagSerializer(source="tags", many=True, read_only=True)
 	status = serializers.CharField(read_only=True)
 	rating = serializers.IntegerField(read_only=True)
 	comment = serializers.CharField(read_only=True)
@@ -87,11 +90,7 @@ class SharedListPublicSerializer(serializers.ModelSerializer):
 		fields = ("id", "title", "owner", "pins", "created_at")
 
 	def get_pins(self, obj):
-		qs = (
-			Pin.objects.filter(user=obj.user)
-			.select_related("restaurant")
-			.prefetch_related("personas")
-		)
+		qs = Pin.objects.filter(user=obj.user).select_related("restaurant").prefetch_related("tags")
 		if obj.status_filter != "all":
 			qs = qs.filter(status=obj.status_filter)
 		return PublicPinSerializer(qs[:PUBLIC_PIN_LIMIT], many=True).data

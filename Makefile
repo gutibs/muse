@@ -66,7 +66,11 @@ apk-prod:
 
 # Carga datos iniciales (cuisines + personas + tags + restaurantes de ejemplo)
 seed:
-	docker compose -f docker-compose.dev.yml exec backend python manage.py loaddata /app/fixtures/cuisines.json /app/fixtures/personas.json /app/fixtures/tags.json /app/fixtures/seed_restaurants.json
+# Los tags ya no están acá: los siembra la migración restaurants/0020, que es
+# la única forma de que existan también en producción — este target nunca
+# corrió allá, y por eso prod tenía cuatro tags mientras el fixture declaraba
+# doce. personas.json se fue con el modelo Persona.
+	docker compose -f docker-compose.dev.yml exec backend python manage.py loaddata /app/fixtures/cuisines.json /app/fixtures/seed_restaurants.json
 
 # Tests Django
 test:

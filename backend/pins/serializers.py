@@ -1,25 +1,34 @@
 from rest_framework import serializers
 
-from pins.models import Persona, Pin, SharedList
+from pins.models import Pin, SharedList
+from restaurants.models import Tag
 from restaurants.serializers import RestaurantSerializer
 
 
-class PersonaSerializer(serializers.ModelSerializer):
+class PinTagSerializer(serializers.ModelSerializer):
+	"""Las etiquetas de un pin, con su eje.
+
+	`kind` viaja al cliente porque es lo que le permite agrupar en vibe,
+	occasion y scene sin mantener su propia tabla de qué etiqueta va en qué
+	grupo. `icon` y `color`, que traía el viejo modelo Persona, no existen en
+	Tag y no los usaba nadie.
+	"""
+
 	class Meta:
-		model = Persona
-		fields = ("id", "name", "slug", "icon", "color")
+		model = Tag
+		fields = ("id", "name", "slug", "kind")
 
 
 class PinSerializer(serializers.ModelSerializer):
 	restaurant_detail = RestaurantSerializer(source="restaurant", read_only=True)
-	persona_ids = serializers.PrimaryKeyRelatedField(
-		queryset=Persona.objects.all(),
+	tag_ids = serializers.PrimaryKeyRelatedField(
+		queryset=Tag.objects.all(),
 		many=True,
-		source="personas",
+		source="tags",
 		write_only=True,
 		required=False,
 	)
-	personas_detail = PersonaSerializer(source="personas", many=True, read_only=True)
+	tags_detail = PinTagSerializer(source="tags", many=True, read_only=True)
 
 	class Meta:
 		model = Pin
@@ -31,8 +40,8 @@ class PinSerializer(serializers.ModelSerializer):
 			"rating",
 			"comment",
 			"visited_at",
-			"persona_ids",
-			"personas_detail",
+			"tag_ids",
+			"tags_detail",
 			"created_at",
 			"updated_at",
 		)
@@ -53,20 +62,20 @@ class PinSerializer(serializers.ModelSerializer):
 		return data
 
 	def create(self, validated_data):
-		personas = validated_data.pop("personas", [])
+		tags = validated_data.pop("tags", [])
 		validated_data["user"] = self.context["request"].user
 		pin = Pin.objects.create(**validated_data)
-		if personas:
-			pin.personas.set(personas)
+		if tags:
+			pin.tags.set(tags)
 		return pin
 
 	def update(self, instance, validated_data):
-		personas = validated_data.pop("personas", None)
+		tags = validated_data.pop("tags", None)
 		for attr, value in validated_data.items():
 			setattr(instance, attr, value)
 		instance.save()
-		if personas is not None:
-			instance.personas.set(personas)
+		if tags is not None:
+			instance.tags.set(tags)
 		return instance
 
 

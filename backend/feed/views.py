@@ -18,5 +18,5 @@ class FeedView(generics.ListAPIView):
 				"target_user__profile",
 				"pin__restaurant",
 			)
-			.prefetch_related("pin__personas", "pin__restaurant__cuisines")
+			.prefetch_related("pin__tags", "pin__restaurant__cuisines")
 		)

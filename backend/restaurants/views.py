@@ -157,6 +157,19 @@ class CuisineViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
-	queryset = Tag.objects.all()
+	"""Catálogo de etiquetas, opcionalmente acotado a un eje con `?kind=`.
+
+	Sin el filtro, la pantalla de "vibe" ofrecía `vegetarian` y `gluten-free`,
+	que son dietary: el endpoint devolvía la tabla entera y el cliente no
+	tenía con qué separarlas.
+	"""
+
 	serializer_class = TagSerializer
 	pagination_class = None
+
+	def get_queryset(self):
+		qs = Tag.objects.all()
+		kind = self.request.query_params.get("kind")
+		if kind in Tag.Kind.values:
+			qs = qs.filter(kind=kind)
+		return qs

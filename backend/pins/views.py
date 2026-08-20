@@ -3,10 +3,9 @@ from rest_framework import generics, permissions, status, viewsets
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 
-from pins.models import Persona, Pin, SharedList
+from pins.models import Pin, SharedList
 from pins.selectors import visible_pins
 from pins.serializers import (
-	PersonaSerializer,
 	PinSerializer,
 	SharedListSerializer,
 )
@@ -25,7 +24,7 @@ class PinViewSet(viewsets.ModelViewSet):
 		return visible_pins(
 			self.request.user,
 			status=params.get("status"),
-			persona=params.get("persona"),
+			tag=params.get("tag"),
 			city=params.get("city"),
 		)
 
@@ -50,12 +49,6 @@ class PinViewSet(viewsets.ModelViewSet):
 			if existing:
 				payload["pinId"] = existing.id
 			return Response(payload, status=status.HTTP_409_CONFLICT)
-
-
-class PersonaViewSet(viewsets.ReadOnlyModelViewSet):
-	queryset = Persona.objects.all()
-	serializer_class = PersonaSerializer
-	pagination_class = None
 
 
 class SharedListViewSet(viewsets.ModelViewSet):

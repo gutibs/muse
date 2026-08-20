@@ -6,20 +6,6 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 
-class Persona(models.Model):
-	name = models.CharField(max_length=80, unique=True)
-	slug = models.SlugField(max_length=80, unique=True)
-	icon = models.CharField(max_length=50, blank=True)
-	color = models.CharField(max_length=7, blank=True)
-
-	class Meta:
-		db_table = "pins_persona"
-		ordering = ["name"]
-
-	def __str__(self):
-		return self.name
-
-
 class Pin(models.Model):
 	class Status(models.TextChoices):
 		VISITED = "visited", "Visited"
@@ -47,7 +33,11 @@ class Pin(models.Model):
 	)
 	comment = models.TextField(blank=True, max_length=2000)
 	visited_at = models.DateField(null=True, blank=True)
-	personas = models.ManyToManyField(Persona, blank=True, related_name="pins")
+	# Los tres ejes (vibe, occasion, scene) cuelgan del Pin y no del
+	# Restaurant: son la opinión de quien lo guardó. Con el vibe en el
+	# restaurante, dos personas con opiniones distintas se pisan, y sólo el
+	# creador podría editarlo.
+	tags = models.ManyToManyField("restaurants.Tag", blank=True, related_name="pins")
 	created_at = models.DateTimeField(auto_now_add=True)
 	updated_at = models.DateTimeField(auto_now=True)
 
