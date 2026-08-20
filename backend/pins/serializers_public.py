@@ -34,16 +34,12 @@ class PublicRestaurantSerializer(serializers.Serializer):
 	id = serializers.IntegerField(read_only=True)
 	name = serializers.CharField(read_only=True)
 	city = serializers.CharField(read_only=True)
-	district = serializers.SerializerMethodField()
+	district = serializers.CharField(read_only=True)
 	address = serializers.CharField(read_only=True)
 	image_url = serializers.CharField(read_only=True)
 	price_level = serializers.IntegerField(read_only=True)
 	lat = serializers.SerializerMethodField()
 	lng = serializers.SerializerMethodField()
-
-	def get_district(self, obj):
-		# Column arrives with the tag axes; tolerated as absent until then.
-		return getattr(obj, "district", "") or ""
 
 	def get_lat(self, obj):
 		return obj.location.y if obj.location else None

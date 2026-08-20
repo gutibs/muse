@@ -83,6 +83,7 @@ class RestaurantSerializer(serializers.ModelSerializer):
 			"longitude",
 			"address",
 			"city",
+			"district",
 			"country",
 			"image_url",
 			"cuisines",

@@ -82,6 +82,11 @@ class Restaurant(models.Model):
 	)
 	address = models.CharField(max_length=300, blank=True)
 	city = models.CharField(max_length=100, blank=True, db_index=True)
+	# El barrio, de `sublocality` en el payload de Google. Es como la gente
+	# ubica un lugar —Sheung Wan, Palermo— mucho más que la ciudad, que para
+	# todo el catálogo porteño dice lo mismo. Indexado porque el filtro por
+	# barrio es lo que viene.
+	district = models.CharField(max_length=120, blank=True, db_index=True)
 	country = models.CharField(max_length=100, blank=True)
 	cuisines = models.ManyToManyField(Cuisine, blank=True, related_name="restaurants")
 	tags = models.ManyToManyField(Tag, blank=True, related_name="restaurants")

@@ -72,6 +72,7 @@ def restaurant_kwargs(payload: dict) -> dict:
 		"location": Point(float(lng), float(lat), srid=4326),
 		"address": parsed["address"],
 		"city": parsed["city"],
+		"district": parsed["district"],
 		"country": parsed["country"],
 		"website": parsed["website"],
 		"phone": parsed["phone"],
