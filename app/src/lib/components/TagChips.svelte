@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n/index.svelte';
 	import type { Tag } from '$lib/types';
 	import { axisLabel, groupByAxis, tagLabel } from '$lib/utils/taxonomy';
 
@@ -7,6 +8,7 @@
 		selected = $bindable([]),
 		grouped = false,
 		readonly = false,
+		suggested = [],
 	}: {
 		tags: Tag[];
 		/** Ids seleccionados. Ignorado con `readonly`. */
@@ -15,12 +17,23 @@
 		grouped?: boolean;
 		/** Sólo muestra. Para pintar las etiquetas que ya tiene un pin. */
 		readonly?: boolean;
+		/**
+		 * Slugs que el sistema propuso, no que el usuario eligió. Se marcan
+		 * distinto para que se vea que es una sugerencia: si se confunde con
+		 * una elección propia, el usuario termina publicando algo que nunca
+		 * dijo.
+		 */
+		suggested?: string[];
 	} = $props();
 
 	let groups = $derived(grouped ? groupByAxis(tags) : [{ kind: null, tags }]);
 
 	function toggle(id: number) {
 		selected = selected.includes(id) ? selected.filter((s) => s !== id) : [...selected, id];
+	}
+
+	function isSuggested(tag: Tag): boolean {
+		return suggested.includes(tag.slug) && selected.includes(tag.id);
 	}
 
 	function countFor(group: Tag[]): number {
@@ -49,13 +62,20 @@
 						<button
 							type="button"
 							aria-pressed={selected.includes(tag.id)}
+							data-suggested={isSuggested(tag) ? 'true' : undefined}
 							onclick={() => toggle(tag.id)}
 							class="min-h-11 rounded-chip px-3.5 text-sm transition-colors active:scale-[0.98]
 								{selected.includes(tag.id)
 								? 'bg-jade text-white'
-								: 'bg-cream-dark text-ink-light'}"
+								: 'bg-cream-dark text-ink-light'}
+								{isSuggested(tag) ? 'border border-dashed border-white/70' : ''}"
 						>
 							{tagLabel(tag)}
+							{#if isSuggested(tag)}
+								<span class="ml-1 text-[10px] uppercase tracking-wide opacity-80">
+									{t('pin.suggested')}
+								</span>
+							{/if}
 						</button>
 					{/if}
 				{/each}

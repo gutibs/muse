@@ -34,8 +34,40 @@ FIELD_MASK = ",".join(
 		"regularOpeningHours",
 		"photos",
 		"primaryTypeDisplayName",
+		# Atributos de atmósfera. Suben la llamada al SKU "Enterprise +
+		# Atmosphere", que cuesta $25 por mil contra $20 del anterior — y
+		# cero en la práctica: el cap gratuito es de 1.000 llamadas por SKU
+		# por mes y la caché de 30 días deja el techo del catálogo en ~550.
+		# Verificado contra la doc oficial y una llamada real (2026-08-19).
+		"outdoorSeating",
+		"liveMusic",
+		"allowsDogs",
 	]
 )
+
+# Atributo del payload → slug del catálogo. Sólo van los que tienen una
+# etiqueta que ya existe: inferir una que no está en el catálogo dejaría un
+# chip marcado apuntando a la nada.
+_INFERRED_TAGS = {
+	"outdoorSeating": "outdoor-terrace",
+	"liveMusic": "live-music",
+	"allowsDogs": "pet-friendly",
+}
+
+
+def inferred_tag_slugs(payload: dict) -> set[str]:
+	"""Etiquetas que se desprenden de lo que Google afirma del local.
+
+	Sólo con `True` explícito. `False` es una respuesta —Google sabe que no
+	tiene terraza— y la ausencia del campo es otra —no sabe—: en los dos
+	casos no se marca nada, porque una sugerencia equivocada es peor que
+	ninguna.
+
+	Función pura: no toca la red ni la base, así se puede probar cualquier
+	combinación con un payload de mentira.
+	"""
+	return {slug for campo, slug in _INFERRED_TAGS.items() if payload.get(campo) is True}
+
 
 # Address component types we care about, most specific first. Google does
 # not guarantee the order of `addressComponents`, so precedence has to be

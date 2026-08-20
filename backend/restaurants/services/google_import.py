@@ -19,8 +19,12 @@ from django.db import IntegrityError
 
 from places.services import google_places
 from places.services.place_details import get_details
-from restaurants.models import Restaurant
-from restaurants.services.google_place_parser import FIELD_MASK, parse_place
+from restaurants.models import Restaurant, Tag
+from restaurants.services.google_place_parser import (
+	FIELD_MASK,
+	inferred_tag_slugs,
+	parse_place,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -81,6 +85,23 @@ def restaurant_kwargs(payload: dict) -> dict:
 	}
 
 
+def _mark_attributes(restaurant: Restaurant, payload: dict) -> None:
+	"""Marca en el restaurante lo que Google afirma del local.
+
+	Terraza, música en vivo y perros son hechos del lugar, no opiniones de
+	quien lo guarda: por eso van en `Restaurant.tags` y no en el pin. La
+	pantalla de pin los lee de ahí para venir con esos chips ya marcados.
+
+	Sólo se agrega: nunca se quita una etiqueta que alguien puso a mano.
+	"""
+	slugs = inferred_tag_slugs(payload)
+	if not slugs:
+		return
+	tags = list(Tag.objects.filter(slug__in=slugs))
+	if tags:
+		restaurant.tags.add(*tags)
+
+
 def import_from_google_place_id(place_id: str, user) -> tuple[Restaurant, bool]:
 	"""Find or create a Restaurant from a Google placeId.
 
@@ -118,6 +139,7 @@ def import_from_google_place_id(place_id: str, user) -> tuple[Restaurant, bool]:
 			approval_status=Restaurant.ApprovalStatus.APPROVED,
 			**fields,
 		)
+		_mark_attributes(restaurant, payload)
 		return restaurant, True
 	except IntegrityError:
 		# Race: another request created the same place_id between our

@@ -43,6 +43,30 @@ describe('TagChips', () => {
 		expect(chip.getAttribute('aria-pressed')).toBe('true');
 	});
 
+	it('shows a suggested chip as a suggestion, not as a choice', () => {
+		// Si una sugerencia del sistema se ve igual que algo que el usuario
+		// eligió, termina publicando una etiqueta que nunca puso.
+		i18n.setLocale('en');
+		const { getByRole } = render(TagChips, {
+			tags: TAGS,
+			selected: [3],
+			suggested: ['live-music'],
+		});
+
+		const chip = getByRole('button', { name: /Live Music/ });
+		expect(chip.dataset.suggested).toBe('true');
+		expect(chip.textContent).toContain('suggested');
+	});
+
+	it('does not mark a suggestion the user has turned off', () => {
+		const { getByRole } = render(TagChips, {
+			tags: TAGS,
+			selected: [],
+			suggested: ['live-music'],
+		});
+		expect(getByRole('button', { name: 'Live Music' }).dataset.suggested).toBeUndefined();
+	});
+
 	it('renders nothing clickable in readonly mode', () => {
 		const { container } = render(TagChips, { tags: TAGS, readonly: true });
 		expect(container.querySelector('button')).toBeNull();

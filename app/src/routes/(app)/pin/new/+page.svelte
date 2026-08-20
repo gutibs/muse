@@ -14,6 +14,7 @@
 	import { restaurantsService } from '$lib/services/restaurants.service';
 	import type { Cuisine, PinStatus, Restaurant, Tag } from '$lib/types';
 	import { AXES } from '$lib/utils/taxonomy';
+	import { suggestOccasion } from '$lib/utils/suggest-occasion';
 	import { ApiError } from '$lib/types';
 	import { extractFirstDrfError } from '$lib/utils/api-error';
 	import { logSilent } from '$lib/utils/logger';
@@ -57,6 +58,59 @@
 	// Un solo fetch del catálogo, repartido según para qué sirve cada eje.
 	let axisTags = $derived(tags.filter((tag) => (AXES as readonly string[]).includes(tag.kind)));
 	let dietaryTags = $derived(tags.filter((tag) => tag.kind === 'dietary'));
+
+	// Lo que propuso el sistema, no lo que eligió el usuario. Se guarda
+	// aparte para poder marcarlo como sugerencia y para poder retirarlo si
+	// deja de corresponder.
+	let suggestedSlugs = $state<string[]>([]);
+	let suggestionsApplied = $state(false);
+
+	/**
+	 * Marca sola lo que ya sabemos, al entrar al paso 2.
+	 *
+	 * Dos orígenes distintos y con distinto derecho a estar ahí: las
+	 * características del local (terraza, música en vivo, perros) son un
+	 * hecho que Google afirma y viajan en el restaurante; la ocasión es una
+	 * corazonada a partir de la hora, así que sólo se propone al registrar
+	 * una visita — guardar un lugar al mediodía no dice nada sobre cuándo
+	 * pensás ir.
+	 */
+	$effect(() => {
+		if (step !== 2 || suggestionsApplied || tags.length === 0) return;
+		suggestionsApplied = true;
+
+		const propuestos: string[] = [];
+
+		for (const tag of selectedRestaurant?.tagsDetail ?? []) {
+			if (tag.kind === 'scene') propuestos.push(tag.slug);
+		}
+
+		if (status === 'visited') {
+			const ocasion = suggestOccasion();
+			if (ocasion) propuestos.push(ocasion);
+		}
+
+		const ids = axisTags.filter((tag) => propuestos.includes(tag.slug)).map((tag) => tag.id);
+		if (ids.length === 0) return;
+		suggestedSlugs = propuestos;
+		selectedTags = [...new Set([...selectedTags, ...ids])];
+	});
+
+	/**
+	 * Pasar a "quiero ir" retira la ocasión sugerida, no la que el usuario
+	 * haya elegido a mano.
+	 */
+	$effect(() => {
+		if (status !== 'to_visit' || suggestedSlugs.length === 0) return;
+		const ocasiones = axisTags
+			.filter((tag) => tag.kind === 'occasion' && suggestedSlugs.includes(tag.slug))
+			.map((tag) => tag.id);
+		if (ocasiones.length === 0) return;
+		selectedTags = selectedTags.filter((id) => !ocasiones.includes(id));
+		suggestedSlugs = suggestedSlugs.filter(
+			(slug) => !axisTags.some((tag) => tag.slug === slug && tag.kind === 'occasion')
+		);
+	});
 
 	// Load reference data
 	$effect(() => {
@@ -468,7 +522,12 @@
 
 				<!-- Los tres ejes del pin: vibe, ocasión y características -->
 				{#if axisTags.length > 0}
-					<TagChips tags={axisTags} grouped bind:selected={selectedTags} />
+					<TagChips
+						tags={axisTags}
+						grouped
+						suggested={suggestedSlugs}
+						bind:selected={selectedTags}
+					/>
 				{/if}
 
 				<!-- Submit -->

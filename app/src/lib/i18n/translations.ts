@@ -263,6 +263,7 @@ const translations: Record<Locale, Record<string, string>> = {
 		// nueva cargada desde el admin cae al nombre de la base en vez de
 		// romper la pantalla.
 		'pin.dietaryOptions': 'Dietary options',
+		'pin.suggested': 'suggested',
 		'axis.vibe': 'Vibe',
 		'axis.occasion': 'Occasion',
 		'axis.scene': 'Features',
@@ -668,6 +669,7 @@ const translations: Record<Locale, Record<string, string>> = {
 		// nueva cargada desde el admin cae al nombre de la base en vez de
 		// romper la pantalla.
 		'pin.dietaryOptions': 'Opciones dietarias',
+		'pin.suggested': 'sugerido',
 		'axis.vibe': 'Ambiente',
 		'axis.occasion': 'Ocasión',
 		'axis.scene': 'Características',
@@ -1063,6 +1065,7 @@ const translations: Record<Locale, Record<string, string>> = {
 		// nueva cargada desde el admin cae al nombre de la base en vez de
 		// romper la pantalla.
 		'pin.dietaryOptions': 'Opzioni dietetiche',
+		'pin.suggested': 'suggerito',
 		'axis.vibe': 'Atmosfera',
 		'axis.occasion': 'Occasione',
 		'axis.scene': 'Caratteristiche',
