@@ -3,7 +3,7 @@
 Written for the product owner. Same content as the shared web version, kept in
 the repo so it stays with the code that produces these numbers.
 
-Last updated: 2026-08-19 · app version V1.1.0
+Last updated: 2026-08-21 · app version V1.1.0
 
 ---
 
@@ -98,17 +98,30 @@ Three did not survive that check.
 | i Latina | **Closed** | Shut in January 2021, and its old domain now redirects to an unrelated site. |
 | Sacro | Open | Still trading, but no booking channel we could verify — the domain lapsed and its old booking page is inactive. No link loaded. |
 
-### Two closed restaurants are still on the map
+### Two closed restaurants were still on the map
 
-Between them, Tegui and i Latina hold four real pins from members — someone
-could set out for dinner at a place that closed four years ago. i Latina is
-the more awkward of the two: its address is the one **Trescha** occupies
-today, so the map carries two pins on the same door, one of them for a
-restaurant that no longer exists.
+Between them, Tegui and i Latina held four real pins from members — someone
+could have set out for dinner at a place that closed four years ago.
 
-Nothing has been deleted. Removing a venue takes members' reviews with it,
-and that is a product call. The options are to hide them from search while
-keeping the history, or to merge i Latina into Trescha.
+i Latina is the more tangled of the two: **Trescha** operates out of that
+exact address today (Murillo 725, Villa Crespo), so the catalogue holds two
+entries for one door. Worse, Trescha's own record has the wrong street — it
+says Gorriti 5836, which is a different neighbourhood entirely, so the map
+has been placing it about thirty blocks from where it is.
+
+**What has been done:** venues can now be marked as permanently closed. A
+closed venue disappears from search and from "near me", but its page and
+everybody's pins stay exactly as they were — nobody loses a review they
+wrote. Nothing was deleted.
+
+**What still needs a decision from you:** whether i Latina should be merged
+into Trescha, or left as separate history. And Trescha's address needs
+fixing regardless of that call.
+
+From now on this maintains itself for anything that came from Google: their
+data tells us when a place shuts down, and we now read it. Tegui, i Latina
+and Trescha were all added by hand and have no Google link, which is exactly
+why they drifted.
 
 ---
 
@@ -137,3 +150,6 @@ keeping the history, or to merge i Latina into Trescha.
 - Booking-link classification lives in `restaurants/services/reservations.py`.
   Adding a provider means adding its **registrable domain** there, with a test.
 - `scripts/ver-eventos.py` prints what has been recorded while testing by hand.
+- Closed venues: `Restaurant.is_closed`, filtered in `RestaurantViewSet.get_queryset`
+  so the detail page and existing pins keep working. `backfill_from_google`
+  refreshes district, venue attributes and closed status in one pass.
