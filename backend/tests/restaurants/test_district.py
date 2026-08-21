@@ -130,3 +130,62 @@ def test_district_is_not_a_new_google_call():
 	from restaurants.services.google_place_parser import FIELD_MASK
 
 	assert "addressComponents" in FIELD_MASK
+
+
+@pytest.mark.django_db
+def test_the_backfill_also_marks_the_attributes():
+	"""El payload ya está en la mano: leerlo para el distrito y no aprovechar
+	los atributos dejaba la autoselección sin efecto sobre todo lo que ya
+	estaba en el catálogo."""
+	from restaurants.models import Tag
+
+	restaurant = RestaurantFactory(name="Con terraza", google_place_id="ChIJtest", district="")
+
+	payload = dict(PAYLOAD, outdoorSeating=True, allowsDogs=True, liveMusic=False)
+	with patch(
+		"restaurants.management.commands.backfill_districts.get_details",
+		return_value=payload,
+	):
+		call_command("backfill_districts")
+
+	restaurant.refresh_from_db()
+	assert restaurant.district == "Sheung Wan"
+	assert set(restaurant.tags.values_list("slug", flat=True)) == {
+		"outdoor-terrace",
+		"pet-friendly",
+	}
+	assert Tag.objects.get(slug="live-music") not in restaurant.tags.all()
+
+
+@pytest.mark.django_db
+def test_a_restaurant_with_a_district_still_gets_its_attributes():
+	"""El corte de "ya tiene distrito" no puede dejar afuera los atributos:
+	son dos datos distintos del mismo payload."""
+	restaurant = RestaurantFactory(
+		name="Ya ubicado", google_place_id="ChIJtest", district="Palermo"
+	)
+
+	payload = dict(PAYLOAD, outdoorSeating=True)
+	with patch(
+		"restaurants.management.commands.backfill_districts.get_details",
+		return_value=payload,
+	):
+		call_command("backfill_districts", "--attributes")
+
+	restaurant.refresh_from_db()
+	assert restaurant.district == "Palermo"
+	assert set(restaurant.tags.values_list("slug", flat=True)) == {"outdoor-terrace"}
+
+
+@pytest.mark.django_db
+def test_the_dry_run_does_not_mark_attributes_either():
+	restaurant = RestaurantFactory(google_place_id="ChIJtest", district="")
+
+	with patch(
+		"restaurants.management.commands.backfill_districts.get_details",
+		return_value=dict(PAYLOAD, outdoorSeating=True),
+	):
+		call_command("backfill_districts", "--dry-run")
+
+	restaurant.refresh_from_db()
+	assert restaurant.tags.count() == 0
