@@ -1,11 +1,13 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import { t } from '$lib/i18n/index.svelte';
 	import { trackVisibility } from '$lib/utils/track-visibility';
 
 	let {
 		href,
 		onclick,
 		onVisible,
+		closed = false,
 		imageUrl,
 		imageAlt = '',
 		imageClass = 'h-28 w-24',
@@ -22,6 +24,12 @@
 		 * cuenta y con qué etiqueta.
 		 */
 		onVisible?: () => void;
+		/**
+		 * El lugar cerró. Se marca en la tarjeta porque es donde la gente ve
+		 * sus propios pins: sin esto, un "quiero ir" a un lugar cerrado se ve
+		 * igual que cualquier otro.
+		 */
+		closed?: boolean;
 		imageUrl?: string | null;
 		imageAlt?: string;
 		/** Size of the thumbnail. Each screen uses its own. */
@@ -50,6 +58,11 @@
 	{/if}
 	<div class={contentClass}>
 		{@render children()}
+		{#if closed}
+			<span class="mt-0.5 inline-flex w-fit rounded-full bg-blush/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-blush">
+				{t('restaurant.closed')}
+			</span>
+		{/if}
 	</div>
 {/snippet}
 

@@ -166,6 +166,7 @@
 								<li>
 									<PinCard
 										onVisible={() => trackVenueCardView(pin.restaurantDetail.id, 'friend')}
+										closed={pin.restaurantDetail.isClosed}
 										imageUrl={pin.restaurantDetail.imageUrl}
 										imageAlt={pin.restaurantDetail.name}
 									>

@@ -169,8 +169,18 @@
 				{/if}
 			</div>
 
+			{#if restaurant.isClosed}
+				<!-- Un lugar cerrado conserva su ficha porque hay pins que apuntan
+				     acá, pero no se lo manda a nadie: ni indicaciones ni reserva. -->
+				<div class="mx-5 mb-4 rounded-card border border-blush/40 bg-blush/5 p-4">
+					<p class="text-sm font-semibold text-blush">{t('restaurant.closed')}</p>
+					<p class="mt-1 text-xs text-ink-light">{t('restaurant.closedNote')}</p>
+				</div>
+			{/if}
+
 			<!-- Salidas externas. Son los únicos botones que sacan al usuario de
 			     la app, y los tres reportan el mismo evento con distinto destino. -->
+			{#if !restaurant.isClosed}
 			<div class="flex gap-2 px-5 pb-4">
 				<button
 					type="button"
@@ -195,6 +205,7 @@
 					</button>
 				{/if}
 			</div>
+			{/if}
 
 			<!-- Info section: website + address -->
 			<div class="space-y-3 px-5 pb-4">

@@ -56,6 +56,10 @@ class RestaurantViewSet(viewsets.ModelViewSet):
 		# Admins see everything, regular users only see approved
 		if not (self.request.user.is_staff or self.request.user.is_superuser):
 			qs = qs.filter(approval_status=Restaurant.ApprovalStatus.APPROVED)
+			# Los cerrados se ocultan acá y no en `_base_queryset`, del que
+			# cuelga `retrieve`: la ficha tiene que seguir respondiendo para
+			# que el pin de alguien no se convierta en un 404.
+			qs = qs.filter(is_closed=False)
 		return qs
 
 	# `list` is no longer overridden: the default ModelViewSet implementation
@@ -144,6 +148,18 @@ class RestaurantViewSet(viewsets.ModelViewSet):
 			restaurant, created = import_from_google_place_id(place_id, request.user)
 		except GoogleImportError as exc:
 			return Response({"detail": exc.message}, status=exc.status_code)
+
+		if restaurant.is_closed:
+			# El importador devuelve la fila existente sin volver a mirar
+			# Google, así que sin este corte un lugar cerrado se traía de
+			# vuelta desde el autocomplete y se pineaba como si nada.
+			return Response(
+				{
+					"detail": "This place is permanently closed.",
+					"restaurantId": restaurant.id,
+				},
+				status=status.HTTP_409_CONFLICT,
+			)
 
 		serializer = self.get_serializer(self._base_queryset().get(pk=restaurant.pk))
 		http_status = status.HTTP_201_CREATED if created else status.HTTP_200_OK

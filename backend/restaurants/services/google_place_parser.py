@@ -39,6 +39,10 @@ FIELD_MASK = ",".join(
 		# cero en la práctica: el cap gratuito es de 1.000 llamadas por SKU
 		# por mes y la caché de 30 días deja el techo del catálogo en ~550.
 		# Verificado contra la doc oficial y una llamada real (2026-08-19).
+		# Google avisa cuando un lugar cerró. Sin este campo, dos
+		# restaurantes estuvieron cuatro años cerrados en el catálogo sin que
+		# nadie se enterara.
+		"businessStatus",
 		"outdoorSeating",
 		"liveMusic",
 		"allowsDogs",
@@ -153,6 +157,9 @@ def parse_place(payload: dict) -> dict:
 		"address": (payload.get("formattedAddress", "") or "")[:300],
 		"city": _first_of(components, _CITY_TYPES)[:100],
 		"district": _first_of(components, _DISTRICT_TYPES)[:120],
+		# Sólo el cierre definitivo. `CLOSED_TEMPORARILY` reabre, y un lugar
+		# que reabre tiene que volver a aparecer solo.
+		"is_closed": payload.get("businessStatus") == "CLOSED_PERMANENTLY",
 		"country": components.get("country", "")[:100],
 		"lat": location.get("latitude"),
 		"lng": location.get("longitude"),

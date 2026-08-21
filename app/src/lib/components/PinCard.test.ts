@@ -34,6 +34,18 @@ describe('PinCard', () => {
 		expect(container.querySelector('img')).toBeNull();
 	});
 
+	it('marks a closed venue on the card', () => {
+		// Es donde la gente ve sus propios pins: sin la marca, un "quiero ir"
+		// a un lugar cerrado se ve igual que cualquier otro.
+		const { container } = render(PinCard, { children, closed: true });
+		expect(container.textContent?.toLowerCase()).toContain('closed');
+	});
+
+	it('says nothing about opening hours on a normal card', () => {
+		const { container } = render(PinCard, { children });
+		expect(container.textContent?.toLowerCase()).not.toContain('closed');
+	});
+
 	it('drops the image when it fails to load', async () => {
 		// A Google photo ref expires and starts answering 4xx. Without this the
 		// card kept the broken-image glyph on screen.

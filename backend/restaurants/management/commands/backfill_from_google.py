@@ -1,7 +1,7 @@
-"""Rellena, desde el payload de Google que ya pedimos, lo que las filas viejas
-no tienen: el distrito y los atributos del local.
+"""Actualiza el catálogo con lo que el payload de Google ya nos dice: el
+distrito, los atributos del local y si el lugar cerró.
 
-	python manage.py backfill_districts [--dry-run] [--limit N] [--attributes]
+	python manage.py backfill_from_google [--dry-run] [--limit N] [--attributes]
 
 Va por management command y no por data migration porque hay red de por
 medio: una migración que sale a internet cientos de veces bloquea el deploy
@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
-	help = "Fill in district and venue attributes from the Google payload we already fetch."
+	help = "Refresh district, venue attributes and closed status from the Google payload."
 
 	def add_arguments(self, parser):
 		parser.add_argument(
@@ -66,7 +66,7 @@ class Command(BaseCommand):
 		if options["limit"]:
 			pendientes = pendientes[: options["limit"]]
 
-		ubicados = etiquetados = fallados = vacios = 0
+		ubicados = etiquetados = cerrados = fallados = vacios = 0
 
 		for restaurant in pendientes:
 			try:
@@ -85,6 +85,15 @@ class Command(BaseCommand):
 
 			district = parsed["district"]
 			slugs = inferred_tag_slugs(payload)
+
+			# Sólo se marca el cierre, nunca se destilda: Tegui e i Latina se
+			# marcaron a mano porque no tienen place_id, y un backfill que
+			# "reabriera" lo que Google no confirma los volvería a publicar.
+			if parsed["is_closed"] and not restaurant.is_closed:
+				cerrados += 1
+				if not options["dry_run"]:
+					restaurant.is_closed = True
+					restaurant.save(update_fields=["is_closed"])
 
 			if district and not restaurant.district:
 				ubicados += 1
@@ -106,14 +115,16 @@ class Command(BaseCommand):
 						# mano desde el admin.
 						restaurant.tags.add(*nuevos)
 
-			if options["dry_run"] and (district or slugs):
+			if options["dry_run"] and (district or slugs or parsed["is_closed"]):
 				detalle = ", ".join(sorted(slugs)) or "sin atributos"
-				self.stdout.write(f"  {restaurant.name} → {district or '—'} · {detalle}")
+				estado = " · CERRADO" if parsed["is_closed"] else ""
+				self.stdout.write(f"  {restaurant.name} → {district or '—'} · {detalle}{estado}")
 
 		prefijo = "[dry-run] " if options["dry_run"] else ""
 		self.stdout.write(
 			self.style.SUCCESS(
 				f"{prefijo}{ubicados} con distrito nuevo, {etiquetados} atributos marcados, "
-				f"{vacios} sin sublocality en Google, {fallados} con error."
+				f"{cerrados} marcados como cerrados, {vacios} sin sublocality en Google, "
+				f"{fallados} con error."
 			)
 		)

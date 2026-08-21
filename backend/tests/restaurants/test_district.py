@@ -45,10 +45,10 @@ def test_the_backfill_fills_only_what_is_missing():
 	ya_tiene = RestaurantFactory(name="Otro", google_place_id="ChIJotro", district="Palermo")
 
 	with patch(
-		"restaurants.management.commands.backfill_districts.get_details",
+		"restaurants.management.commands.backfill_from_google.get_details",
 		return_value=PAYLOAD,
 	) as get_details:
-		call_command("backfill_districts")
+		call_command("backfill_from_google")
 
 	sin_distrito.refresh_from_db()
 	ya_tiene.refresh_from_db()
@@ -64,8 +64,8 @@ def test_the_backfill_skips_restaurants_without_a_place_id():
 	"""Un restaurante cargado a mano no tiene a quién preguntarle."""
 	RestaurantFactory(name="A mano", google_place_id=None, district="")
 
-	with patch("restaurants.management.commands.backfill_districts.get_details") as get_details:
-		call_command("backfill_districts")
+	with patch("restaurants.management.commands.backfill_from_google.get_details") as get_details:
+		call_command("backfill_from_google")
 
 	assert get_details.call_count == 0
 
@@ -75,10 +75,10 @@ def test_the_backfill_has_a_dry_run():
 	restaurant = RestaurantFactory(google_place_id="ChIJtest", district="")
 
 	with patch(
-		"restaurants.management.commands.backfill_districts.get_details",
+		"restaurants.management.commands.backfill_from_google.get_details",
 		return_value=PAYLOAD,
 	):
-		call_command("backfill_districts", "--dry-run")
+		call_command("backfill_from_google", "--dry-run")
 
 	restaurant.refresh_from_db()
 	assert restaurant.district == ""
@@ -96,10 +96,10 @@ def test_the_backfill_survives_one_bad_response():
 		return PAYLOAD
 
 	with patch(
-		"restaurants.management.commands.backfill_districts.get_details",
+		"restaurants.management.commands.backfill_from_google.get_details",
 		side_effect=responder,
 	):
-		call_command("backfill_districts")
+		call_command("backfill_from_google")
 
 	roto.refresh_from_db()
 	sano.refresh_from_db()
@@ -143,10 +143,10 @@ def test_the_backfill_also_marks_the_attributes():
 
 	payload = dict(PAYLOAD, outdoorSeating=True, allowsDogs=True, liveMusic=False)
 	with patch(
-		"restaurants.management.commands.backfill_districts.get_details",
+		"restaurants.management.commands.backfill_from_google.get_details",
 		return_value=payload,
 	):
-		call_command("backfill_districts")
+		call_command("backfill_from_google")
 
 	restaurant.refresh_from_db()
 	assert restaurant.district == "Sheung Wan"
@@ -167,10 +167,10 @@ def test_a_restaurant_with_a_district_still_gets_its_attributes():
 
 	payload = dict(PAYLOAD, outdoorSeating=True)
 	with patch(
-		"restaurants.management.commands.backfill_districts.get_details",
+		"restaurants.management.commands.backfill_from_google.get_details",
 		return_value=payload,
 	):
-		call_command("backfill_districts", "--attributes")
+		call_command("backfill_from_google", "--attributes")
 
 	restaurant.refresh_from_db()
 	assert restaurant.district == "Palermo"
@@ -182,10 +182,10 @@ def test_the_dry_run_does_not_mark_attributes_either():
 	restaurant = RestaurantFactory(google_place_id="ChIJtest", district="")
 
 	with patch(
-		"restaurants.management.commands.backfill_districts.get_details",
+		"restaurants.management.commands.backfill_from_google.get_details",
 		return_value=dict(PAYLOAD, outdoorSeating=True),
 	):
-		call_command("backfill_districts", "--dry-run")
+		call_command("backfill_from_google", "--dry-run")
 
 	restaurant.refresh_from_db()
 	assert restaurant.tags.count() == 0

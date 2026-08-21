@@ -376,6 +376,7 @@
 								<PinCard
 									href={`/restaurant/${pin.restaurantDetail.id}`}
 									onVisible={() => trackVenueCardView(pin.restaurantDetail.id, 'profile')}
+									closed={pin.restaurantDetail.isClosed}
 									imageUrl={pin.restaurantDetail.imageUrl}
 									imageAlt={pin.restaurantDetail.name}
 									imageClass="h-20 w-16"

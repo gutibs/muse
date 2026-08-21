@@ -80,6 +80,13 @@ class Restaurant(models.Model):
 		default=ApprovalStatus.PENDING,
 		db_index=True,
 	)
+	# El lugar cerró para siempre. No se borra la fila: `Pin.restaurant` es
+	# CASCADE y se llevaría las reseñas de la gente. Tampoco alcanza
+	# `approval_status`, que significa otra cosa y además esconde la ficha de
+	# quien no la creó — justo la que necesita ver el que tiene el pin.
+	# Se oculta donde alguien podría descubrirlo (listas, cerca mío) y se
+	# conserva donde alguien ya lo tiene (su ficha, su pin).
+	is_closed = models.BooleanField(default=False, db_index=True)
 	address = models.CharField(max_length=300, blank=True)
 	city = models.CharField(max_length=100, blank=True, db_index=True)
 	# El barrio, de `sublocality` en el payload de Google. Es como la gente

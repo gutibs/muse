@@ -63,6 +63,9 @@ export interface Restaurant {
 	averageRating: number | null;
 	pinCount: number;
 	approvalStatus: 'pending' | 'approved' | 'rejected';
+	/** El lugar cerró para siempre. Sigue accesible desde un pin, pero no
+	 * aparece en búsqueda ni en "cerca mío". */
+	isClosed: boolean;
 	createdAt: string;
 	/** Sólo viene en el detalle: en el listado sería un lookup por fila. */
 	photoAttribution?: PhotoAttribution[];

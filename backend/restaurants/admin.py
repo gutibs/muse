@@ -12,6 +12,7 @@ class RestaurantAdmin(gis_admin.GISModelAdmin):
 		"country",
 		"cuisines_display",
 		"approval_status",
+		"is_closed",
 		"reservation_status",
 		"created_by",
 		"created_at",
@@ -19,6 +20,7 @@ class RestaurantAdmin(gis_admin.GISModelAdmin):
 	search_fields = ("name", "city", "country", "address")
 	list_filter = (
 		"approval_status",
+		"is_closed",
 		# La cola de links de reserva a revisar: filtrar por `pending` con una
 		# URL cargada da exactamente lo que falta mirar.
 		"reservation_status",
@@ -38,7 +40,13 @@ class RestaurantAdmin(gis_admin.GISModelAdmin):
 		return ", ".join(c.name for c in obj.cuisines.all())
 
 	cuisines_display.short_description = "Cuisines"
-	actions = ["approve_restaurants", "reject_restaurants", "approve_reservation_links"]
+	actions = [
+		"approve_restaurants",
+		"reject_restaurants",
+		"approve_reservation_links",
+		"mark_closed",
+		"mark_open",
+	]
 
 	@admin.action(description="Approve selected restaurants")
 	def approve_restaurants(self, request, queryset):
@@ -49,6 +57,18 @@ class RestaurantAdmin(gis_admin.GISModelAdmin):
 	def reject_restaurants(self, request, queryset):
 		count = queryset.update(approval_status=Restaurant.ApprovalStatus.REJECTED)
 		self.message_user(request, f"{count} restaurant(s) rejected.")
+
+	@admin.action(description="Mark selected as permanently closed")
+	def mark_closed(self, request, queryset):
+		"""Los saca de búsqueda y de "cerca mío". Sus pins y su ficha siguen
+		en pie: la gente que ya estuvo ahí no pierde su reseña."""
+		count = queryset.update(is_closed=True)
+		self.message_user(request, f"{count} restaurant(s) marked as closed.")
+
+	@admin.action(description="Mark selected as open again")
+	def mark_open(self, request, queryset):
+		count = queryset.update(is_closed=False)
+		self.message_user(request, f"{count} restaurant(s) marked as open.")
 
 	@admin.action(description="Approve selected reservation links")
 	def approve_reservation_links(self, request, queryset):

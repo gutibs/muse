@@ -99,6 +99,7 @@ class RestaurantSerializer(serializers.ModelSerializer):
 			"average_rating",
 			"pin_count",
 			"approval_status",
+			"is_closed",
 			"google_place_id",
 			"opening_hours",
 			"created_at",
@@ -106,6 +107,9 @@ class RestaurantSerializer(serializers.ModelSerializer):
 		read_only_fields = (
 			"id",
 			"approval_status",
+			# Dato del catálogo, no del creador: lo pone Google o el admin.
+			"is_closed",
+			"is_closed",
 			"created_at",
 			"google_place_id",
 			"average_rating",
