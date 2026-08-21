@@ -11,6 +11,8 @@ export interface Pin {
 	comment: string;
 	visitedAt: string | null;
 	tagsDetail: Tag[];
+	/** Marca privada del dueño del pin. No viaja en los links compartidos. */
+	isFavourite: boolean;
 	createdAt: string;
 	updatedAt: string;
 }
@@ -26,12 +28,25 @@ export interface PinCreate {
 
 export type SharedListFilter = 'all' | 'visited' | 'to_visit';
 
+export type SharedListKind = 'auto' | 'curated';
+
+export interface SharedListItem {
+	pin: number;
+	position: number;
+	note: string;
+}
+
 export interface SharedList {
 	id: number;
 	token: string;
 	title: string;
+	/** `auto` sigue un filtro; `curated` muestra sólo los pins elegidos. */
+	kind: SharedListKind;
 	statusFilter: SharedListFilter;
 	isActive: boolean;
+	/** ISO, o null si el link no vence. */
+	expiresAt: string | null;
+	items: SharedListItem[];
 	url: string;
 	createdAt: string;
 }
@@ -56,6 +71,8 @@ export interface PublicRestaurant {
 
 export interface PublicPin {
 	restaurantDetail: PublicRestaurant;
+	/** Sólo en listas curadas: lo que el dueño escribió sobre ese lugar. */
+	note?: string;
 	tagsDetail: Omit<Tag, 'id'>[];
 	status: PinStatus;
 	rating: number | null;

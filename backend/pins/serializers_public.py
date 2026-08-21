@@ -21,6 +21,10 @@ from pins.models import Pin, SharedList
 # to return every pin the owner had.
 PUBLIC_PIN_LIMIT = 100
 
+# Una shortlist curada es "mis diez lugares", no un catálogo. El tope también
+# acota lo que puede costar una sola request anónima.
+CURATED_ITEM_LIMIT = 10
+
 
 class PublicRestaurantSerializer(serializers.Serializer):
 	"""What a shared page needs to render a restaurant, and nothing else.
@@ -74,6 +78,9 @@ class PublicPinSerializer(serializers.Serializer):
 	status = serializers.CharField(read_only=True)
 	rating = serializers.IntegerField(read_only=True)
 	comment = serializers.CharField(read_only=True)
+	# Sólo en listas curadas: lo que el dueño escribió sobre ese lugar para
+	# esta lista en particular.
+	note = serializers.CharField(read_only=True, default="")
 
 
 class SharedListPublicSerializer(serializers.ModelSerializer):
@@ -86,6 +93,21 @@ class SharedListPublicSerializer(serializers.ModelSerializer):
 		fields = ("id", "title", "owner", "pins", "created_at")
 
 	def get_pins(self, obj):
+		if obj.kind == SharedList.Kind.CURATED:
+			return self._curated_pins(obj)
+		return self._filtered_pins(obj)
+
+	def _curated_pins(self, obj):
+		"""Los pins elegidos a mano, en su orden, con su nota."""
+		items = obj.items.select_related("pin__restaurant").prefetch_related("pin__tags")
+		salida = []
+		for item in items[:CURATED_ITEM_LIMIT]:
+			fila = PublicPinSerializer(item.pin).data
+			fila["note"] = item.note
+			salida.append(fila)
+		return salida
+
+	def _filtered_pins(self, obj):
 		qs = Pin.objects.filter(user=obj.user).select_related("restaurant").prefetch_related("tags")
 		if obj.status_filter != "all":
 			qs = qs.filter(status=obj.status_filter)

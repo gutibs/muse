@@ -14,6 +14,12 @@
 	--color-blush: #B5464A;
 	--color-blush-light: #D4777A;
 
+	/* Favoritos. Color propio y no `blush`, que ya es el rating: dos
+	   significados en el mismo color se confunden en una tarjeta donde
+	   conviven la estrella y los corazones. Un dorado apagado, para que
+	   convive con el taupe sin gritar. */
+	--color-gold: #B08833;
+
 	/* Ink */
 	--color-ink: #2B221A;
 	--color-ink-light: #5C5044;

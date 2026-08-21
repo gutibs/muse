@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from pins.models import Pin, SharedList
+from pins.models import Pin, SharedList, SharedListItem
 from restaurants.models import Tag
 from restaurants.serializers import RestaurantSerializer
 
@@ -42,10 +42,14 @@ class PinSerializer(serializers.ModelSerializer):
 			"visited_at",
 			"tag_ids",
 			"tags_detail",
+			"is_favourite",
 			"created_at",
 			"updated_at",
 		)
-		read_only_fields = ("id", "created_at", "updated_at")
+		# `is_favourite` se lee acá pero se escribe por su propia acción: un
+		# PATCH común tocaría `updated_at` (auto_now) y, con
+		# `ordering = ["-updated_at"]`, la lista saltaría bajo el dedo.
+		read_only_fields = ("id", "created_at", "updated_at", "is_favourite")
 
 	def validate(self, data):
 		status = data.get("status", getattr(self.instance, "status", None))
@@ -81,11 +85,66 @@ class PinSerializer(serializers.ModelSerializer):
 
 class SharedListSerializer(serializers.ModelSerializer):
 	url = serializers.SerializerMethodField()
+	# La selección viaja como una lista ordenada de pins: el orden del array
+	# es el orden de la lista, y mandarla completa reemplaza la anterior. Es
+	# más simple para el cliente que un endpoint de items con posiciones.
+	pin_ids = serializers.ListField(
+		child=serializers.IntegerField(),
+		write_only=True,
+		required=False,
+	)
+	items = serializers.SerializerMethodField()
 
 	class Meta:
 		model = SharedList
-		fields = ("id", "token", "title", "status_filter", "is_active", "url", "created_at")
-		read_only_fields = ("id", "token", "url", "created_at")
+		fields = (
+			"id",
+			"token",
+			"title",
+			"kind",
+			"status_filter",
+			"is_active",
+			"expires_at",
+			"pin_ids",
+			"items",
+			"url",
+			"created_at",
+		)
+		read_only_fields = ("id", "token", "url", "items", "created_at")
+
+	def get_items(self, obj):
+		return [
+			{"pin": item.pin_id, "position": item.position, "note": item.note}
+			for item in obj.items.all()
+		]
+
+	def validate_pin_ids(self, value):
+		from pins.serializers_public import CURATED_ITEM_LIMIT
+
+		if len(value) > CURATED_ITEM_LIMIT:
+			raise serializers.ValidationError(
+				f"A shortlist holds up to {CURATED_ITEM_LIMIT} places."
+			)
+		if len(set(value)) != len(value):
+			raise serializers.ValidationError("The same place is in the list twice.")
+
+		# Sólo pins propios: sin esto, cualquiera podría armar una lista
+		# pública con las reseñas de otra persona.
+		user = self.context["request"].user
+		propios = set(Pin.objects.filter(user=user, id__in=value).values_list("id", flat=True))
+		ajenos = [pid for pid in value if pid not in propios]
+		if ajenos:
+			raise serializers.ValidationError(f"Not your pins: {ajenos}")
+		return value
+
+	def _set_items(self, instance, pin_ids):
+		instance.items.all().delete()
+		SharedListItem.objects.bulk_create(
+			[
+				SharedListItem(shared_list=instance, pin_id=pid, position=posicion)
+				for posicion, pid in enumerate(pin_ids)
+			]
+		)
 
 	def get_url(self, obj):
 		# Absolute URL so the link is shareable from the mobile app, where
@@ -97,8 +156,19 @@ class SharedListSerializer(serializers.ModelSerializer):
 		return f"{base}/shared/{obj.token}"
 
 	def create(self, validated_data):
+		pin_ids = validated_data.pop("pin_ids", None)
 		validated_data["user"] = self.context["request"].user
-		return super().create(validated_data)
+		instance = super().create(validated_data)
+		if pin_ids is not None:
+			self._set_items(instance, pin_ids)
+		return instance
+
+	def update(self, instance, validated_data):
+		pin_ids = validated_data.pop("pin_ids", None)
+		instance = super().update(instance, validated_data)
+		if pin_ids is not None:
+			self._set_items(instance, pin_ids)
+		return instance
 
 
 # SharedListPublicSerializer used to live here and reuse PinSerializer, which

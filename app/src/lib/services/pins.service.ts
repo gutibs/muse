@@ -1,13 +1,20 @@
 import { api } from './api.service';
 import type { Pin, PinCreate, PaginatedResponse, SharedList, SharedListPublic } from '$lib/types';
 
-type PinFilters = { status?: string; tag?: string; city?: string; page?: number };
+type PinFilters = {
+	status?: string;
+	tag?: string;
+	city?: string;
+	favourite?: boolean;
+	page?: number;
+};
 
 function pinsQuery(params?: PinFilters): string {
 	const query = new URLSearchParams();
 	if (params?.status) query.set('status', params.status);
 	if (params?.tag) query.set('tag', params.tag);
 	if (params?.city) query.set('city', params.city);
+	if (params?.favourite) query.set('favourite', 'true');
 	if (params?.page) query.set('page', String(params.page));
 	const qs = query.toString();
 	return `/pins/${qs ? `?${qs}` : ''}`;
@@ -46,6 +53,17 @@ export const pinsService = {
 		return api.delete(`/pins/${id}/`);
 	},
 
+	/**
+	 * Marca o desmarca un favorito.
+	 *
+	 * Endpoint propio y no un PATCH: el backend lo escribe sin tocar
+	 * `updatedAt`, porque la lista se ordena por ese campo y el pin saltaría
+	 * al tope apenas tocás la estrella.
+	 */
+	setFavourite(id: number, isFavourite: boolean): Promise<{ id: number; isFavourite: boolean }> {
+		return api.post(`/pins/${id}/favourite/`, { isFavourite });
+	},
+
 
 
 	// Shared lists
@@ -54,7 +72,14 @@ export const pinsService = {
 		return res.then((r) => (Array.isArray(r) ? r : r.results));
 	},
 
-	createSharedList(data: { title?: string; statusFilter?: string }): Promise<SharedList> {
+	createSharedList(data: {
+		title?: string;
+		statusFilter?: string;
+		kind?: string;
+		/** Orden de la lista curada. El orden del array es el de la pantalla. */
+		pinIds?: number[];
+		expiresAt?: string | null;
+	}): Promise<SharedList> {
 		return api.post('/shared-lists/', data);
 	},
 

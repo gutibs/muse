@@ -1,5 +1,6 @@
 from django.db import IntegrityError, transaction
 from rest_framework import generics, permissions, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 
@@ -26,7 +27,32 @@ class PinViewSet(viewsets.ModelViewSet):
 			status=params.get("status"),
 			tag=params.get("tag"),
 			city=params.get("city"),
+			favourite=params.get("favourite") in ("true", "1"),
 		)
+
+	@action(detail=True, methods=["post"])
+	def favourite(self, request, pk=None):
+		"""Marca o desmarca el pin como favorito.
+
+		Tiene acción propia en vez de ir por PATCH porque se escribe con
+		`.update()`, que no dispara `auto_now`: con
+		`Pin.Meta.ordering = ["-updated_at"]`, un PATCH mandaría el pin al
+		tope de la lista y la lista saltaría bajo el dedo de quien tocó la
+		estrella.
+
+		`get_queryset` ya filtra por usuario, así que el pin de otra persona
+		devuelve 404 sin un chequeo extra.
+		"""
+		pin = self.get_object()
+		valor = request.data.get("isFavourite", request.data.get("is_favourite"))
+		if not isinstance(valor, bool):
+			return Response(
+				{"detail": "isFavourite must be a boolean."},
+				status=status.HTTP_400_BAD_REQUEST,
+			)
+
+		Pin.objects.filter(pk=pin.pk).update(is_favourite=valor)
+		return Response({"id": pin.pk, "isFavourite": valor})
 
 	def create(self, request, *args, **kwargs):
 		# (user, restaurant) is unique. If a pin already exists, surface that as
@@ -72,4 +98,14 @@ class SharedListPublicView(generics.RetrieveAPIView):
 	lookup_field = "token"
 
 	def get_queryset(self):
-		return SharedList.objects.filter(is_active=True).select_related("user__profile")
+		# Una lista vencida es un 404, igual que una desactivada: quien tiene
+		# el link no tiene por qué saber si existió.
+		from django.db.models import Q
+		from django.utils import timezone
+
+		return (
+			SharedList.objects.filter(is_active=True)
+			.filter(Q(expires_at__isnull=True) | Q(expires_at__gt=timezone.now()))
+			.select_related("user__profile")
+			.prefetch_related("items__pin__restaurant")
+		)

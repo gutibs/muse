@@ -21,7 +21,7 @@ from pins.models import Pin
 STATUS_ALL = "all"
 
 
-def visible_pins(viewer, *, owner=None, status=None, tag=None, city=None):
+def visible_pins(viewer, *, owner=None, status=None, tag=None, city=None, favourite=None):
 	"""Pins owned by `owner` that `viewer` is allowed to see.
 
 	`owner` defaults to `viewer`, i.e. your own pins. Permission is the
@@ -40,6 +40,8 @@ def visible_pins(viewer, *, owner=None, status=None, tag=None, city=None):
 		qs = qs.filter(status=status)
 	if tag:
 		qs = qs.filter(tags__slug=tag)
+	if favourite:
+		qs = qs.filter(is_favourite=True)
 	if city:
 		qs = qs.filter(restaurant__city__icontains=city)
 	return qs

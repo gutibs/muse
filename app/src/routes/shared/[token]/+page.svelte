@@ -124,6 +124,12 @@
 									{#if pin.rating}
 										<RatingHearts value={(pin.rating ?? 0)} />
 									{/if}
+									{#if pin.note}
+										<!-- Nota escrita para esta lista en particular. Va antes del
+										     comentario del pin porque es lo que el dueño quiso decir
+										     de este lugar a quien recibe el link. -->
+										<p class="text-xs font-medium text-jade-dark">{pin.note}</p>
+									{/if}
 									{#if pin.comment}
 										<p class="line-clamp-2 text-xs italic text-ink-light">"{pin.comment}"</p>
 									{/if}

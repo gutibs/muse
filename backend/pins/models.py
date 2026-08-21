@@ -38,6 +38,10 @@ class Pin(models.Model):
 	# restaurante, dos personas con opiniones distintas se pisan, y sólo el
 	# creador podría editarlo.
 	tags = models.ManyToManyField("restaurants.Tag", blank=True, related_name="pins")
+	# Un flag y no un tercer `Status`: `unique_together (user, restaurant)`
+	# haría que marcar favorito pisara el pin que ya está, y
+	# `SharedList.status_filter` heredaría una opción que no es un estado.
+	is_favourite = models.BooleanField(default=False, db_index=True)
 	created_at = models.DateTimeField(auto_now_add=True)
 	updated_at = models.DateTimeField(auto_now=True)
 
@@ -76,6 +80,10 @@ class Pin(models.Model):
 
 
 class SharedList(models.Model):
+	class Kind(models.TextChoices):
+		AUTO = "auto", "Everything that matches a filter"
+		CURATED = "curated", "A hand-picked shortlist"
+
 	user = models.ForeignKey(
 		settings.AUTH_USER_MODEL,
 		on_delete=models.CASCADE,
@@ -88,7 +96,13 @@ class SharedList(models.Model):
 		choices=[("all", "All"), *Pin.Status.choices],
 		default="all",
 	)
+	# `auto` por defecto y no es negociable: con `curated` por defecto, cada
+	# link ya compartido pasaría a mostrar cero restaurantes de golpe.
+	kind = models.CharField(max_length=10, choices=Kind.choices, default=Kind.AUTO)
 	is_active = models.BooleanField(default=True)
+	# Una lista que se llamó "almuerzo del viernes" tiene vida útil de días.
+	# Hasta ahora el único apagador era acordarse de desactivarla a mano.
+	expires_at = models.DateTimeField(null=True, blank=True)
 	created_at = models.DateTimeField(auto_now_add=True)
 
 	class Meta:
@@ -97,3 +111,33 @@ class SharedList(models.Model):
 
 	def __str__(self):
 		return f"{self.user} — {self.title or 'My List'} ({self.token})"
+
+
+class SharedListItem(models.Model):
+	"""Un pin elegido a mano para una lista curada, en su posición.
+
+	Existe sólo para `SharedList.kind == curated`. Una lista `auto` sigue
+	resolviéndose por filtro sobre los pins del dueño y no tiene items.
+	"""
+
+	shared_list = models.ForeignKey(
+		SharedList,
+		on_delete=models.CASCADE,
+		related_name="items",
+	)
+	pin = models.ForeignKey(Pin, on_delete=models.CASCADE, related_name="+")
+	position = models.PositiveSmallIntegerField(default=0)
+	note = models.CharField(max_length=280, blank=True)
+
+	class Meta:
+		db_table = "pins_shared_list_item"
+		ordering = ["position", "id"]
+		constraints = [
+			models.UniqueConstraint(
+				fields=["shared_list", "pin"],
+				name="unique_pin_per_shared_list",
+			)
+		]
+
+	def __str__(self):
+		return f"{self.shared_list} · {self.position}"

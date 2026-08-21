@@ -2,6 +2,7 @@
 	import { browser } from '$app/environment';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
+	import StarIcon from '$lib/components/StarIcon.svelte';
 	import CityAutocomplete from '$lib/components/CityAutocomplete.svelte';
 	import MapView from '$lib/components/MapView.svelte';
 	import { t } from '$lib/i18n/index.svelte';
@@ -20,13 +21,21 @@
 
 	let hasFocus = $derived(Boolean(page.url.searchParams.get('focus')));
 	let showFriendPins = $state(true);
+	// Favoritos: filtra los markers ya dibujados, igual que el de cocina, sin
+	// volver a pedirle nada al servidor.
+	let onlyFavourites = $state(false);
 	let showSearch = $state(false);
 	let friendLayers = $state<L.LayerGroup | null>(null);
 	let mapRef = $state<L.Map | null>(null);
 	let friendCount = $state(0);
 
 	// Track markers with their cuisine slugs for filtering
-	type MarkerEntry = { marker: L.Marker; cuisineSlugs: string[]; isFriend: boolean };
+	type MarkerEntry = {
+		marker: L.Marker;
+		cuisineSlugs: string[];
+		isFriend: boolean;
+		isFavourite: boolean;
+	};
 	let allMarkers = $state<MarkerEntry[]>([]);
 
 	// Surface the discrepancy reported by Jess: a pin can appear "on the list"
@@ -60,12 +69,20 @@
 		}
 	}
 
+	function toggleOnlyFavourites() {
+		onlyFavourites = !onlyFavourites;
+		applyMarkerFilter();
+	}
+
 	function applyMarkerFilter() {
 		if (!mapRef) return;
 		const cuisineFilter = cuisineSearch;
 		for (const entry of allMarkers) {
 			const matches = !cuisineFilter || entry.cuisineSlugs.includes(cuisineFilter);
-			const shouldShow = matches && (!entry.isFriend || showFriendPins);
+			// Los pins de amigos no tienen favorito: el favorito es del dueño
+			// del pin, así que el filtro sólo aplica a los propios.
+			const favouriteOk = !onlyFavourites || (!entry.isFriend && entry.isFavourite);
+			const shouldShow = matches && favouriteOk && (!entry.isFriend || showFriendPins);
 			// Friend markers live inside friendLayers (a LayerGroup); own markers live on the map.
 			const container: L.Map | L.LayerGroup | null = entry.isFriend ? friendLayers : mapRef;
 			if (!container) continue;
@@ -175,6 +192,7 @@
 							marker,
 							cuisineSlugs: (r.cuisinesDetail ?? []).map((c) => c.slug),
 							isFriend: true,
+							isFavourite: false,
 						});
 					}
 				} catch (err) {
@@ -244,6 +262,7 @@
 				marker,
 				cuisineSlugs: (r.cuisinesDetail ?? []).map((c) => c.slug),
 				isFriend: false,
+				isFavourite: pin.isFavourite,
 			});
 		}
 
@@ -396,6 +415,17 @@
 				{showFriendPins ? t('map.friendsOn') : t('map.friendsOff')}
 			</button>
 		{/if}
+
+		<!-- Sólo favoritos: filtra los markers ya dibujados, sin recargar -->
+		<button
+			onclick={toggleOnlyFavourites}
+			aria-pressed={onlyFavourites}
+			class="flex w-fit items-center gap-1.5 rounded-full px-3 py-2 text-xs font-medium shadow-elevated active:scale-95
+				{onlyFavourites ? 'bg-gold text-white' : 'border border-cream-dark bg-white/90 text-ink-muted'}"
+		>
+			<StarIcon size="sm" filled={onlyFavourites} />
+			{t('pin.onlyFavourites')}
+		</button>
 	</div>
 
 	<!-- Legend — inline chips, always visible -->

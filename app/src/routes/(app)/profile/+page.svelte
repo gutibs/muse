@@ -14,6 +14,7 @@
 	import { LEGAL_URLS } from '$lib/legal';
 	import RatingHearts from '$lib/components/RatingHearts.svelte';
 	import PinCard from '$lib/components/PinCard.svelte';
+	import StarIcon from '$lib/components/StarIcon.svelte';
 	import { trackVenueCardView } from '$lib/services/analytics.service';
 	import PinStatusBadge from '$lib/components/PinStatusBadge.svelte';
 
@@ -26,7 +27,7 @@
 	let myPins = $state<Pin[]>([]);
 	let totalFilteredPins = $state(0);
 	let loadingPins = $state(true);
-	let pinsFilter = $state<'all' | 'visited' | 'to_visit'>('all');
+	let pinsFilter = $state<'all' | 'visited' | 'to_visit' | 'favourite'>('all');
 
 	let saving = $state(false);
 	let error = $state('');
@@ -104,6 +105,69 @@
 		}
 	}
 
+	// Shortlist curada. El tope lo valida también el backend; acá está para
+	// que la pantalla no deje pasar lo que el servidor va a rechazar.
+	const SHORTLIST_MAX = 10;
+	let curating = $state(false);
+	let shortlistTitle = $state('');
+	let shortlistPins = $state<Pin[]>([]);
+	let shortlistSelection = $state<number[]>([]);
+	let shortlistExpiry = $state<0 | 7 | 30>(0);
+	let creatingShortlist = $state(false);
+
+	async function openShortlist() {
+		curating = !curating;
+		if (!curating) return;
+		shortlistTitle = '';
+		shortlistSelection = [];
+		try {
+			// Todos los pins, no la primera página: elegir a mano entre los
+			// primeros 20 no es elegir.
+			shortlistPins = await pinsService.listAll();
+		} catch (err) {
+			logSilent('profile.shortlistPins', err);
+			shortlistPins = [];
+		}
+	}
+
+	function toggleShortlistPin(id: number) {
+		if (shortlistSelection.includes(id)) {
+			shortlistSelection = shortlistSelection.filter((p) => p !== id);
+		} else if (shortlistSelection.length < SHORTLIST_MAX) {
+			// Se agrega al final: el orden de selección es el orden de la lista.
+			shortlistSelection = [...shortlistSelection, id];
+		}
+	}
+
+	async function createShortlist() {
+		if (shortlistSelection.length === 0) return;
+		creatingShortlist = true;
+		try {
+			const expiresAt =
+				shortlistExpiry === 0
+					? null
+					: new Date(Date.now() + shortlistExpiry * 86400000).toISOString();
+			const list = await pinsService.createSharedList({
+				title: shortlistTitle.trim() || t('profile.shortlist'),
+				kind: 'curated',
+				pinIds: shortlistSelection,
+				expiresAt,
+			});
+			sharedLists = [...sharedLists, list];
+			curating = false;
+			const result = await shareLink({ url: list.url, title: list.title });
+			if (result !== 'cancelled') {
+				success = t('profile.linkCopiedClipboard');
+				setTimeout(() => (success = ''), 3000);
+			}
+		} catch (err) {
+			logSilent('profile.createShortlist', err);
+			error = t('profile.cantCreateLink');
+		} finally {
+			creatingShortlist = false;
+		}
+	}
+
 	async function deleteSharedList(id: number) {
 		try {
 			await pinsService.deleteSharedList(id);
@@ -120,12 +184,20 @@
 		setTimeout(() => (success = ''), 3000);
 	}
 
-	async function loadMyPins(filter: 'all' | 'visited' | 'to_visit' = pinsFilter) {
+	async function loadMyPins(
+		filter: 'all' | 'visited' | 'to_visit' | 'favourite' = pinsFilter
+	) {
 		loadingPins = true;
 		try {
 			// Server-side filter: backend returns the full filtered count even
 			// when only the first page of results is shown.
-			const res = await pinsService.list(filter === 'all' ? undefined : { status: filter });
+			const params =
+				filter === 'all'
+					? undefined
+					: filter === 'favourite'
+						? { favourite: true }
+						: { status: filter };
+			const res = await pinsService.list(params);
 			myPins = res.results;
 			totalFilteredPins = res.count;
 		} catch (err) {
@@ -137,7 +209,7 @@
 		}
 	}
 
-	function setPinsFilter(next: 'all' | 'visited' | 'to_visit') {
+	function setPinsFilter(next: 'all' | 'visited' | 'to_visit' | 'favourite') {
 		if (pinsFilter === next) return;
 		pinsFilter = next;
 		loadMyPins(next);
@@ -348,6 +420,14 @@
 						>
 							{t('common.toVisit')}
 						</button>
+						<button
+							onclick={() => setPinsFilter('favourite')}
+							aria-label={t('pin.onlyFavourites')}
+							class="flex min-w-11 flex-1 items-center justify-center rounded-button py-1.5 active:scale-[0.98]
+								{pinsFilter === 'favourite' ? 'bg-white text-gold shadow-card' : 'text-ink-muted'}"
+						>
+							<StarIcon size="sm" filled={pinsFilter === 'favourite'} />
+						</button>
 					</div>
 				{/if}
 
@@ -440,6 +520,91 @@
 					</svg>
 					{sharing ? t('profile.creating') : t('profile.createShareLink')}
 				</button>
+
+				<!-- Shortlist curada: elegir a mano en vez de compartir todo -->
+				<button
+					onclick={openShortlist}
+					class="mt-2 flex min-h-12 w-full items-center justify-center gap-2 rounded-button border border-cream-dark bg-white text-base font-medium text-ink active:scale-[0.98]"
+				>
+					<StarIcon size="sm" filled={curating} class={curating ? 'text-gold' : ''} />
+					{t('profile.shortlist')}
+				</button>
+
+				{#if curating}
+					<div class="mt-2 space-y-3 rounded-card bg-white p-4 shadow-card">
+						<input
+							type="text"
+							bind:value={shortlistTitle}
+							placeholder={t('profile.shortlist')}
+							class="w-full rounded-input border border-cream-dark px-4 py-3 text-base text-ink outline-none focus:border-jade"
+						/>
+						<p class="text-xs text-ink-muted">
+							{t('profile.shortlistHint', { max: String(SHORTLIST_MAX) })}
+						</p>
+
+						{#if shortlistPins.length === 0}
+							<p class="text-sm text-ink-muted">{t('profile.shortlistEmpty')}</p>
+						{:else}
+							<div class="flex items-center justify-between">
+								<span class="text-xs font-medium text-ink-light">
+									{t('profile.selectedCount', {
+										n: String(shortlistSelection.length),
+										max: String(SHORTLIST_MAX),
+									})}
+								</span>
+							</div>
+							<ul class="max-h-64 space-y-1 overflow-y-auto">
+								{#each shortlistPins as pin (pin.id)}
+									{@const posicion = shortlistSelection.indexOf(pin.id)}
+									<li>
+										<button
+											type="button"
+											onclick={() => toggleShortlistPin(pin.id)}
+											aria-pressed={posicion >= 0}
+											disabled={posicion < 0 && shortlistSelection.length >= SHORTLIST_MAX}
+											class="flex min-h-11 w-full items-center gap-2 rounded-button px-3 text-left text-sm active:scale-[0.98] disabled:opacity-40
+												{posicion >= 0 ? 'bg-jade/10 text-ink' : 'text-ink-light'}"
+										>
+											<span
+												class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold
+													{posicion >= 0 ? 'bg-jade text-white' : 'border border-cream-dark text-ink-muted'}"
+											>
+												{posicion >= 0 ? posicion + 1 : ''}
+											</span>
+											<span class="truncate">{pin.restaurantDetail.name}</span>
+										</button>
+									</li>
+								{/each}
+							</ul>
+
+							<div>
+								<span class="mb-1 block text-xs font-medium text-ink-light">{t('profile.expires')}</span>
+								<div class="flex gap-1 rounded-card bg-cream-dark p-1">
+									{#each [0, 7, 30] as dias (dias)}
+										<button
+											type="button"
+											onclick={() => (shortlistExpiry = dias as 0 | 7 | 30)}
+											class="min-h-11 flex-1 rounded-button text-xs font-medium active:scale-[0.98]
+												{shortlistExpiry === dias ? 'bg-white text-ink shadow-card' : 'text-ink-muted'}"
+										>
+											{dias === 0
+												? t('profile.expiresNever')
+												: t('profile.expiresDays', { days: String(dias) })}
+										</button>
+									{/each}
+								</div>
+							</div>
+
+							<button
+								onclick={createShortlist}
+								disabled={creatingShortlist || shortlistSelection.length === 0}
+								class="flex min-h-12 w-full items-center justify-center rounded-button bg-jade text-base font-semibold text-white active:scale-[0.98] disabled:opacity-50"
+							>
+								{creatingShortlist ? t('profile.creating') : t('profile.createShortlist')}
+							</button>
+						{/if}
+					</div>
+				{/if}
 			</section>
 
 			<!-- Navigation -->

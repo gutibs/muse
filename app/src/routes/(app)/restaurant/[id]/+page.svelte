@@ -16,6 +16,7 @@
 	import { directionsUrl, openExternal } from '$lib/utils/external';
 	import RatingHearts from '$lib/components/RatingHearts.svelte';
 	import HeartIcon from '$lib/components/HeartIcon.svelte';
+	import StarIcon from '$lib/components/StarIcon.svelte';
 
 	let restaurantId = $derived(Number(page.params.id));
 
@@ -27,6 +28,25 @@
 	// Google puede mandar más de un autor; se muestra el primero, que es el de
 	// la foto que efectivamente servimos (el parser toma photos[0]).
 	let photoAuthor = $derived(restaurant?.photoAttribution?.[0] ?? null);
+
+	let togglingFavourite = $state(false);
+
+	async function toggleFavourite() {
+		if (!myPin || togglingFavourite) return;
+		const siguiente = !myPin.isFavourite;
+		togglingFavourite = true;
+		// Optimista: la estrella responde al toque y vuelve sola si el
+		// servidor rechaza.
+		myPin = { ...myPin, isFavourite: siguiente };
+		try {
+			await pinsService.setFavourite(myPin.id, siguiente);
+		} catch (err) {
+			myPin = { ...myPin, isFavourite: !siguiente };
+			logSilent('restaurant:favourite', err);
+		} finally {
+			togglingFavourite = false;
+		}
+	}
 
 	function goToDirections() {
 		if (!restaurant) return;
@@ -147,15 +167,30 @@
 			<!-- My pin: edit or add -->
 			<div class="px-5 pb-2">
 				{#if myPin}
-					<a
-						href={`/pin/${myPin.id}/edit`}
-						class="flex min-h-12 w-full items-center justify-center gap-2 rounded-button bg-jade text-base font-semibold text-white active:scale-[0.98]"
-					>
-						<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-							<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-						</svg>
-						{t('restaurant.editMyPin')}
-					</a>
+					<div class="flex gap-2">
+						<a
+							href={`/pin/${myPin.id}/edit`}
+							class="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-button bg-jade text-base font-semibold text-white active:scale-[0.98]"
+						>
+							<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+							</svg>
+							{t('restaurant.editMyPin')}
+						</a>
+						<button
+							type="button"
+							onclick={toggleFavourite}
+							disabled={togglingFavourite}
+							aria-pressed={myPin.isFavourite}
+							aria-label={t('pin.favourite')}
+							class="flex min-h-12 w-12 shrink-0 items-center justify-center rounded-button border active:scale-[0.98]
+								{myPin.isFavourite
+								? 'border-gold bg-gold/10 text-gold'
+								: 'border-cream-dark bg-white text-ink-muted'}"
+						>
+							<StarIcon filled={myPin.isFavourite} />
+						</button>
+					</div>
 				{:else}
 					<a
 						href={`/pin/new?restaurantId=${restaurant.id}`}
