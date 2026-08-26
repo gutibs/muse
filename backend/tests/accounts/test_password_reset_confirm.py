@@ -45,7 +45,7 @@ def _confirm(email, code, password=NEW_PASSWORD):
 @pytest.mark.django_db
 def test_four_failed_attempts_leave_the_code_usable():
 	user = UserFactory()
-	code = issue_code(user)
+	code, _ = issue_code(user)
 
 	for _ in range(4):
 		failed = _confirm(user.email, WRONG_CODE)
@@ -63,7 +63,7 @@ def test_four_failed_attempts_leave_the_code_usable():
 @pytest.mark.django_db
 def test_fifth_failed_attempt_burns_the_code_even_with_the_right_value():
 	user = UserFactory()
-	code = issue_code(user)
+	code, _ = issue_code(user)
 
 	for _ in range(5):
 		_confirm(user.email, WRONG_CODE)
@@ -135,13 +135,13 @@ def test_two_users_with_the_same_live_code_cannot_reach_each_other(_random):
 def test_code_works_at_fourteen_minutes_and_not_at_sixteen():
 	"""RF7: vigencia de 15 minutos."""
 	early_user = UserFactory(username="early", email="early@example.com")
-	early_code = issue_code(early_user)
+	early_code, _ = issue_code(early_user)
 	_age(early_user, minutes=14)
 	early = _confirm(early_user.email, early_code)
 	assert early.status_code == 200, early.content
 
 	late_user = UserFactory(username="late", email="late@example.com")
-	late_code = issue_code(late_user)
+	late_code, _ = issue_code(late_user)
 	_age(late_user, minutes=16)
 	late = _confirm(late_user.email, late_code)
 	assert late.status_code == 400, late.content
@@ -155,9 +155,9 @@ def test_requesting_a_new_code_kills_the_previous_one():
 	"""RF9: sin esto, RF7 y RF8 se esquivan pidiendo un código nuevo y
 	siguiendo con el viejo."""
 	user = UserFactory()
-	first = issue_code(user)
+	first, _ = issue_code(user)
 	first_row = PasswordResetCode.objects.get(user=user)
-	second = issue_code(user)
+	second, _ = issue_code(user)
 
 	# El anterior queda muerto en la base, no sólo tapado por el nuevo: si
 	# sobreviviera vigente, quemar los 5 intentos del nuevo devolvería la
@@ -177,7 +177,7 @@ def test_requesting_a_new_code_kills_the_previous_one():
 def test_a_code_cannot_be_redeemed_twice():
 	"""RF10: dentro de los 15 minutos, el segundo canje falla igual."""
 	user = UserFactory()
-	code = issue_code(user)
+	code, _ = issue_code(user)
 
 	first = _confirm(user.email, code)
 	assert first.status_code == 200, first.content
@@ -194,7 +194,7 @@ def test_the_plain_code_is_never_persisted(caplog):
 	"""RF11: es una credencial. No va en claro en la fila ni en los logs."""
 	user = UserFactory()
 	with caplog.at_level(logging.DEBUG):
-		code = issue_code(user)
+		code, _ = issue_code(user)
 		_confirm(user.email, WRONG_CODE)
 
 	entry = PasswordResetCode.objects.get(user=user)
@@ -209,7 +209,7 @@ def test_new_password_must_pass_the_project_validators():
 	"""RF12: si el reset es más permisivo que el registro, el registro no
 	valida nada — alcanza con resetear para poner '12345678'."""
 	user = UserFactory()
-	code = issue_code(user)
+	code, _ = issue_code(user)
 
 	weak = _confirm(user.email, code, password="12345678")
 
@@ -217,3 +217,55 @@ def test_new_password_must_pass_the_project_validators():
 	assert "newPassword" in weak.json(), weak.content
 	user.refresh_from_db()
 	assert not user.check_password("12345678")
+
+
+@pytest.mark.critical
+@pytest.mark.django_db
+@patch("accounts.services.password_reset.make_password")
+def test_every_rejection_costs_the_same_hash(make_password_mock):
+	"""RF3 vale para el canje, no sólo para el pedido. Sin esto, la salida
+	rápida —usuario conocido sin código vivo, que es el estado normal de toda
+	cuenta— responde en milisegundos mientras el email desconocido paga un
+	PBKDF2 entero: el tiempo dice quién tiene cuenta, con la señal invertida."""
+	make_password_mock.return_value = "fake-hash"
+	user = UserFactory(username="known", email="known@example.com")
+
+	# 1) Usuario conocido, sin ningún código emitido.
+	_confirm(user.email, WRONG_CODE)
+	assert make_password_mock.call_count == 1, "usuario conocido sin código vivo no hasheó"
+
+	# 2) Email desconocido: la referencia con la que hay que empatar.
+	make_password_mock.reset_mock()
+	_confirm("nobody@example.com", WRONG_CODE)
+	assert make_password_mock.call_count == 1
+
+
+@pytest.mark.critical
+@pytest.mark.django_db
+@patch("accounts.services.password_reset.make_password")
+def test_a_burned_code_also_costs_a_hash(make_password_mock):
+	make_password_mock.side_effect = lambda *a, **kw: "fake-hash"
+	user = UserFactory()
+	issue_code(user)
+	for _ in range(PasswordResetCode.MAX_ATTEMPTS):
+		_confirm(user.email, WRONG_CODE)
+
+	make_password_mock.reset_mock()
+	_confirm(user.email, WRONG_CODE)
+
+	assert make_password_mock.call_count == 1, "el código quemado salió sin pagar el hash"
+
+
+@pytest.mark.critical
+@pytest.mark.django_db
+@patch("accounts.services.password_reset.make_password")
+def test_an_expired_code_also_costs_a_hash(make_password_mock):
+	make_password_mock.side_effect = lambda *a, **kw: "fake-hash"
+	user = UserFactory()
+	issue_code(user)
+	_age(user, minutes=16)
+
+	make_password_mock.reset_mock()
+	_confirm(user.email, WRONG_CODE)
+
+	assert make_password_mock.call_count == 1, "el código vencido salió sin pagar el hash"

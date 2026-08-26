@@ -14,6 +14,7 @@ from rest_framework.test import APIClient
 
 from accounts.models import PasswordResetCode
 from accounts.services.email import EmailSendError
+from accounts.services.password_reset import issue_code
 from accounts.views import PASSWORD_RESET_ACCEPTED
 from tests.factories import UserFactory
 
@@ -134,3 +135,37 @@ def test_successful_send_marks_the_row_as_sent(send):
 	APIClient().post(reverse("password_reset"), {"email": EXISTING_EMAIL}, format="json")
 
 	assert PasswordResetCode.objects.get(user=user).sent_at is not None
+
+
+@pytest.mark.critical
+@pytest.mark.django_db
+def test_issue_code_returns_the_row_it_created():
+	"""RF5 depende de marcar la fila correcta. Con un re-query por
+	`filter(user=...).first()`, dos pedidos concurrentes del mismo usuario
+	pueden estampar sent_at en la fila del otro y dejar mintiendo a la única
+	señal que dice qué envío hay que reintentar a mano."""
+	user = UserFactory(username="issuer", email="issuer@example.com")
+
+	code, entry = issue_code(user)
+
+	assert isinstance(code, str) and len(code) == PasswordResetCode.CODE_DIGITS
+	assert entry.pk == PasswordResetCode.objects.get(user=user).pk
+	assert entry.sent_at is None
+
+
+@pytest.mark.critical
+@pytest.mark.django_db
+@patch("accounts.services.password_reset.send_password_reset_email")
+def test_cooldown_rejection_also_costs_a_hash(send):
+	"""Misma razón que RF3: la salida por cooldown no puede ser la barata."""
+	send.return_value = {"id": "re_ok"}
+	UserFactory(username="reset-me", email=EXISTING_EMAIL)
+	url = reverse("password_reset")
+	for _ in range(PasswordResetCode.MAX_PER_WINDOW):
+		APIClient().post(url, {"email": EXISTING_EMAIL}, format="json")
+
+	with patch("accounts.services.password_reset.make_password") as make_password_mock:
+		make_password_mock.return_value = "fake-hash"
+		APIClient().post(url, {"email": EXISTING_EMAIL}, format="json")
+
+	assert make_password_mock.call_count == 1

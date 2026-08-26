@@ -45,7 +45,11 @@ export const authService = {
 		return api.get('/auth/dietary-preferences/');
 	},
 
-	changePassword(currentPassword: string, newPassword: string): Promise<void> {
+	/** Devuelve un par de tokens NUEVO, no 204: el cambio de contraseña
+	 * invalida todo lo firmado con el hash anterior, incluido el token de este
+	 * mismo dispositivo (CHECK_REVOKE_TOKEN). Quien llame tiene que guardarlo
+	 * — de eso se encarga `authStore.changePassword`. */
+	changePassword(currentPassword: string, newPassword: string): Promise<AuthTokens> {
 		return api.post('/auth/change-password/', { currentPassword, newPassword });
 	},
 

@@ -26,7 +26,7 @@ def _tokens(email, password):
 
 
 def _reset(user):
-	code = issue_code(user)
+	code, _ = issue_code(user)
 	resp = APIClient().post(
 		reverse("password_reset_confirm"),
 		{"email": user.email, "code": code, "newPassword": NEW_PASSWORD},

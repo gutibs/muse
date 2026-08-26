@@ -7,7 +7,8 @@ from django.shortcuts import get_object_or_404
 from rest_framework import generics, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
+from rest_framework.throttling import AnonRateThrottle, SimpleRateThrottle, UserRateThrottle
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from accounts.models import DietaryPreference, EmailInvitation, Friendship
 from accounts.serializers import (
@@ -55,15 +56,28 @@ class InviteThrottle(UserRateThrottle):
 	scope = "invite"
 
 
-class PasswordResetThrottle(AnonRateThrottle):
-	"""Cada pedido cuesta un email real, así que el throttle no protege sólo
-	la cuenta. Cuenta por IP de cliente — ver NUM_PROXIES en settings.py, sin
-	el cual todos los anónimos comparten el cubo de nginx (RF14)."""
+class ClientIPRateThrottle(SimpleRateThrottle):
+	"""Cuenta por IP de cliente SIEMPRE, tenga sesión o no.
 
+	`AnonRateThrottle.get_cache_key` devuelve None cuando el request viene
+	autenticado, o sea que no cuenta nada. En un endpoint `AllowAny` eso es un
+	agujero: el registro es abierto, así que una cuenta gratis se saltea el
+	tope entero. En estos dos endpoints el tope no protege sólo la cuenta —
+	cada pedido cuesta un email real que sale de nuestro dominio— así que
+	tiene que valer también para quien viene con token.
+
+	La identidad sale de `get_ident`, que depende de NUM_PROXIES (RF14).
+	"""
+
+	def get_cache_key(self, request, view):
+		return self.cache_format % {"scope": self.scope, "ident": self.get_ident(request)}
+
+
+class PasswordResetThrottle(ClientIPRateThrottle):
 	scope = "password_reset"
 
 
-class PasswordResetConfirmThrottle(AnonRateThrottle):
+class PasswordResetConfirmThrottle(ClientIPRateThrottle):
 	scope = "password_reset_confirm"
 
 
@@ -114,6 +128,16 @@ class DietaryPreferenceListView(generics.ListAPIView):
 
 
 class ChangePasswordView(generics.GenericAPIView):
+	"""Cambiar la contraseña estando adentro.
+
+	Devuelve un par de tokens nuevo, y no un 204. Con CHECK_REVOKE_TOKEN, el
+	cambio de contraseña invalida todo lo firmado con el hash anterior — que
+	incluye el token del dispositivo desde el que estás cambiándola. Sin el par
+	nuevo, el usuario ve "contraseña actualizada" y la llamada siguiente lo
+	manda al login sin explicación. Las OTRAS sesiones sí se cierran, que es lo
+	que se busca.
+	"""
+
 	serializer_class = ChangePasswordSerializer
 
 	def post(self, request):
@@ -121,7 +145,11 @@ class ChangePasswordView(generics.GenericAPIView):
 		serializer.is_valid(raise_exception=True)
 		request.user.set_password(serializer.validated_data["new_password"])
 		request.user.save()
-		return Response(status=status.HTTP_204_NO_CONTENT)
+		refresh = RefreshToken.for_user(request.user)
+		return Response(
+			{"refresh": str(refresh), "access": str(refresh.access_token)},
+			status=status.HTTP_200_OK,
+		)
 
 
 class UserSearchView(generics.ListAPIView):

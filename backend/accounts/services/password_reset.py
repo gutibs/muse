@@ -67,8 +67,14 @@ def _random_code() -> str:
 	return f"{secrets.randbelow(10 ** PasswordResetCode.CODE_DIGITS):0{PasswordResetCode.CODE_DIGITS}d}"
 
 
-def issue_code(user) -> str:
-	"""Crea un código nuevo para `user` y devuelve su valor en claro.
+def issue_code(user) -> tuple[str, PasswordResetCode]:
+	"""Crea un código nuevo para `user` y devuelve `(código en claro, fila)`.
+
+	Devuelve la fila y no sólo el código porque el llamador tiene que marcarle
+	`sent_at`: buscarla después con `filter(user=...).first()` es una carrera
+	—dos pedidos del mismo usuario crean dos filas— y estampar la marca en la
+	fila equivocada deja mintiendo a la única señal que dice qué envío hay que
+	reintentar a mano (RF5).
 
 	RF9: vence cualquier código anterior que siguiera vivo, en la misma
 	transacción. No los borra —de eso se encarga la limpieza (RF17)—: vencerlos
@@ -82,12 +88,12 @@ def issue_code(user) -> str:
 		PasswordResetCode.objects.filter(
 			user=user, used_at__isnull=True, expires_at__gt=now
 		).update(expires_at=now)
-		PasswordResetCode.objects.create(
+		entry = PasswordResetCode.objects.create(
 			user=user,
 			code_hash=make_password(code),
 			expires_at=now + timedelta(minutes=PasswordResetCode.TTL_MINUTES),
 		)
-	return code
+	return code, entry
 
 
 def request_reset(*, email: str, language: str | None = None) -> None:
@@ -102,11 +108,13 @@ def request_reset(*, email: str, language: str | None = None) -> None:
 		return
 
 	if _cooldown_exceeded(user):
+		# Paga el hash igual: si la salida por cooldown fuera la barata, el
+		# tiempo volvería a separar los caminos (RF3).
+		_burn_equivalent_hash()
 		logger.warning("Password reset cooldown hit", extra={"user_id": user.id})
 		return
 
-	code = issue_code(user)
-	entry = PasswordResetCode.objects.filter(user=user).order_by("-created_at").first()
+	code, entry = issue_code(user)
 	try:
 		send_password_reset_email(to_email=user.email, code=code, language=language)
 	except EmailSendError as exc:
@@ -118,13 +126,12 @@ def request_reset(*, email: str, language: str | None = None) -> None:
 			"Password reset email not sent (status=%s): %s",
 			exc.status_code,
 			exc.message,
-			extra={"user_id": user.id, "reset_code_id": entry.id if entry else None},
+			extra={"user_id": user.id, "reset_code_id": entry.id},
 		)
 		return
 
-	if entry is not None:
-		entry.sent_at = timezone.now()
-		entry.save(update_fields=["sent_at"])
+	entry.sent_at = timezone.now()
+	entry.save(update_fields=["sent_at"])
 	logger.info("Password reset code sent", extra={"user_id": user.id})
 
 
@@ -148,6 +155,11 @@ def confirm_reset(*, email: str, code: str, new_password: str):
 		.first()
 	)
 	if entry is None:
+		# RF3 vale acá tanto como en el pedido, y este es el caso normal: una
+		# cuenta que existe y no tiene ningún reset en curso. Sin el hash, la
+		# respuesta rápida dice "esta cuenta existe" — la señal invertida, y
+		# más limpia que si no hubiéramos hecho nada.
+		_burn_equivalent_hash()
 		raise ValidationError({"code": [_INVALID]})
 
 	# RF8: el intento se cobra en la base, con un UPDATE condicional. Que sea
@@ -160,6 +172,7 @@ def confirm_reset(*, email: str, code: str, new_password: str):
 		attempts__lt=PasswordResetCode.MAX_ATTEMPTS,
 	).update(attempts=F("attempts") + 1)
 	if not charged:
+		_burn_equivalent_hash()
 		logger.warning("Password reset attempt on burned code", extra={"user_id": user.id})
 		raise ValidationError({"code": [_INVALID]})
 
@@ -167,6 +180,7 @@ def confirm_reset(*, email: str, code: str, new_password: str):
 
 	# RF7: se compara contra expires_at al momento del canje, en UTC.
 	if entry.expires_at <= timezone.now():
+		_burn_equivalent_hash()
 		logger.info("Password reset attempt on expired code", extra={"user_id": user.id})
 		raise ValidationError({"code": [_INVALID]})
 

@@ -105,3 +105,64 @@ def test_num_proxies_is_configured():
 	NUM_PROXIES del dict REST_FRAMEWORK, y un setting suelto a nivel de módulo
 	deja api_settings.NUM_PROXIES en None sin que nada avise."""
 	assert api_settings.NUM_PROXIES == 1
+
+
+@pytest.mark.critical
+@pytest.mark.django_db
+def test_an_authenticated_caller_is_throttled_too(real_throttles):
+	"""`AnonRateThrottle.get_cache_key` devuelve None si hay sesión, o sea que
+	no cuenta nada. Como el registro es abierto, una cuenta gratis alcanzaba
+	para rociar mails de reset a direcciones de terceros desde nuestro dominio
+	de Resend, sin tope: el cooldown por destino son 3 por casilla, no un tope
+	global de envíos."""
+	from tests.factories import UserFactory
+
+	user = UserFactory(username="spammer", email="spammer@example.com")
+	tokens = (
+		APIClient()
+		.post(
+			reverse("token_obtain"),
+			{"username": user.username, "password": "test-pass-123"},
+			format="json",
+		)
+		.json()
+	)
+	client = APIClient(HTTP_AUTHORIZATION=f"Bearer {tokens['access']}")
+	url = reverse("password_reset")
+
+	statuses = [
+		client.post(url, {"email": f"victim{i}@example.com"}, format="json").status_code
+		for i in range(7)
+	]
+
+	assert 429 in statuses, f"ninguna request fue frenada: {statuses}"
+
+
+@pytest.mark.critical
+@pytest.mark.django_db
+def test_an_authenticated_caller_is_throttled_on_confirm_too(real_throttles):
+	from tests.factories import UserFactory
+
+	user = UserFactory(username="guesser", email="guesser@example.com")
+	tokens = (
+		APIClient()
+		.post(
+			reverse("token_obtain"),
+			{"username": user.username, "password": "test-pass-123"},
+			format="json",
+		)
+		.json()
+	)
+	client = APIClient(HTTP_AUTHORIZATION=f"Bearer {tokens['access']}")
+	url = reverse("password_reset_confirm")
+
+	statuses = [
+		client.post(
+			url,
+			{"email": "victim@example.com", "code": "000000", "newPassword": "Nu3va-clave!"},
+			format="json",
+		).status_code
+		for i in range(12)
+	]
+
+	assert 429 in statuses, f"ninguna request fue frenada: {statuses}"

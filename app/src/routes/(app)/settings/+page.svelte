@@ -48,7 +48,9 @@
 
 		pwSaving = true;
 		try {
-			await authService.changePassword(currentPassword, newPassword);
+			// Por el store: el backend devuelve un par de tokens nuevo y hay que
+			// guardarlo, o el cambio de contraseña te deja afuera a vos mismo.
+			await authStore.changePassword(currentPassword, newPassword);
 			pwSuccess = t('settings.passwordUpdated');
 			changingPassword = false;
 			currentPassword = '';

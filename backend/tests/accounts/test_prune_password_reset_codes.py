@@ -56,7 +56,7 @@ def test_prune_never_touches_a_live_code():
 	tipeando. Un código vigente no tiene edad suficiente para calificar, pero
 	el test lo fija por si el filtro cambia."""
 	user = UserFactory()
-	code = issue_code(user)
+	code, _ = issue_code(user)
 	PasswordResetCode.objects.filter(user=user).update(
 		created_at=timezone.now() - timedelta(days=365)
 	)

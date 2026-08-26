@@ -103,6 +103,18 @@ class AuthStore {
 		this.user = result.user;
 	}
 
+	/** Cambia la contraseña y se queda con el par de tokens que devuelve el
+	 * backend. Sin guardarlo, el usuario queda con el token que su propio
+	 * cambio acaba de invalidar: vería "contraseña actualizada" y la llamada
+	 * siguiente lo mandaría al login. Las otras sesiones sí se cierran. */
+	async changePassword(currentPassword: string, newPassword: string) {
+		const tokens = await authService.changePassword(currentPassword, newPassword);
+		this.accessToken = tokens.access;
+		this.refreshToken = tokens.refresh;
+		localStorage.setItem(TOKEN_KEY, tokens.access);
+		localStorage.setItem(REFRESH_KEY, tokens.refresh);
+	}
+
 	async updateProfile(data: import('$lib/services/auth.service').ProfileUpdatePayload) {
 		this.user = await authService.updateProfile(data);
 	}
