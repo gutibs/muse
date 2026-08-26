@@ -169,6 +169,13 @@ def _not_configured():
 	)
 
 
+# Places API (New) rechaza el request entero con 400 INVALID_ARGUMENT si el
+# radio se pasa: "Radius must be between 0 and 50,000 meters". Un bias
+# demasiado ancho no degrada la búsqueda, la rompe — así que se acota acá y no
+# en cada llamador.
+MAX_LOCATION_BIAS_RADIUS_M = 50000.0
+
+
 def _location_bias(request, radius_m: float) -> dict | None:
 	"""Optional map-centre bias. Bad client coordinates degrade to no bias
 	rather than failing the search, but are logged."""
@@ -180,7 +187,7 @@ def _location_bias(request, radius_m: float) -> dict | None:
 		return {
 			"circle": {
 				"center": {"latitude": float(lat), "longitude": float(lng)},
-				"radius": radius_m,
+				"radius": min(radius_m, MAX_LOCATION_BIAS_RADIUS_M),
 			}
 		}
 	except (TypeError, ValueError):
@@ -251,8 +258,9 @@ def city_autocomplete(request):
 	else:
 		# No explicit country hint: bias by the caller's current map view so
 		# a bare "london" prefers the London the user is looking at over the
-		# US-default Google falls back to.
-		bias = _location_bias(request, 500000.0)
+		# US-default Google falls back to. El radio es el máximo que acepta
+		# Google: una ciudad puede estar lejos del centro del mapa.
+		bias = _location_bias(request, MAX_LOCATION_BIAS_RADIUS_M)
 		if bias:
 			body["locationBias"] = bias
 
