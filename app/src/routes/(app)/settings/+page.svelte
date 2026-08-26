@@ -209,7 +209,7 @@
 			<div class="space-y-2">
 				<div class="rounded-card bg-white p-4 shadow-card">
 					<div class="text-sm font-medium text-ink">{t('settings.appName')}</div>
-					<div class="text-xs text-ink-muted">{t('settings.appVersion')}</div>
+					<div class="text-xs text-ink-muted">{t('settings.appVersion', { version: __APP_VERSION__ })}</div>
 				</div>
 			</div>
 		</section>
