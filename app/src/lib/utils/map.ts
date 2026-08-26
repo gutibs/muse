@@ -23,11 +23,34 @@ export const PIN_COLORS = {
 	friend: '#6366F1',   // indigo — distinct from rated/unrated
 } as const;
 
-/** Tile provider. Was pasted into three components; changing it meant three
- * edits and it was a matter of time before one got missed. */
-const TILE_URL = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+/**
+ * Tile provider. Was pasted into three components; changing it meant three
+ * edits and it was a matter of time before one got missed.
+ *
+ * CARTO pasó a exigir key y, en vez de responder un error, sirve el mismo PNG
+ * con "API KEY REQUIRED" estampado encima — así que el mapa "anda" y se ve
+ * roto. Dos detalles que cuestan una tarde si se erran: el parámetro es `key`
+ * (con `api_key` devuelve el tile marcado, mismo byte por byte que sin key), y
+ * la ruta lleva el prefijo `rastertiles/` (la vieja `light_all/` suelta ignora
+ * la key). Verificado tile por tile contra la CDN.
+ */
+const CARTO_KEY = import.meta.env.VITE_CARTO_KEY;
+/** Exportada sólo para que `map.test.ts` pueda fijar la ruta y el parámetro. */
+export const TILE_URL =
+	'https://{s}.basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}{r}.png' +
+	(CARTO_KEY ? `?key=${CARTO_KEY}` : '');
 const ATTRIBUTION =
 	'&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>';
+
+// Sin key el mapa sigue funcionando, pero con la marca de agua encima. Es el
+// tipo de fallo que nadie reporta como bug porque "el mapa se ve": conviene
+// que grite en la consola de quien desarrolla.
+if (import.meta.env.DEV && !CARTO_KEY) {
+	console.warn(
+		'[muse] Falta VITE_CARTO_KEY: los tiles del mapa van a venir con la marca de agua "API KEY REQUIRED".\n' +
+			'Copiá la key en app/.env — se pide gratis en https://carto.com/basemaps/apikey/'
+	);
+}
 
 /**
  * Load the Leaflet namespace and its stylesheet.

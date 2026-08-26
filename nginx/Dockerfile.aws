@@ -7,6 +7,12 @@ WORKDIR /app
 COPY app/package.json app/package-lock.json ./
 RUN npm ci
 COPY app/ .
+# `app/.env` está gitignored, así que acá adentro no existe: la key de CARTO
+# entra por build-arg desde el .env del servidor (ver docker-compose.aws.yml).
+# Sin ella el mapa de /shared/ se sirve con "API KEY REQUIRED" estampado sobre
+# cada tile — CARTO responde 200, así que nada falla y nadie se entera.
+ARG VITE_CARTO_KEY
+ENV VITE_CARTO_KEY=$VITE_CARTO_KEY
 RUN npm run build
 
 FROM python:3.13-slim AS backend

@@ -35,6 +35,18 @@ No inventes saltos: después de `V0.1.2` va `V0.1.3`, no `V0.2.0`, salvo que el 
    - `app/package.json` → `"version": "1.1.0"` — sin la `V`, porque npm exige semver estricto.
 4. **Buildeá** con `npm run build:apk-prod` desde `app/`.
 
+   Necesita `VITE_CARTO_KEY` disponible: alcanza con tenerla en `app/.env` (Vite
+   lo carga también en los modos de Capacitor), o pasándola en la línea:
+
+   ```
+   VITE_CARTO_KEY=<la key> npm run build:apk-prod
+   ```
+
+   **No la pongas en `.env.capacitor-prod`**: ese archivo está versionado. Si
+   falta, el build corta con un mensaje que lo explica — es a propósito: sin la
+   key CARTO devuelve 200 igual, pero con "API KEY REQUIRED" estampado sobre
+   cada mapa, y eso recién se ve con el APK instalado en un teléfono.
+
 ## Pendiente conocido
 
 El APK `V1.0.0` compilado **es anterior al borrado de cuenta**. Play Store exige esa funcionalidad para toda app con registro, así que hay que rebuildear antes de publicar. Por la convención sería `V1.1.0`: es una feature visible al usuario.

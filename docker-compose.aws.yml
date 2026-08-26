@@ -67,6 +67,11 @@ services:
     build:
       context: .
       dockerfile: nginx/Dockerfile.aws
+      args:
+        # Sale del .env de este directorio en el servidor. El build falla si
+        # falta (corte en app/vite.config.ts), y como el build corre ANTES del
+        # down, producción queda intacta hasta que se cargue.
+        VITE_CARTO_KEY: ${VITE_CARTO_KEY}
     ports:
       - "80:80"
       - "443:443"
