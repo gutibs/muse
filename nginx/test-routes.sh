@@ -33,7 +33,14 @@ cleanup() {
 trap cleanup EXIT
 
 echo "==> Compilando la SPA (mismo stage que la imagen de producción)"
-docker build --quiet --target frontend -f "$REPO_ROOT/nginx/Dockerfile.aws" -t "${IMAGE}-frontend" "$REPO_ROOT" >/dev/null
+# El build de producción exige VITE_CARTO_KEY (ver app/vite.config.ts): sin ella
+# los mapas salen con la marca de agua de CARTO y nada falla en runtime. Acá se
+# le pasa un valor de descarte a propósito — este script verifica qué rutas
+# sirve nginx, no cómo se ven los mapas, y CI no tiene por qué llevar la key
+# real. El corte sigue vivo donde importa: el APK y el build del servidor.
+docker build --quiet --target frontend \
+	--build-arg VITE_CARTO_KEY="${VITE_CARTO_KEY:-test-routes-no-usa-mapas}" \
+	-f "$REPO_ROOT/nginx/Dockerfile.aws" -t "${IMAGE}-frontend" "$REPO_ROOT" >/dev/null
 docker create --name "${CONTAINER}-extract" "${IMAGE}-frontend" >/dev/null
 docker cp "${CONTAINER}-extract:/app/build" "$WORK/app" >/dev/null
 docker rm -f "${CONTAINER}-extract" >/dev/null
