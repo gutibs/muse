@@ -121,6 +121,35 @@ async function request<T>(path: string, options?: RequestInit, alreadyRetried = 
 	return response.json();
 }
 
+/** Igual que `request` pero sin Authorization y sin la maquinaria de refresh:
+ * un 401 acá es la respuesta del endpoint, no una sesión vencida. */
+async function requestAnon<T>(path: string, options?: RequestInit): Promise<T> {
+	const controller = new AbortController();
+	const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+	let response: Response;
+	try {
+		response = await fetch(`${API_BASE}${path}`, {
+			...options,
+			signal: controller.signal,
+			headers: { 'Content-Type': 'application/json', ...(options?.headers as Record<string, string>) },
+		});
+	} catch (fetchErr) {
+		console.error('[api] anonymous fetch failed:', fetchErr);
+		throw fetchErr;
+	} finally {
+		clearTimeout(timeoutId);
+	}
+
+	if (!response.ok) {
+		const data = await response.json().catch(() => null);
+		throw new ApiError(response.status, data);
+	}
+
+	if (response.status === 204) return undefined as T;
+	return response.json();
+}
+
 /** Max pages `getAll` will walk before giving up. At PAGE_SIZE=20 that is
  * 2000 rows — far past any list a person actually has, and a guard against
  * looping forever if the API ever returns a `next` that points at itself. */
@@ -164,6 +193,21 @@ export const api = {
 	},
 	post<T>(path: string, body?: unknown): Promise<T> {
 		return request<T>(path, {
+			method: 'POST',
+			body: body ? JSON.stringify(body) : undefined,
+		});
+	},
+	/**
+	 * POST a un endpoint anónimo, sin mandar el token aunque haya uno guardado.
+	 *
+	 * DRF corre la autenticación antes que el permiso, así que una view
+	 * AllowAny responde 401 igual si el header trae un token que ya no vale.
+	 * Por ese camino, `post` intentaría refrescar, fallaría y haría clearAuth
+	 * en medio de un flujo anónimo. Lo usa la recuperación de contraseña, que
+	 * es donde la persona por definición no tiene sesión válida.
+	 */
+	postAnon<T>(path: string, body?: unknown): Promise<T> {
+		return requestAnon<T>(path, {
 			method: 'POST',
 			body: body ? JSON.stringify(body) : undefined,
 		});

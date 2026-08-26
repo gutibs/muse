@@ -34,3 +34,8 @@ PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 # política de privacidad. Consolida antes de borrar; corre después del rollup
 # a propósito.
 0 5 * * 0 root cd /home/ubuntu/muse && /usr/bin/docker-compose -f docker-compose.aws.yml exec -T backend python manage.py prune_analytics 2>&1 | logger -t muse-prune-analytics
+
+# Códigos de recuperación de contraseña: la tabla guarda hashes de credenciales
+# de un solo uso. Borra lo usado o vencido con más de 30 días; lo vigente no
+# entra al filtro por viejo que sea el registro.
+30 5 * * 0 root cd /home/ubuntu/muse && /usr/bin/docker-compose -f docker-compose.aws.yml exec -T backend python manage.py prune_password_reset_codes 2>&1 | logger -t muse-prune-reset-codes

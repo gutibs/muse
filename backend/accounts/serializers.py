@@ -277,3 +277,21 @@ class ChangePasswordSerializer(serializers.Serializer):
 		if not self.context["request"].user.check_password(value):
 			raise serializers.ValidationError("Current password is incorrect.")
 		return value
+
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+	"""Sólo valida la forma del email. Que exista o no la cuenta no se
+	responde acá ni en ningún lado (RF2)."""
+
+	email = serializers.EmailField()
+	language = serializers.CharField(required=False, allow_blank=True)
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+	"""La validación del código y de la contraseña vive en
+	accounts.services.password_reset.confirm_reset — un solo lugar, como pide
+	el CLAUDE.md. Acá sólo la forma."""
+
+	email = serializers.EmailField()
+	code = serializers.CharField(max_length=12)
+	new_password = serializers.CharField(write_only=True)

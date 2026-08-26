@@ -16,6 +16,8 @@ from accounts.serializers import (
 	DietaryPreferenceSerializer,
 	EmailInvitationSerializer,
 	FriendshipSerializer,
+	PasswordResetConfirmSerializer,
+	PasswordResetRequestSerializer,
 	ProfileSerializer,
 	RegisterSerializer,
 	UserPublicSerializer,
@@ -23,6 +25,7 @@ from accounts.serializers import (
 from accounts.services.account_deletion import anonymise_user
 from accounts.services.email import EmailSendError, send_invitation_email
 from accounts.services.friendships import are_friends
+from accounts.services.password_reset import confirm_reset, request_reset
 from accounts.services.visibility import require_can_view
 from pins.selectors import visible_pins
 from pins.serializers import PinSerializer
@@ -50,6 +53,18 @@ class UserSearchThrottle(UserRateThrottle):
 
 class InviteThrottle(UserRateThrottle):
 	scope = "invite"
+
+
+class PasswordResetThrottle(AnonRateThrottle):
+	"""Cada pedido cuesta un email real, así que el throttle no protege sólo
+	la cuenta. Cuenta por IP de cliente — ver NUM_PROXIES en settings.py, sin
+	el cual todos los anónimos comparten el cubo de nginx (RF14)."""
+
+	scope = "password_reset"
+
+
+class PasswordResetConfirmThrottle(AnonRateThrottle):
+	scope = "password_reset_confirm"
 
 
 # Kept as a module-level alias for the tests that still import it from here.
@@ -252,3 +267,53 @@ class UserPinsView(generics.ListAPIView):
 			owner=user,
 			status=self.request.query_params.get("status"),
 		)
+
+
+# El cuerpo es literalmente el mismo objeto para todos los caminos de
+# PasswordResetView: exista la cuenta, no exista, o falle Resend (RF2). Si
+# alguna vez hay que tocarlo, se toca acá y sigue siendo uno solo.
+PASSWORD_RESET_ACCEPTED = {"detail": "If an account exists for that email, a code has been sent."}
+
+
+class PasswordResetView(generics.GenericAPIView):
+	"""Pide un código de recuperación. Endpoint anónimo.
+
+	Responde 200 con el mismo cuerpo siempre (RF2). Cualquier excepción que
+	se escapara de acá sería un oráculo de enumeración, así que el service no
+	levanta nada y esta vista no tiene ramas.
+	"""
+
+	serializer_class = PasswordResetRequestSerializer
+	permission_classes = (permissions.AllowAny,)
+	throttle_classes = (PasswordResetThrottle,)
+
+	def post(self, request):
+		serializer = self.get_serializer(data=request.data)
+		serializer.is_valid(raise_exception=True)
+		request_reset(
+			email=serializer.validated_data["email"],
+			language=serializer.validated_data.get("language"),
+		)
+		return Response(PASSWORD_RESET_ACCEPTED, status=status.HTTP_200_OK)
+
+
+class PasswordResetConfirmView(generics.GenericAPIView):
+	"""Canjea el código por una contraseña nueva. Endpoint anónimo.
+
+	El 400 sale del ValidationError que levanta el service, con el mismo
+	mensaje para código errado, vencido, quemado o usado.
+	"""
+
+	serializer_class = PasswordResetConfirmSerializer
+	permission_classes = (permissions.AllowAny,)
+	throttle_classes = (PasswordResetConfirmThrottle,)
+
+	def post(self, request):
+		serializer = self.get_serializer(data=request.data)
+		serializer.is_valid(raise_exception=True)
+		confirm_reset(
+			email=serializer.validated_data["email"],
+			code=serializer.validated_data["code"],
+			new_password=serializer.validated_data["new_password"],
+		)
+		return Response({"detail": "Password updated."}, status=status.HTTP_200_OK)

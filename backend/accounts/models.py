@@ -156,3 +156,48 @@ class EmailInvitation(models.Model):
 
 	def __str__(self):
 		return f"{self.from_user} invited {self.email}"
+
+
+class PasswordResetCode(models.Model):
+	"""Un código de recuperación de contraseña, de un solo uso.
+
+	Es una credencial, así que se guarda hasheada con el mismo mecanismo que
+	una contraseña (RF11) — nunca en claro, ni en la fila ni en los logs. Se
+	descartó reusar el patrón de EmailInvitation, que persiste un UUID legible
+	y no expira: ahí el token no protege nada y acá sí.
+
+	`attempts` es lo que hace que seis dígitos alcancen; se incrementa siempre
+	con un UPDATE atómico (ver services/password_reset.py), nunca leyendo y
+	escribiendo desde Python.
+	"""
+
+	CODE_DIGITS = 6
+	MAX_ATTEMPTS = 5
+	TTL_MINUTES = 15
+	# RF4: tope de códigos por casilla destino y ventana en la que se cuenta.
+	MAX_PER_WINDOW = 3
+	WINDOW_HOURS = 1
+
+	user = models.ForeignKey(
+		settings.AUTH_USER_MODEL,
+		on_delete=models.CASCADE,
+		related_name="password_reset_codes",
+	)
+	code_hash = models.CharField(max_length=128)
+	expires_at = models.DateTimeField()
+	attempts = models.PositiveSmallIntegerField(default=0)
+	used_at = models.DateTimeField(null=True, blank=True)
+	# RF5: null cuando Resend falló. La fila queda para poder reenviar a mano;
+	# el usuario recibe la misma respuesta que si hubiera salido (RF2).
+	sent_at = models.DateTimeField(null=True, blank=True)
+	created_at = models.DateTimeField(auto_now_add=True)
+
+	class Meta:
+		db_table = "accounts_password_reset_code"
+		ordering = ["-created_at"]
+		indexes = [
+			models.Index(fields=["user", "-created_at"], name="accounts_prc_user_idx"),
+		]
+
+	def __str__(self):
+		return f"Reset code for {self.user_id} (expires {self.expires_at:%Y-%m-%d %H:%M})"

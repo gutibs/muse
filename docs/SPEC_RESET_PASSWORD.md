@@ -129,15 +129,32 @@ aceptados, en todos los dispositivos.
 *Aceptación:* un token obtenido antes del reset devuelve `401` en un endpoint
 autenticado después del reset; uno obtenido después funciona.
 
+> **Corregido durante la implementación.** `CHECK_REVOKE_TOKEN` se chequea sólo
+> en `JWTAuthentication.get_user`; `TokenRefreshSerializer.validate` no lo mira.
+> De fábrica, entonces, un refresh emitido antes del reset sigue siendo aceptado
+> por `/token/refresh/` —y con `ROTATE_REFRESH_TOKENS` devuelve otro refresh,
+> indefinidamente—, aunque los access que produce hereden el claim viejo y no
+> autentiquen. Se cerró con `ThrottledTokenRefreshView`, que compara el claim
+> contra el usuario antes de emitir. Verificado en simplejwt 5.5.1.
+
 **RF14 — El rate limit cuenta por cliente real, no por el proxy.**
 DRF tiene que resolver la IP del cliente detrás de nginx.
 *Aceptación:* dos requests con `X-Forwarded-For` distintos se cuentan en cubos
 separados; el límite de uno no agota el del otro.
 
-> Hoy esto **no funciona**: `NUM_PROXIES` no está en `settings.py`, así que DRF
-> usa `REMOTE_ADDR` —la IP del contenedor de nginx— y todos los anónimos
-> comparten un único cubo. Afecta a los throttles que ya existen (`login`,
-> `register`, `shared_list_public`), no sólo a éste.
+> **El diagnóstico de esta spec estaba mal, y el arreglo que proponía no
+> funciona.** Verificado contra `rest_framework/throttling.py::get_ident` y
+> midiendo `api_settings.NUM_PROXIES`:
+>
+> 1. Sin `NUM_PROXIES`, DRF **no** cae a `REMOTE_ADDR` mientras haya
+>    `X-Forwarded-For`: usa la cadena XFF entera como identidad. Los anónimos
+>    no comparten un cubo — pasa algo peor. Como nginx appendea con
+>    `$proxy_add_x_forwarded_for`, esa cadena arranca con lo que mandó el
+>    cliente, así que un XFF distinto en cada request da un cubo nuevo en cada
+>    request: el throttle se evade entero, hoy, en `login` y `register`.
+> 2. `NUM_PROXIES = 1` a nivel de módulo en `settings.py` **no hace nada**: DRF
+>    lee sus settings del dict `REST_FRAMEWORK`, y con el setting suelto puesto
+>    en 1, `api_settings.NUM_PROXIES` seguía en `None`. Va dentro del dict.
 
 **RF15 — El email sale en el idioma del usuario.**
 Español, inglés o italiano, con el mismo mecanismo que la invitación.
@@ -271,8 +288,9 @@ Se descartó la blacklist oficial: agrega una app, dos tablas que crecen con cad
 login y necesitan limpieza, y sólo alcanza a los tokens emitidos después de
 instalarla.
 
-**`NUM_PROXIES = 1` en `settings.py`** para que los throttles cuenten por
-cliente (RF14).
+**`"NUM_PROXIES": 1` dentro del dict `REST_FRAMEWORK`** para que los throttles
+cuenten por cliente (RF14). Dentro del dict, no suelto en `settings.py`: ver la
+nota bajo RF14.
 
 **Frontend:** el modal de `login/+page.svelte:72` pasa a tres pasos. Las claves
 `login.forgotPassword` y `login.forgotBody` ya existen en los tres idiomas;
@@ -325,3 +343,22 @@ cliente (RF14).
   alguien cuya cuenta fue tomada. Un séptimo template y una llamada más.
 - **Cerrar el hueco de `deploy.yml`**, que no espera a `test.yml`: si algo de
   esto sale roto, el deploy no se entera. Se vio pasar el 2026-08-26.
+
+
+## 11 · Correcciones surgidas de la implementación (2026-08-26)
+
+Tres afirmaciones de la spec no sobrevivieron al contacto con las librerías.
+Quedan acá para que la spec no siga diciendo lo que ya se sabe falso:
+
+| Decía | Es | Consecuencia |
+|---|---|---|
+| Sin `NUM_PROXIES` DRF usa `REMOTE_ADDR` y todos comparten un cubo | Usa la cadena XFF entera, que el cliente controla | El throttle no está "mal repartido": se evade variando el header. Aplica a `login` y `register` desde siempre |
+| `NUM_PROXIES = 1` en `settings.py` | DRF lee sus settings del dict `REST_FRAMEWORK`; suelto queda en `None` | El arreglo propuesto no habría cambiado nada, y nada avisa |
+| `CHECK_REVOKE_TOKEN` cubre access y refresh | Sólo se chequea en `JWTAuthentication.get_user` | Un refresh viejo seguía siendo canjeable. Se agregó el chequeo en la view de refresh |
+
+Y una decisión de implementación que la spec no cubría: las dos llamadas del
+frontend van por un `api.postAnon` que no manda el header `Authorization`. DRF
+corre la autenticación antes que el permiso, así que un endpoint `AllowAny`
+responde `401` igual si el header trae un token inválido — y el deploy que
+activa `CHECK_REVOKE_TOKEN` deja a **todo el mundo** con un token muerto
+guardado, justo cuando van a usar este flujo.
