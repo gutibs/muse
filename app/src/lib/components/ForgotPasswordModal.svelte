@@ -44,19 +44,27 @@
 		error = '';
 		submitting = true;
 		try {
-			await passwordResetService.confirm(email, code, newPassword);
+			await passwordResetService.confirm(email, code, newPassword, i18n.locale);
 			step = 'done';
 		} catch (err) {
 			logSilent('forgot-password:confirm', err);
 			if (err instanceof ApiError && err.status === 400) {
 				// El backend no distingue código errado, vencido, quemado ni
-				// usado — a propósito. Los errores de contraseña sí vienen
-				// aparte y son los únicos que vale la pena mostrar literales.
+				// usado — a propósito, todos llegan bajo la clave `code`. Los
+				// errores de contraseña vienen aparte y ya traducidos, así que
+				// son los únicos que se muestran literales.
 				const data = err.data as Record<string, string[]> | null;
 				const passwordErrors = data?.newPassword;
-				error = passwordErrors?.length
-					? passwordErrors.join(' ')
-					: t('login.resetInvalidCode');
+				if (passwordErrors?.length) {
+					error = passwordErrors.join(' ');
+				} else {
+					// Vuelve al paso del código: decir "pedí uno nuevo" en la
+					// pantalla de la contraseña le pide a la persona algo que
+					// desde ahí no puede hacer. El valor tipeado queda puesto
+					// para corregir un dígito sin retipear los seis.
+					error = t('login.resetInvalidCode');
+					step = 'code';
+				}
 			} else {
 				error = t('auth.connectionError');
 			}
@@ -179,7 +187,7 @@
 				</button>
 			</form>
 		{:else}
-			<p class="mt-2 text-sm text-ink-light">{t('login.resetDone')}</p>
+			<p class="mt-2 text-sm text-ink-light">{t('login.resetDoneBody')}</p>
 			<button
 				onclick={onclose}
 				class="mt-5 flex min-h-11 w-full items-center justify-center rounded-button bg-jade text-sm font-semibold text-white active:scale-[0.98]"

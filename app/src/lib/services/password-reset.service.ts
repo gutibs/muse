@@ -16,9 +16,22 @@ export const passwordResetService = {
 		return api.postAnon('/auth/password-reset/', { email, language });
 	},
 
-	/** Canjea el código por una contraseña nueva. Un 400 puede ser código
-	 * errado, vencido, quemado o ya usado: el backend no distingue. */
-	confirm(email: string, code: string, newPassword: string): Promise<{ detail: string }> {
-		return api.postAnon('/auth/password-reset/confirm/', { email, code, newPassword });
+	/** Canjea el código por una contraseña nueva. Un 400 con la clave `code`
+	 * puede ser código errado, vencido, quemado o ya usado: el backend no
+	 * distingue, a propósito. El idioma va para que los errores de validación
+	 * de la contraseña vuelvan traducidos — la API no tiene LocaleMiddleware,
+	 * así que Django contesta en español si nadie le dice otra cosa. */
+	confirm(
+		email: string,
+		code: string,
+		newPassword: string,
+		language?: string
+	): Promise<{ detail: string }> {
+		return api.postAnon('/auth/password-reset/confirm/', {
+			email,
+			code,
+			newPassword,
+			language
+		});
 	}
 };

@@ -19,11 +19,15 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from django.db.models import F
-from django.utils import timezone
+from django.utils import timezone, translation
 from rest_framework.exceptions import ValidationError
 
 from accounts.models import PasswordResetCode
-from accounts.services.email import EmailSendError, send_password_reset_email
+from accounts.services.email import (
+	EmailSendError,
+	_normalize_language,
+	send_password_reset_email,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -135,7 +139,7 @@ def request_reset(*, email: str, language: str | None = None) -> None:
 	logger.info("Password reset code sent", extra={"user_id": user.id})
 
 
-def confirm_reset(*, email: str, code: str, new_password: str):
+def confirm_reset(*, email: str, code: str, new_password: str, language: str | None = None):
 	"""RF6-RF13. Devuelve el usuario con la contraseña ya cambiada.
 
 	Levanta ValidationError de DRF (→ 400) en cualquier fallo de canje, y con
@@ -194,10 +198,17 @@ def confirm_reset(*, email: str, code: str, new_password: str):
 	# RF12: las mismas validaciones que aplica el registro. Va después de
 	# validar el código, para no convertir esto en un validador de contraseñas
 	# abierto a cualquiera que pase por acá.
-	try:
-		validate_password(new_password, user=user)
-	except DjangoValidationError as exc:
-		raise ValidationError({"new_password": list(exc.messages)}) from exc
+	#
+	# El override de idioma no es cosmético: LANGUAGE_CODE es "es" y la API no
+	# tiene LocaleMiddleware, así que sin esto Django contesta siempre en
+	# español. Es la pantalla donde alguien elige una contraseña nueva, y la
+	# mitad del beta no habla español. Se normaliza con la misma función que
+	# elige el template del email, así que un idioma desconocido cae al default.
+	with translation.override(_normalize_language(language)):
+		try:
+			validate_password(new_password, user=user)
+		except DjangoValidationError as exc:
+			raise ValidationError({"new_password": list(exc.messages)}) from exc
 
 	with transaction.atomic():
 		# RF10: el código se consume acá, en la misma transacción que el

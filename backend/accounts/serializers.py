@@ -295,3 +295,6 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
 	email = serializers.EmailField()
 	code = serializers.CharField(max_length=12)
 	new_password = serializers.CharField(write_only=True)
+	# Sólo para traducir los errores de validación de la contraseña: la API no
+	# tiene LocaleMiddleware, así que sin esto salen siempre en español.
+	language = serializers.CharField(required=False, allow_blank=True)

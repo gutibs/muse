@@ -21,13 +21,17 @@ describe('passwordResetService', () => {
 		});
 	});
 
-	it('redeems the code with the new password', async () => {
-		await passwordResetService.confirm('forgot@example.com', '123456', 'Nu3va-clave!');
+	it('redeems the code with the new password, in the user language', async () => {
+		// El idioma viaja para que los errores de validación de contraseña
+		// vuelvan traducidos: la API no tiene LocaleMiddleware y Django
+		// contesta en español por defecto.
+		await passwordResetService.confirm('forgot@example.com', '123456', 'Nu3va-clave!', 'it');
 
 		expect(api.postAnon).toHaveBeenCalledWith('/auth/password-reset/confirm/', {
 			email: 'forgot@example.com',
 			code: '123456',
-			newPassword: 'Nu3va-clave!'
+			newPassword: 'Nu3va-clave!',
+			language: 'it'
 		});
 	});
 

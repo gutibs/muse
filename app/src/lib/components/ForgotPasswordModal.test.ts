@@ -56,7 +56,8 @@ describe('ForgotPasswordModal', () => {
 			expect(passwordResetService.confirm).toHaveBeenCalledWith(
 				EMAIL,
 				'123456',
-				'Nu3va-clave-segura!'
+				'Nu3va-clave-segura!',
+				expect.anything()
 			);
 		});
 	});
@@ -73,7 +74,10 @@ describe('ForgotPasswordModal', () => {
 		await waitFor(() => expect(container.querySelector('input[name="code"]')).not.toBeNull());
 	});
 
-	it('shows an error and stays on the code step when the code is rejected', async () => {
+	it('sends the user back to the code step when the code is rejected', async () => {
+		// El backend no distingue código errado, vencido ni quemado: el 400
+		// llega con la clave `code`. Mostrar "pedí uno nuevo" en el paso de la
+		// contraseña le pide a la persona algo que desde ahí no puede hacer.
 		const { ApiError } = await import('$lib/types');
 		vi.mocked(passwordResetService.confirm).mockRejectedValue(
 			new ApiError(400, { code: ['Invalid or expired code.'] })
@@ -94,7 +98,55 @@ describe('ForgotPasswordModal', () => {
 		await waitFor(() => {
 			expect(container.querySelector('[data-testid="reset-error"]')).not.toBeNull();
 		});
+		// El campo del código vuelve a estar a la vista, con el valor puesto
+		// para poder corregirlo sin retipearlo entero.
+		expect(container.querySelector('input[name="code"]')).not.toBeNull();
+		expect(container.querySelector('input[name="newPassword"]')).toBeNull();
+	});
+
+	it('stays on the password step when it is the password that is rejected', async () => {
+		const { ApiError } = await import('$lib/types');
+		vi.mocked(passwordResetService.confirm).mockRejectedValue(
+			new ApiError(400, { newPassword: ['This password is too common.'] })
+		);
+
+		const { container } = render(ForgotPasswordModal, { onclose: () => {} });
+		await type(container, 'input[type="email"]', EMAIL);
+		await fireEvent.submit(container.querySelector('form') as HTMLFormElement);
+		await waitFor(() => expect(container.querySelector('input[name="code"]')).not.toBeNull());
+		await type(container, 'input[name="code"]', '123456');
+		await fireEvent.submit(container.querySelector('form') as HTMLFormElement);
+		await waitFor(() =>
+			expect(container.querySelector('input[name="newPassword"]')).not.toBeNull()
+		);
+		await type(container, 'input[name="newPassword"]', 'weak');
+		await fireEvent.submit(container.querySelector('form') as HTMLFormElement);
+
+		await waitFor(() => {
+			expect(container.querySelector('[data-testid="reset-error"]')).not.toBeNull();
+		});
 		expect(container.querySelector('input[name="newPassword"]')).not.toBeNull();
+		expect(container.textContent).toContain('too common');
+	});
+
+	it('does not print the same sentence as heading and body when it is done', async () => {
+		const { container } = render(ForgotPasswordModal, { onclose: () => {} });
+		await type(container, 'input[type="email"]', EMAIL);
+		await fireEvent.submit(container.querySelector('form') as HTMLFormElement);
+		await waitFor(() => expect(container.querySelector('input[name="code"]')).not.toBeNull());
+		await type(container, 'input[name="code"]', '123456');
+		await fireEvent.submit(container.querySelector('form') as HTMLFormElement);
+		await waitFor(() =>
+			expect(container.querySelector('input[name="newPassword"]')).not.toBeNull()
+		);
+		await type(container, 'input[name="newPassword"]', 'Nu3va-clave-segura!');
+		await fireEvent.submit(container.querySelector('form') as HTMLFormElement);
+
+		await waitFor(() => expect(container.querySelector('h2')).not.toBeNull());
+		const heading = container.querySelector('h2')?.textContent?.trim() ?? '';
+		const body = container.querySelector('h2 ~ p')?.textContent?.trim() ?? '';
+		expect(heading).not.toBe('');
+		expect(body).not.toBe(heading);
 	});
 
 	it('lets the user go back and ask for another code', async () => {
