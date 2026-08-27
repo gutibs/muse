@@ -20,6 +20,56 @@ from rest_framework.exceptions import PermissionDenied
 
 from accounts.models import Block
 from accounts.services.friendships import are_friends, friend_ids
+from pins.constants import Visibility
+
+
+def visible_pin_filter(viewer, prefix: str = "") -> Q:
+	"""Los pins que `viewer` puede ver, como `Q` reutilizable.
+
+	`prefix` permite aplicarlo desde otro modelo — el feed lo usa con
+	`"pin__"` para filtrar Activities por el pin que cuelga de ellas.
+	"""
+	if not getattr(viewer, "is_authenticated", False):
+		# Mismo contrato que `can_view`: por acá no ve nada nadie sin sesión.
+		# Las superficies anónimas piden `public_pin_filter` explícitamente.
+		return Q(pk__in=[])
+
+	blocked = blocked_user_ids(viewer)
+	own = Q(**{f"{prefix}user_id": viewer.id})
+	# El bloqueo gana sobre el nivel, igual que gana sobre la amistad en
+	# `can_view`. `visible_friend_ids` ya lo resta del lado de los amigos; acá
+	# hace falta para los públicos, que no pasan por ninguna relación.
+	unblocked = ~Q(**{f"{prefix}user_id__in": blocked})
+	public = _pins_at_level(Visibility.PUBLIC, prefix) & unblocked
+	friends = _pins_at_level(Visibility.FRIENDS, prefix) & Q(
+		**{f"{prefix}user_id__in": friend_ids(viewer) - blocked}
+	)
+	return own | public | friends
+
+
+def public_pin_filter(prefix: str = "") -> Q:
+	"""Los pins que puede ver alguien sin sesión: sólo los públicos.
+
+	Es lo que corresponde a un link compartido, que responde a cualquiera que
+	lo tenga. Un pin `friends` no entra —el visitante del link es un
+	desconocido— y uno `private` tampoco, ni siquiera si su dueño lo eligió a
+	mano para una lista curada (decisión 3 del spec).
+	"""
+	return _pins_at_level(Visibility.PUBLIC, prefix)
+
+
+def _pins_at_level(level, prefix: str = "") -> Q:
+	"""Pins cuya visibilidad **efectiva** es `level`.
+
+	Efectiva porque `Pin.visibility` NULL no es un valor sino una remisión:
+	significa "lo que diga el default de mi perfil". Sin esta segunda rama,
+	los pins que ya existen —todos con NULL— no serían de ningún nivel y
+	desaparecerían de todas las superficies a la vez.
+	"""
+	return Q(**{f"{prefix}visibility": level}) | (
+		Q(**{f"{prefix}visibility__isnull": True})
+		& Q(**{f"{prefix}user__profile__default_pin_visibility": level})
+	)
 
 
 def can_view(viewer, owner) -> bool:
