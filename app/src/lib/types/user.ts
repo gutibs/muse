@@ -59,8 +59,8 @@ export type FriendshipStatus = 'pending' | 'accepted' | 'declined';
 
 export interface Friendship {
 	id: number;
-	fromUser: PublicUser;
-	toUser: PublicUser;
+	fromUser: AnonymousUser;
+	toUser: AnonymousUser;
 	status: FriendshipStatus;
 	createdAt: string;
 }

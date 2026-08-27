@@ -202,7 +202,7 @@
 							<Avatar name={activity.actor.displayName} src={activity.actor.avatar} size={32} />
 							<div class="min-w-0 flex-1">
 								<p class="text-sm text-ink">
-									<span class="font-semibold">{activity.actor.displayName || activity.actor.email}</span>
+									<span class="font-semibold">{activity.actor.displayName || t('restaurant.anonymous')}</span>
 									{' '}
 									<span class="text-ink-muted">{activityText(activity)}</span>
 								</p>

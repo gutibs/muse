@@ -99,7 +99,7 @@
 							<div class="min-w-0 flex-1">
 								<!-- Main line -->
 								<p class="text-sm text-ink">
-									<a href={`/users/${activity.actor.id}`} class="font-semibold text-ink active:text-jade">{activity.actor.displayName || activity.actor.email}</a>
+									<a href={`/users/${activity.actor.id}`} class="font-semibold text-ink active:text-jade">{activity.actor.displayName || t('restaurant.anonymous')}</a>
 									{' '}
 									{#if activity.verb === 'joined'}
 										<span class="text-ink-muted">{t('feed.joinedMuse')} 🎉</span>

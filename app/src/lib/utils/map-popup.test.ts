@@ -31,7 +31,7 @@ describe('buildRestaurantPopup', () => {
 				city: '"><img>',
 				cuisinesDetail: [{ id: 1, name: 'A & B', slug: 'a-b' }],
 			},
-			owner: { displayName: '<b>X</b>', email: null },
+			owner: { displayName: '<b>X</b>' },
 			showCuisines: true,
 		});
 		expect(html).not.toContain('<img>');
@@ -66,7 +66,7 @@ describe('buildRestaurantPopup', () => {
 	it('shows owner byline when owner is provided', () => {
 		const html = buildRestaurantPopup({
 			restaurant: baseR,
-			owner: { displayName: 'Juan', email: 'juan@example.com' },
+			owner: { displayName: 'Juan' },
 		});
 		expect(html).toContain('Juan');
 		// Owner byline must appear before the name (top of popup).
@@ -75,14 +75,17 @@ describe('buildRestaurantPopup', () => {
 		expect(ownerIdx).toBeLessThan(nameIdx);
 	});
 
-	it('falls back to email when displayName is empty for owner', () => {
+	it('omits the owner line when there is no display name', () => {
+		// Antes caía al email. El backend ya no lo entrega para nadie que no
+		// seas vos: mostrar la dirección de una persona en el mapa era darle
+		// su identificador de contacto a cualquiera que abriera el popup.
 		const html = buildRestaurantPopup({
 			restaurant: baseR,
-			owner: { displayName: '', email: 'juan@example.com' },
+			owner: { displayName: '' },
+			showCuisines: false,
 		});
-		expect(html).toContain('juan@example.com');
+		expect(html).not.toContain('color:#AF9483');
 	});
-
 	it('wraps name in <a href> when link=true', () => {
 		const html = buildRestaurantPopup({ restaurant: baseR, link: true });
 		expect(html).toContain('href="/restaurant/1"');

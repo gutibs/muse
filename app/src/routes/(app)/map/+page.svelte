@@ -180,7 +180,7 @@
 								buildRestaurantPopup({
 									restaurant: r,
 									pin,
-									owner: { displayName: other.displayName, email: other.email },
+									owner: { displayName: other.displayName },
 									link: true,
 								})
 							);

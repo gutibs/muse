@@ -233,8 +233,10 @@ class FriendshipSerializer(serializers.ModelSerializer):
 	acosador "te bloquearon" es el resultado que RF2 existe para evitar.
 	"""
 
-	from_user = UserPublicSerializer(read_only=True)
-	to_user = UserPublicSerializer(read_only=True)
+	# Sin email: la contraparte de una amistad —y sobre todo la de una solicitud
+	# que todavía no aceptaste— es alguien cuyo email no tenés por qué recibir.
+	from_user = UserAnonymousSafeSerializer(read_only=True)
+	to_user = UserAnonymousSafeSerializer(read_only=True)
 	to_user_id = serializers.PrimaryKeyRelatedField(
 		queryset=User.objects.all(), source="to_user", write_only=True
 	)
@@ -284,10 +286,7 @@ class EmailInvitationSerializer(serializers.ModelSerializer):
 	def validate_email(self, value):
 		value = value.lower()
 		request = self.context["request"]
-		if User.objects.filter(email__iexact=value).exists():
-			raise serializers.ValidationError(
-				"This user is already on Muse. Search for them by email instead."
-			)
+
 		existing = EmailInvitation.objects.filter(
 			from_user=request.user, email__iexact=value
 		).first()

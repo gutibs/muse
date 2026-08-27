@@ -24,7 +24,7 @@ from accounts.serializers import (
 	ProfileSerializer,
 	RegisterSerializer,
 	ReportSerializer,
-	UserPublicSerializer,
+	UserAnonymousSafeSerializer,
 )
 from accounts.services.account_deletion import anonymise_user
 from accounts.services.blocking import block_user, is_blocked, unblock_user
@@ -158,21 +158,26 @@ class ChangePasswordView(generics.GenericAPIView):
 
 
 class UserSearchView(generics.ListAPIView):
-	serializer_class = UserPublicSerializer
+	"""Encontrar a alguien de quien ya tenés el dato exacto.
+
+	No es un directorio: no se busca por coincidencia parcial de nombre. Con
+	`display_name__icontains` y tres caracteres, escribir "ana" devolvía a
+	todas las Ana, Mariana y Susana de la plataforma —con su email— y eso es
+	una lista de gente a la que mandarle solicitudes. Para encontrar a una
+	persona hay que saber su email o su teléfono; si no, se la invita por mail.
+	"""
+
+	serializer_class = UserAnonymousSafeSerializer
 	throttle_classes = (UserSearchThrottle,)
 
 	def get_queryset(self):
 		query = self.request.query_params.get("q", "").strip()
-		# Require at least 3 chars to reduce mass enumeration by short prefixes.
 		if not query or len(query) < 3:
 			return User.objects.none()
 
 		email_ids = User.objects.filter(email__iexact=query).values_list("id", flat=True)
-		name_ids = User.objects.filter(profile__display_name__icontains=query).values_list(
-			"id", flat=True
-		)
 		phone_ids = User.objects.filter(profile__phone__iexact=query).values_list("id", flat=True)
-		matching_ids = set(email_ids) | set(name_ids) | set(phone_ids)
+		matching_ids = set(email_ids) | set(phone_ids)
 		matching_ids.discard(self.request.user.id)
 		# RF10. Esta vista no pasa por ningún service —es la que el plan daba
 		# por perdida— así que el filtro va explícito. En las dos direcciones:

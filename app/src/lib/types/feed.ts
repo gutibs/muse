@@ -1,11 +1,11 @@
 import type { Pin } from './pin';
-import type { AnonymousUser, PublicUser } from './user';
+import type { AnonymousUser } from './user';
 
 export type ActivityVerb = 'pinned' | 'rated' | 'updated' | 'joined' | 'friendship';
 
 export interface Activity {
 	id: number;
-	actor: PublicUser;
+	actor: AnonymousUser;
 	verb: ActivityVerb;
 	pin: Pin | null;
 	targetUser: AnonymousUser | null;

@@ -1,5 +1,7 @@
-import type { Friendship, PublicUser } from '$lib/types';
+import type { AnonymousUser, Friendship } from '$lib/types';
 
-export function getOtherUser(f: Friendship, myId: number): PublicUser {
+/** La contraparte de una amistad. Sin email: el backend no lo entrega para
+ * nadie que no seas vos. */
+export function getOtherUser(f: Friendship, myId: number): AnonymousUser {
 	return f.fromUser.id === myId ? f.toUser : f.fromUser;
 }
