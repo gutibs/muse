@@ -201,3 +201,44 @@ class PasswordResetCode(models.Model):
 
 	def __str__(self):
 		return f"Reset code for {self.user_id} (expires {self.expires_at:%Y-%m-%d %H:%M})"
+
+
+class Block(models.Model):
+	"""Una persona decidió dejar de ver a otra, y de ser vista por ella.
+
+	La fila es **direccional** —guarda quién bloqueó a quién, que es lo que hace
+	falta para poder desbloquear— pero el efecto en visibilidad es **simétrico**:
+	ninguna superficie mira la dirección, todas preguntan por
+	`accounts.services.visibility.blocked_user_ids`, que junta las dos.
+
+	No se reusó `Friendship.DECLINED`: hoy no filtra nada, el emisor puede
+	borrar la fila y volver a solicitar, y su `unique_together` es direccional
+	por otra razón.
+
+	El bloqueo es silencioso (RF2): al bloqueado no se le dice nada, ni por
+	respuesta ni por ausencia de respuesta. Cualquier endpoint que devuelva el
+	estado de bloqueo tiene que hacerlo sólo para quien bloqueó.
+	"""
+
+	blocker = models.ForeignKey(
+		settings.AUTH_USER_MODEL,
+		on_delete=models.CASCADE,
+		related_name="blocks_made",
+	)
+	blocked = models.ForeignKey(
+		settings.AUTH_USER_MODEL,
+		on_delete=models.CASCADE,
+		related_name="blocks_received",
+	)
+	created_at = models.DateTimeField(auto_now_add=True)
+
+	class Meta:
+		db_table = "accounts_block"
+		unique_together = ("blocker", "blocked")
+		ordering = ["-created_at"]
+		indexes = [
+			models.Index(fields=["blocked"], name="accounts_block_blocked_idx"),
+		]
+
+	def __str__(self):
+		return f"{self.blocker_id} blocked {self.blocked_id}"

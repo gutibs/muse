@@ -15,8 +15,10 @@ five places to keep in sync, which is why the visibility work in phase 2
 is priced as one module and not as five edits.
 """
 
+from django.db.models import Q
 from rest_framework.exceptions import PermissionDenied
 
+from accounts.models import Block
 from accounts.services.friendships import are_friends, friend_ids
 
 
@@ -54,3 +56,32 @@ def visible_user_ids(viewer) -> set[int]:
 	if not getattr(viewer, "is_authenticated", False):
 		return set()
 	return friend_ids(viewer) | {viewer.id}
+
+
+def blocked_user_ids(viewer) -> set[int]:
+	"""Ids con los que `viewer` tiene un bloqueo, en cualquier dirección.
+
+	Es el único lugar donde se mira el modelo `Block`. Que sea uno solo es el
+	punto: si cada superficie armara su propio `Q(blocker=…) | Q(blocked=…)`,
+	alguna se olvidaría de una de las dos direcciones y el bloqueo sería
+	asimétrico sin que nadie lo note.
+	"""
+	if not getattr(viewer, "is_authenticated", False):
+		return set()
+
+	rows = Block.objects.filter(Q(blocker=viewer) | Q(blocked=viewer)).values_list(
+		"blocker_id", "blocked_id"
+	)
+	return {blocker if blocked == viewer.id else blocked for blocker, blocked in rows}
+
+
+def visible_friend_ids(viewer) -> set[int]:
+	"""Amigos de `viewer` sin los bloqueados. **Excluye al viewer**, igual que
+	`friend_ids`.
+
+	Es el reemplazo directo de `friend_ids` en las superficies que filtran
+	"datos de mis amigos": el feed y los agregados del restaurante. No usar
+	`visible_user_ids` para eso — incluye al viewer, y el feed pasaría a
+	mostrar la actividad propia (ver el docstring de esa función).
+	"""
+	return friend_ids(viewer) - blocked_user_ids(viewer)
