@@ -31,6 +31,12 @@ def can_view(viewer, owner) -> bool:
 	"""
 	if not getattr(viewer, "is_authenticated", False):
 		return False
+	# El bloqueo gana sobre la amistad. No alcanza con que bloquear la borre
+	# (RF3): si sobreviviera por cualquier camino —D-005 recreándola al
+	# registrarse con un email invitado, una carrera— el perfil se seguiría
+	# viendo con un bloqueo puesto.
+	if owner.pk in blocked_user_ids(viewer):
+		return False
 	return are_friends(viewer, owner)
 
 

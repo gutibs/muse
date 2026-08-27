@@ -29,7 +29,7 @@ from accounts.services.blocking import block_user, is_blocked, unblock_user
 from accounts.services.email import EmailSendError, send_invitation_email
 from accounts.services.friendships import are_friends
 from accounts.services.password_reset import confirm_reset, request_reset
-from accounts.services.visibility import require_can_view
+from accounts.services.visibility import blocked_user_ids, require_can_view
 from pins.selectors import visible_pins
 from pins.serializers import PinSerializer
 
@@ -171,6 +171,10 @@ class UserSearchView(generics.ListAPIView):
 		phone_ids = User.objects.filter(profile__phone__iexact=query).values_list("id", flat=True)
 		matching_ids = set(email_ids) | set(name_ids) | set(phone_ids)
 		matching_ids.discard(self.request.user.id)
+		# RF10. Esta vista no pasa por ningún service —es la que el plan daba
+		# por perdida— así que el filtro va explícito. En las dos direcciones:
+		# el conjunto de `blocked_user_ids` ya las junta.
+		matching_ids -= blocked_user_ids(self.request.user)
 
 		return User.objects.filter(id__in=matching_ids).select_related("profile")[:20]
 
