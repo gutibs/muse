@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import pytest
 from django.contrib.auth import get_user_model
 from django.db.models import Q
@@ -14,7 +16,8 @@ User = get_user_model()
 
 @pytest.mark.critical
 @pytest.mark.django_db
-def test_register_creates_profile_and_consumes_invitation():
+@patch("accounts.serializers.send_welcome_email")
+def test_register_creates_profile_and_consumes_invitation(welcome):
 	a = UserFactory()
 	EmailInvitationFactory(from_user=a, email="b@example.com", accepted=False)
 
@@ -31,7 +34,7 @@ def test_register_creates_profile_and_consumes_invitation():
 		format="json",
 	)
 
-	assert response.status_code == 201, response.content
+	assert response.status_code == 202, response.content
 
 	b = User.objects.filter(email__iexact="b@example.com").first()
 	assert b is not None
@@ -106,7 +109,8 @@ def test_register_requires_active_consent(consent):
 
 
 @pytest.mark.django_db
-def test_register_consent_records_capture_ip():
+@patch("accounts.serializers.send_welcome_email")
+def test_register_consent_records_capture_ip(welcome):
 	"""The consenting client IP is persisted on each ConsentRecord (proof of
 	the context in which consent was given)."""
 	client = APIClient()
@@ -122,7 +126,7 @@ def test_register_consent_records_capture_ip():
 		REMOTE_ADDR="203.0.113.7",
 	)
 
-	assert response.status_code == 201, response.content
+	assert response.status_code == 202, response.content
 	user = User.objects.get(email__iexact="ip@example.com")
 	records = ConsentRecord.objects.filter(user=user)
 	assert records.count() == 2

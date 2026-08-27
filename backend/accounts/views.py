@@ -103,7 +103,10 @@ class RegisterView(generics.CreateAPIView):
 		serializer = self.get_serializer(data=request.data)
 		serializer.is_valid(raise_exception=True)
 		result = serializer.save()
-		return Response(result, status=status.HTTP_201_CREATED)
+		# 202 y no 201: la respuesta es la misma exista o no la cuenta, así que
+		# no puede afirmar que se creó algo. El alta no devuelve sesión —ver el
+		# docstring del serializer— y se entra por el login de siempre.
+		return Response(result, status=status.HTTP_202_ACCEPTED)
 
 
 class ProfileView(generics.RetrieveUpdateDestroyAPIView):

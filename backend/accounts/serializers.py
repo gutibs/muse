@@ -1,7 +1,8 @@
+import logging
+
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
-from rest_framework_simplejwt.tokens import RefreshToken
 
 from accounts.consent import POLICY_VERSIONS
 from accounts.models import (
@@ -14,10 +15,17 @@ from accounts.models import (
 	Report,
 )
 from accounts.services.blocking import is_blocked
+from accounts.services.email import (
+	EmailSendError,
+	send_account_exists_email,
+	send_welcome_email,
+)
 from accounts.services.visibility import blocked_user_ids
 from pins.models import Pin
 
 User = get_user_model()
+
+logger = logging.getLogger(__name__)
 
 
 class DietaryPreferenceSerializer(serializers.ModelSerializer):
@@ -91,6 +99,10 @@ class ProfileSerializer(serializers.ModelSerializer):
 
 
 class RegisterSerializer(serializers.Serializer):
+	# Un solo cuerpo para los dos caminos: si el texto difiere, aunque sea en
+	# un espacio, vuelve el oráculo.
+	CONFIRMATION_DETAIL = "Check your inbox to finish setting up your account."
+
 	email = serializers.EmailField()
 	password = serializers.CharField(write_only=True, validators=[validate_password])
 	display_name = serializers.CharField(max_length=100, required=False, default="")
@@ -101,10 +113,10 @@ class RegisterSerializer(serializers.Serializer):
 	accept_privacy = serializers.BooleanField(write_only=True)
 
 	def validate_email(self, value):
-		value = value.lower()
-		if User.objects.filter(email__iexact=value).exists():
-			raise serializers.ValidationError("A user with this email already exists.")
-		return value
+		# No se rechaza el email ya tomado: hacerlo le decía a cualquiera, un
+		# email por vez, quién tiene cuenta en Muse. El caso se resuelve en
+		# `create`, que responde igual y le avisa al dueño de la casilla.
+		return value.lower()
 
 	def validate_accept_privacy(self, value):
 		if value is not True:
@@ -147,7 +159,31 @@ class RegisterSerializer(serializers.Serializer):
 			invitation.accepted = True
 			invitation.save(update_fields=["accepted"])
 
+	@staticmethod
+	def _notify(send, **kwargs):
+		"""El mail no puede tumbar el alta: perder la cuenta porque Resend está
+		caído es peor que no mandar la confirmación."""
+		try:
+			send(**kwargs)
+		except EmailSendError as exc:
+			logger.error("Account email not sent (status=%s): %s", exc.status_code, exc.message)
+
 	def create(self, validated_data):
+		"""Da de alta la cuenta, o avisa al dueño si el email ya está tomado.
+
+		Los dos caminos devuelven exactamente lo mismo y ninguno devuelve
+		sesión. Ésa es la razón de que el alta ya no loguee: con tokens en la
+		respuesta, el caso del email tomado no podía ser idéntico sin entregar
+		esa cuenta.
+		"""
+		language = self.context["request"].data.get("language")
+		existing = User.objects.filter(email__iexact=validated_data["email"]).first()
+		if existing is not None:
+			# No se toca nada de esa cuenta. El único efecto es el aviso, que va
+			# a la casilla: quien probó no se entera de nada.
+			self._notify(send_account_exists_email, to_email=existing.email, language=language)
+			return {"detail": self.CONFIRMATION_DETAIL}
+
 		user = User.objects.create_user(
 			username=validated_data["email"],
 			email=validated_data["email"],
@@ -171,15 +207,13 @@ class RegisterSerializer(serializers.Serializer):
 		)
 
 		self._consume_invitations(user)
-
-		refresh = RefreshToken.for_user(user)
-		return {
-			"user": ProfileSerializer(user.profile).data,
-			"tokens": {
-				"access": str(refresh.access_token),
-				"refresh": str(refresh),
-			},
-		}
+		self._notify(
+			send_welcome_email,
+			to_email=user.email,
+			name=validated_data.get("display_name", ""),
+			language=language,
+		)
+		return {"detail": self.CONFIRMATION_DETAIL}
 
 
 class UserPublicSerializer(serializers.ModelSerializer):

@@ -27,6 +27,21 @@ _SUBJECTS = {
 
 # El código NO va en el asunto: los asuntos aparecen en la preview de la
 # notificación del teléfono y en los logs de cualquier intermediario.
+_WELCOME_SUBJECTS = {
+	"es": "Tu cuenta de Muse está lista",
+	"en": "Your Muse account is ready",
+	"it": "Il tuo account Muse è pronto",
+}
+
+# Deliberadamente neutro: el asunto aparece en la preview del teléfono y no
+# tiene por qué anunciarle a quien mire la pantalla que hubo un intento de
+# registro con esa dirección.
+_ACCOUNT_EXISTS_SUBJECTS = {
+	"es": "Sobre tu cuenta de Muse",
+	"en": "About your Muse account",
+	"it": "Sul tuo account Muse",
+}
+
 _RESET_SUBJECTS = {
 	"es": "Tu código para recuperar la contraseña",
 	"en": "Your password recovery code",
@@ -203,3 +218,55 @@ def send_report_notification_email(*, report) -> dict:
 		raise EmailSendError(f"Failed to send report notification: {exc}", status_code=502) from exc
 
 	return response
+
+
+def _send_account_email(
+	*, template: str, subjects: dict, to_email: str, name: str, language
+) -> dict:
+	"""Los dos mails del alta comparten forma: mismo layout, mismo enlace al
+	login, y sólo cambian el asunto y el cuerpo."""
+	_ensure_configured()
+	lang = _normalize_language(language)
+	context = {
+		"name_suffix": f" {name}" if name else "",
+		"login_link": f"{settings.APP_PUBLIC_URL}/",
+	}
+	payload = {
+		"from": settings.DEFAULT_FROM_EMAIL,
+		"to": [to_email],
+		"subject": subjects[lang],
+		"html": render_to_string(f"emails/{template}.{lang}.html", context),
+		"text": render_to_string(f"emails/{template}.{lang}.txt", context),
+	}
+	try:
+		response = resend.Emails.send(payload)
+	except Exception as exc:
+		logger.exception("Resend API call failed for %s (%s)", to_email, template)
+		raise EmailSendError(f"Failed to send {template} email: {exc}", status_code=502) from exc
+	return response
+
+
+def send_welcome_email(*, to_email: str, name: str = "", language=None) -> dict:
+	"""Confirma un alta real. No verifica nada: la cuenta ya sirve, y este mail
+	es la contraparte visible de que el registro dejó de devolver sesión."""
+	return _send_account_email(
+		template="welcome",
+		subjects=_WELCOME_SUBJECTS,
+		to_email=to_email,
+		name=name,
+		language=language,
+	)
+
+
+def send_account_exists_email(*, to_email: str, language=None) -> dict:
+	"""Le avisa al dueño de la casilla que alguien intentó registrarse con su
+	email. Es lo que hace que la respuesta del registro pueda ser idéntica en
+	los dos casos sin dejar a nadie sin explicación: la explicación va a la
+	casilla, que es el único lugar donde puede leerla el dueño legítimo."""
+	return _send_account_email(
+		template="account_exists",
+		subjects=_ACCOUNT_EXISTS_SUBJECTS,
+		to_email=to_email,
+		name="",
+		language=language,
+	)

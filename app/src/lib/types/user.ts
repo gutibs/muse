@@ -70,9 +70,11 @@ export interface AuthTokens {
 	refresh: string;
 }
 
+/** El alta no devuelve sesión ni datos: responde lo mismo exista o no la
+ * cuenta, porque los únicos tokens posibles para un email ya tomado serían los
+ * de esa cuenta. Se entra por el login. */
 export interface RegisterResponse {
-	user: Profile;
-	tokens: AuthTokens;
+	detail: string;
 }
 
 export interface LoginRequest {
