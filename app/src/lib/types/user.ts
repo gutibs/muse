@@ -42,6 +42,19 @@ export interface PublicUser {
 	city: string;
 }
 
+/** La forma que devuelve `UserAnonymousSafeSerializer`: sin email, para donde
+ * el que mira no necesariamente tiene relación con la persona (reseñas
+ * públicas, el `targetUser` de una actividad de amistad, links compartidos).
+ * `isDeleted` significa que borró su cuenta: hay que mostrar el label
+ * "anónimo" traducido en lugar del nombre. */
+export interface AnonymousUser {
+	id: number;
+	displayName: string;
+	avatar: string | null;
+	city: string;
+	isDeleted: boolean;
+}
+
 export type FriendshipStatus = 'pending' | 'accepted' | 'declined';
 
 export interface Friendship {

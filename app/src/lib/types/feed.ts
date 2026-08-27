@@ -1,5 +1,5 @@
 import type { Pin } from './pin';
-import type { PublicUser } from './user';
+import type { AnonymousUser, PublicUser } from './user';
 
 export type ActivityVerb = 'pinned' | 'rated' | 'updated' | 'joined' | 'friendship';
 
@@ -8,6 +8,6 @@ export interface Activity {
 	actor: PublicUser;
 	verb: ActivityVerb;
 	pin: Pin | null;
-	targetUser: PublicUser | null;
+	targetUser: AnonymousUser | null;
 	createdAt: string;
 }
