@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import ForgotPasswordModal from '$lib/components/ForgotPasswordModal.svelte';
 	import MuseLogo from '$lib/components/MuseLogo.svelte';
 	import { t } from '$lib/i18n/index.svelte';
 	import { authStore } from '$lib/stores/auth.store.svelte';
@@ -11,8 +12,6 @@
 	let error = $state('');
 	let submitting = $state(false);
 	let showForgotModal = $state(false);
-
-	const SUPPORT_EMAIL = 'support@lovemuse.app';
 
 	async function handleSubmit(e: Event) {
 		e.preventDefault();
@@ -121,32 +120,9 @@
 	</div>
 </div>
 
-<!-- Forgot password modal -->
+<!-- Recuperación de contraseña: email → código → contraseña nueva (RF16).
+     Antes esto era un cartel que decía "viene pronto" y pedía escribir a
+     soporte; la única salida real era un changepassword por SSH. -->
 {#if showForgotModal}
-	<!-- svelte-ignore a11y_click_events_have_key_events -->
-	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div
-		class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-6"
-		onclick={() => (showForgotModal = false)}
-	>
-		<!-- svelte-ignore a11y_click_events_have_key_events -->
-		<!-- svelte-ignore a11y_no_static_element_interactions -->
-		<div class="w-full max-w-sm rounded-card bg-white p-6 shadow-elevated" onclick={(e) => e.stopPropagation()}>
-			<div class="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-jade/10 text-jade">
-				<svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-					<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-				</svg>
-			</div>
-			<h2 class="font-serif text-xl font-semibold text-ink">{t('login.forgotPassword')}</h2>
-			<p class="mt-2 text-sm text-ink-light">
-				{t('login.forgotBody').split('{email}')[0]}<a href="mailto:{SUPPORT_EMAIL}" class="font-medium text-jade">{SUPPORT_EMAIL}</a>{t('login.forgotBody').split('{email}')[1] || ''}
-			</p>
-			<button
-				onclick={() => (showForgotModal = false)}
-				class="mt-5 flex min-h-11 w-full items-center justify-center rounded-button bg-jade text-sm font-semibold text-white active:scale-[0.98]"
-			>
-				{t('login.gotIt')}
-			</button>
-		</div>
-	</div>
+	<ForgotPasswordModal onclose={() => (showForgotModal = false)} />
 {/if}

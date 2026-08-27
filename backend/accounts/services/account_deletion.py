@@ -11,7 +11,7 @@ they hang off, scrubbed of every identifying field, plus the analytics events,
 kept for their per-venue counts with the user_id stripped.
 What is destroyed: profile fields, avatar file, friendships in both
 directions, invitations sent by and addressed to the user, feed activity,
-shared list links, and consent records.
+shared list links, consent records, and any pending password reset codes.
 """
 
 import logging
@@ -20,7 +20,7 @@ import uuid
 from django.db import transaction
 from django.utils import timezone
 
-from accounts.models import ConsentRecord, EmailInvitation, Friendship
+from accounts.models import ConsentRecord, EmailInvitation, Friendship, PasswordResetCode
 from analytics.models import Event
 from feed.models import Activity
 from pins.models import SharedList
@@ -55,6 +55,11 @@ def anonymise_user(user) -> None:
 	Activity.objects.filter(target_user=user).delete()
 	SharedList.objects.filter(user=user).delete()
 	ConsentRecord.objects.filter(user=user).delete()
+	# Credenciales de un solo uso que quedaron a medio camino. El CASCADE del
+	# modelo no dispara porque acá no se borra la fila del usuario, y aunque
+	# `is_active=False` ya las vuelve incanjeables, una credencial de quien
+	# pidió el borrado no se queda esperando al cron de los 30 días.
+	PasswordResetCode.objects.filter(user=user).delete()
 
 	profile = user.profile
 	if profile.avatar:

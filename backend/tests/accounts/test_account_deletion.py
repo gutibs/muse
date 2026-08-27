@@ -199,3 +199,24 @@ def test_reviews_of_deleted_user_are_flagged_anonymous():
 	assert reviews[0]["comment"] == "Solid ramen"
 	assert reviews[0]["user"]["isDeleted"] is True
 	assert reviews[0]["user"]["displayName"] == ""
+
+
+@pytest.mark.critical
+@pytest.mark.django_db
+def test_deletion_destroys_pending_password_reset_codes():
+	"""anonymise_user no borra la fila del usuario, así que el CASCADE de
+	PasswordResetCode nunca dispara y los códigos sobreviven al borrado. No son
+	canjeables (is_active=False) y el cron los barre a los 30 días, pero el
+	contrato del módulo es enumerar qué se destruye: una credencial de la
+	persona que pidió el borrado no puede quedar ahí."""
+	from accounts.models import PasswordResetCode
+	from accounts.services.account_deletion import anonymise_user
+	from accounts.services.password_reset import issue_code
+
+	user = UserFactory()
+	issue_code(user)
+	assert PasswordResetCode.objects.filter(user=user).exists()
+
+	anonymise_user(user)
+
+	assert not PasswordResetCode.objects.filter(user=user).exists()

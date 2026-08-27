@@ -215,7 +215,26 @@ REST_FRAMEWORK = {
 		# número que se le muestra a un tercero, y no hay nada caro detrás
 		# de este endpoint.
 		"analytics": "600/hour",
+		# Recuperación de contraseña. Cada pedido cuesta un email real, así
+		# que el tope protege la casilla tanto como la cuenta. El canje es
+		# más holgado porque tipear mal un código de 6 dígitos es normal;
+		# quien acota la fuerza bruta ahí es el tope de 5 intentos por código.
+		"password_reset": "5/hour",
+		"password_reset_confirm": "10/hour",
 	},
+	# Cuántos proxies hay entre el cliente y Django. VA ACÁ ADENTRO: DRF lee
+	# sus settings del dict REST_FRAMEWORK, así que un NUM_PROXIES a nivel de
+	# módulo queda en None y no hace nada (verificado: api_settings.NUM_PROXIES
+	# seguía en None con el setting suelto puesto en 1).
+	#
+	# Sin esto, DRF no cae a REMOTE_ADDR mientras haya X-Forwarded-For: usa la
+	# cadena XFF entera como identidad. Como nginx appendea con
+	# $proxy_add_x_forwarded_for, esa cadena arranca con lo que mandó el
+	# cliente, así que basta variar el header en cada request para tener un
+	# cubo nuevo cada vez — el throttle deja de existir. Con 1, DRF toma la
+	# última posición, la que puso nginx, y el prefijo falsificado no importa.
+	# Afecta a login, register y shared_list_public, no sólo al reset.
+	"NUM_PROXIES": int(os.environ.get("DJANGO_NUM_PROXIES", "1")),
 }
 
 # JWT
@@ -223,6 +242,16 @@ SIMPLE_JWT = {
 	"ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
 	"REFRESH_TOKEN_LIFETIME": timedelta(days=7),
 	"ROTATE_REFRESH_TOKENS": True,
+	# Firma cada token con el md5 del hash de la contraseña y lo compara en
+	# cada request autenticado, usando el User que la autenticación ya trae de
+	# la base — no agrega un query. Cambiar la contraseña invalida todo lo
+	# emitido antes, que es lo que hace útil al reset (RF13) y de paso arregla
+	# que cambiar la contraseña desde adentro no cerraba las otras sesiones.
+	#
+	# OJO AL DESPLEGAR: activarlo desloguea a TODOS una vez, porque los tokens
+	# vigentes se firmaron sin el claim. Es intencional y se aceptó mientras el
+	# padrón era chico; ver §4 "Compatibilidad" de docs/SPEC_RESET_PASSWORD.md.
+	"CHECK_REVOKE_TOKEN": True,
 }
 
 # CORS

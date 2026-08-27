@@ -39,5 +39,7 @@ def _disable_throttles(settings):
 			"reverse_geocode": "10000/hour",
 			"shared_list_public": "10000/hour",
 			"analytics": "10000/hour",
+			"password_reset": "10000/hour",
+			"password_reset_confirm": "10000/hour",
 		},
 	}

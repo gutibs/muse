@@ -7,7 +7,8 @@ from django.shortcuts import get_object_or_404
 from rest_framework import generics, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
+from rest_framework.throttling import AnonRateThrottle, SimpleRateThrottle, UserRateThrottle
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from accounts.models import DietaryPreference, EmailInvitation, Friendship
 from accounts.serializers import (
@@ -16,6 +17,8 @@ from accounts.serializers import (
 	DietaryPreferenceSerializer,
 	EmailInvitationSerializer,
 	FriendshipSerializer,
+	PasswordResetConfirmSerializer,
+	PasswordResetRequestSerializer,
 	ProfileSerializer,
 	RegisterSerializer,
 	UserPublicSerializer,
@@ -23,6 +26,7 @@ from accounts.serializers import (
 from accounts.services.account_deletion import anonymise_user
 from accounts.services.email import EmailSendError, send_invitation_email
 from accounts.services.friendships import are_friends
+from accounts.services.password_reset import confirm_reset, request_reset
 from accounts.services.visibility import require_can_view
 from pins.selectors import visible_pins
 from pins.serializers import PinSerializer
@@ -50,6 +54,31 @@ class UserSearchThrottle(UserRateThrottle):
 
 class InviteThrottle(UserRateThrottle):
 	scope = "invite"
+
+
+class ClientIPRateThrottle(SimpleRateThrottle):
+	"""Cuenta por IP de cliente SIEMPRE, tenga sesión o no.
+
+	`AnonRateThrottle.get_cache_key` devuelve None cuando el request viene
+	autenticado, o sea que no cuenta nada. En un endpoint `AllowAny` eso es un
+	agujero: el registro es abierto, así que una cuenta gratis se saltea el
+	tope entero. En estos dos endpoints el tope no protege sólo la cuenta —
+	cada pedido cuesta un email real que sale de nuestro dominio— así que
+	tiene que valer también para quien viene con token.
+
+	La identidad sale de `get_ident`, que depende de NUM_PROXIES (RF14).
+	"""
+
+	def get_cache_key(self, request, view):
+		return self.cache_format % {"scope": self.scope, "ident": self.get_ident(request)}
+
+
+class PasswordResetThrottle(ClientIPRateThrottle):
+	scope = "password_reset"
+
+
+class PasswordResetConfirmThrottle(ClientIPRateThrottle):
+	scope = "password_reset_confirm"
 
 
 # Kept as a module-level alias for the tests that still import it from here.
@@ -99,6 +128,16 @@ class DietaryPreferenceListView(generics.ListAPIView):
 
 
 class ChangePasswordView(generics.GenericAPIView):
+	"""Cambiar la contraseña estando adentro.
+
+	Devuelve un par de tokens nuevo, y no un 204. Con CHECK_REVOKE_TOKEN, el
+	cambio de contraseña invalida todo lo firmado con el hash anterior — que
+	incluye el token del dispositivo desde el que estás cambiándola. Sin el par
+	nuevo, el usuario ve "contraseña actualizada" y la llamada siguiente lo
+	manda al login sin explicación. Las OTRAS sesiones sí se cierran, que es lo
+	que se busca.
+	"""
+
 	serializer_class = ChangePasswordSerializer
 
 	def post(self, request):
@@ -106,7 +145,11 @@ class ChangePasswordView(generics.GenericAPIView):
 		serializer.is_valid(raise_exception=True)
 		request.user.set_password(serializer.validated_data["new_password"])
 		request.user.save()
-		return Response(status=status.HTTP_204_NO_CONTENT)
+		refresh = RefreshToken.for_user(request.user)
+		return Response(
+			{"refresh": str(refresh), "access": str(refresh.access_token)},
+			status=status.HTTP_200_OK,
+		)
 
 
 class UserSearchView(generics.ListAPIView):
@@ -252,3 +295,54 @@ class UserPinsView(generics.ListAPIView):
 			owner=user,
 			status=self.request.query_params.get("status"),
 		)
+
+
+# El cuerpo es literalmente el mismo objeto para todos los caminos de
+# PasswordResetView: exista la cuenta, no exista, o falle Resend (RF2). Si
+# alguna vez hay que tocarlo, se toca acá y sigue siendo uno solo.
+PASSWORD_RESET_ACCEPTED = {"detail": "If an account exists for that email, a code has been sent."}
+
+
+class PasswordResetView(generics.GenericAPIView):
+	"""Pide un código de recuperación. Endpoint anónimo.
+
+	Responde 200 con el mismo cuerpo siempre (RF2). Cualquier excepción que
+	se escapara de acá sería un oráculo de enumeración, así que el service no
+	levanta nada y esta vista no tiene ramas.
+	"""
+
+	serializer_class = PasswordResetRequestSerializer
+	permission_classes = (permissions.AllowAny,)
+	throttle_classes = (PasswordResetThrottle,)
+
+	def post(self, request):
+		serializer = self.get_serializer(data=request.data)
+		serializer.is_valid(raise_exception=True)
+		request_reset(
+			email=serializer.validated_data["email"],
+			language=serializer.validated_data.get("language"),
+		)
+		return Response(PASSWORD_RESET_ACCEPTED, status=status.HTTP_200_OK)
+
+
+class PasswordResetConfirmView(generics.GenericAPIView):
+	"""Canjea el código por una contraseña nueva. Endpoint anónimo.
+
+	El 400 sale del ValidationError que levanta el service, con el mismo
+	mensaje para código errado, vencido, quemado o usado.
+	"""
+
+	serializer_class = PasswordResetConfirmSerializer
+	permission_classes = (permissions.AllowAny,)
+	throttle_classes = (PasswordResetConfirmThrottle,)
+
+	def post(self, request):
+		serializer = self.get_serializer(data=request.data)
+		serializer.is_valid(raise_exception=True)
+		confirm_reset(
+			email=serializer.validated_data["email"],
+			code=serializer.validated_data["code"],
+			new_password=serializer.validated_data["new_password"],
+			language=serializer.validated_data.get("language"),
+		)
+		return Response({"detail": "Password updated."}, status=status.HTTP_200_OK)
