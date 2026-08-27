@@ -3,14 +3,21 @@
 	import { page } from '$app/state';
 	import TagChips from '$lib/components/TagChips.svelte';
 	import RatingStars from '$lib/components/RatingStars.svelte';
+	import SegmentedControl from '$lib/components/SegmentedControl.svelte';
 	import StatusToggle from '$lib/components/StatusToggle.svelte';
 	import { t } from '$lib/i18n/index.svelte';
 	import { pinsService } from '$lib/services/pins.service';
 	import { restaurantsService } from '$lib/services/restaurants.service';
-	import type { Pin, PinStatus, Tag } from '$lib/types';
+	import { authStore } from '$lib/stores/auth.store.svelte';
+	import type { Pin, PinStatus, PinVisibility, Tag } from '$lib/types';
 	import { AXES } from '$lib/utils/taxonomy';
 	import { extractFirstDrfError } from '$lib/utils/api-error';
 	import { logSilent } from '$lib/utils/logger';
+	import {
+		VISIBILITY_OPTIONS,
+		effectiveVisibility,
+		visibilityToSubmit,
+	} from '$lib/utils/pin-visibility';
 
 	const pinId = $derived(Number(page.params.id));
 
@@ -22,6 +29,8 @@
 	let rating = $state(0);
 	let comment = $state('');
 	let selectedTags = $state<number[]>([]);
+	let visibility = $state<PinVisibility>('public');
+	const profileVisibility = $derived(authStore.user?.defaultPinVisibility ?? 'public');
 
 	let tags = $state<Tag[]>([]);
 
@@ -46,6 +55,10 @@
 			rating = p.rating ?? 0;
 			comment = p.comment ?? '';
 			selectedTags = (p.tagsDetail ?? []).map((tag) => tag.id);
+			// Un pin sin nivel propio se pinta con el del perfil: mostrarlo
+			// como "público" a secas sería mentirle a quien tiene el perfil
+			// en privado.
+			visibility = effectiveVisibility(p.visibility, profileVisibility);
 		} catch (err) {
 			loadError = t('pin.cantLoad');
 			logSilent('pin:edit:load', err);
@@ -76,6 +89,7 @@
 				rating: status === 'visited' ? rating : undefined,
 				comment: comment || '',
 				tagIds: selectedTags,
+				visibility: visibilityToSubmit(visibility, pin.visibility, profileVisibility),
 			});
 			goto(`/restaurant/${pin.restaurant}`);
 		} catch (err) {
@@ -139,6 +153,12 @@
 				<div>
 					<span class="mb-2 block text-sm font-medium text-ink-light">{t('pin.status')}</span>
 					<StatusToggle bind:value={status} />
+				</div>
+
+				<div>
+					<span class="mb-2 block text-sm font-medium text-ink-light">{t('pin.visibility')}</span>
+					<SegmentedControl bind:value={visibility} options={VISIBILITY_OPTIONS()} />
+					<p class="mt-1.5 text-xs text-ink-muted">{t('pin.visibilityHelp')}</p>
 				</div>
 
 				{#if status === 'visited'}

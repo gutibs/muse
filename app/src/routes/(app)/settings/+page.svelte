@@ -1,5 +1,6 @@
 <script lang="ts">
 	import LanguagePicker from '$lib/components/LanguagePicker.svelte';
+	import SegmentedControl from '$lib/components/SegmentedControl.svelte';
 	import { t } from '$lib/i18n/index.svelte';
 	import { authStore } from '$lib/stores/auth.store.svelte';
 	import Avatar from '$lib/components/Avatar.svelte';
@@ -7,6 +8,8 @@
 	import { authService } from '$lib/services/auth.service';
 	import { extractFirstDrfError } from '$lib/utils/api-error';
 	import { logSilent } from '$lib/utils/logger';
+	import { VISIBILITY_OPTIONS } from '$lib/utils/pin-visibility';
+	import type { PinVisibility } from '$lib/types';
 
 	// Derecho de oposición del art. 21 GDPR. La política publicada promete que
 	// se puede ejercer, así que tiene que estar a mano y no enterrado.
@@ -20,6 +23,28 @@
 			logSilent('settings:analyticsOptOut', err);
 		} finally {
 			optingOut = false;
+		}
+	}
+
+	// El nivel que heredan los pins sin nivel propio. Cambiarlo mueve los que
+	// nunca se tocaron, así que el texto de ayuda avisa que es retroactivo.
+	let savingVisibility = $state(false);
+	let defaultVisibility = $state<PinVisibility>('public');
+	$effect(() => {
+		defaultVisibility = authStore.user?.defaultPinVisibility ?? 'public';
+	});
+
+	async function setDefaultVisibility(value: PinVisibility) {
+		savingVisibility = true;
+		try {
+			await authStore.updateProfile({ defaultPinVisibility: value });
+		} catch (err) {
+			// Vuelve a lo que el perfil sigue diciendo: dejar el control en el
+			// valor nuevo mostraría una preferencia que el servidor no guardó.
+			defaultVisibility = authStore.user?.defaultPinVisibility ?? 'public';
+			logSilent('settings:defaultPinVisibility', err);
+		} finally {
+			savingVisibility = false;
 		}
 	}
 
@@ -254,6 +279,18 @@
 		<section class="mt-6">
 			<h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-ink-muted">{t('settings.privacy')}</h2>
 			<div class="rounded-card bg-white p-4 shadow-card">
+				<span class="text-sm font-medium text-ink">{t('settings.defaultPinVisibility')}</span>
+				<div class="mt-2" class:opacity-60={savingVisibility}>
+					<SegmentedControl
+						options={VISIBILITY_OPTIONS()}
+						bind:value={defaultVisibility}
+						onchange={setDefaultVisibility}
+					/>
+				</div>
+				<p class="mt-1 text-xs text-ink-muted">{t('settings.defaultPinVisibilityHelp')}</p>
+			</div>
+
+			<div class="mt-3 rounded-card bg-white p-4 shadow-card">
 				<label class="flex min-h-11 items-center justify-between gap-3">
 					<span class="text-sm font-medium text-ink">{t('settings.analyticsOptOut')}</span>
 					<input

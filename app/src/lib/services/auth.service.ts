@@ -20,6 +20,7 @@ export type ProfileUpdatePayload = Partial<
 		| 'phone'
 		| 'favouriteCuisine'
 		| 'analyticsOptOut'
+		| 'defaultPinVisibility'
 		| 'dietaryPreferences'
 	>
 >;

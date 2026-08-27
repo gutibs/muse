@@ -1,3 +1,5 @@
+import type { PinVisibility } from './pin';
+
 export interface UserStats {
 	pinCount: number;
 	visitedCount: number;
@@ -30,6 +32,8 @@ export interface Profile {
 	/** Derecho de oposición (art. 21 GDPR): con esto en true no se registra
 	 * ningún evento de uso de esta cuenta, ni desde la app ni desde el servidor. */
 	analyticsOptOut: boolean;
+	/** Nivel que heredan los pins que no eligieron el suyo. */
+	defaultPinVisibility: PinVisibility;
 	stats: UserStats;
 	createdAt: string;
 }
