@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ReportModal from '$lib/components/ReportModal.svelte';
 	import { page } from '$app/state';
 	import { untrack } from 'svelte';
 	import Avatar from '$lib/components/Avatar.svelte';
@@ -17,6 +18,7 @@
 	import RatingHearts from '$lib/components/RatingHearts.svelte';
 	import HeartIcon from '$lib/components/HeartIcon.svelte';
 	import StarIcon from '$lib/components/StarIcon.svelte';
+	import { authStore } from '$lib/stores/auth.store.svelte';
 
 	let restaurantId = $derived(Number(page.params.id));
 
@@ -24,6 +26,9 @@
 	let myPin = $state<Pin | null>(null);
 	let loading = $state(true);
 	let error = $state('');
+	/** Reseña o autor que se está denunciando, con el pin para que el reporte
+	 * apunte al contenido y no sólo a la persona. */
+	let reporting = $state<{ id: number; displayName: string; pinId: number } | null>(null);
 
 	// Google puede mandar más de un autor; se muestra el primero, que es el de
 	// la foto que efectivamente servimos (el parser toma photos[0]).
@@ -69,13 +74,10 @@
 		openExternal(restaurant.website);
 	}
 
-	$effect(() => {
-		const id = restaurantId;
-		if (!id) return;
-		untrack(async () => {
-			loading = true;
-			error = '';
-			try {
+	async function load(id: number) {
+		loading = true;
+		error = '';
+		try {
 				restaurant = await restaurantsService.get(id);
 				// Después del fetch y no antes: si la ficha no cargó, nadie la vio.
 				trackVenueDetailView(id);
@@ -88,13 +90,20 @@
 				// pin", and tapping it got a 409 from the backend.
 				const pins = await pinsService.listAll();
 				myPin = pins.find((p) => p.restaurant === id) ?? null;
-			} catch (err) {
-				error = t('restaurant.cantLoad');
-				logSilent('restaurant:load', err);
-			} finally {
-				loading = false;
-			}
-		});
+		} catch (err) {
+			error = t('restaurant.cantLoad');
+			logSilent('restaurant:load', err);
+		} finally {
+			loading = false;
+		}
+	}
+
+	$effect(() => {
+		const id = restaurantId;
+		if (!id) return;
+		// Recargar después de bloquear a alguien: sus reseñas tienen que
+		// desaparecer de la ficha sin que haga falta volver a entrar.
+		untrack(() => load(id));
 	});
 
 </script>
@@ -362,6 +371,14 @@
 											<RatingHearts value={review.rating} class="mt-0.5  gap-0.5" />
 										{/if}
 										<p class="mt-1.5 text-sm leading-relaxed text-ink-light">{review.comment}</p>
+										{#if !review.user.isDeleted && review.user.id !== authStore.user?.id}
+											<button
+												onclick={() => (reporting = { id: review.user.id, displayName: review.user.displayName, pinId: review.id })}
+												class="mt-1 min-h-11 text-xs font-medium text-ink-muted active:opacity-70"
+											>
+												{t('moderation.report')}
+											</button>
+										{/if}
 									</div>
 								</div>
 							</li>
@@ -372,3 +389,12 @@
 		</div>
 	{/if}
 </div>
+
+{#if reporting}
+	<ReportModal
+		user={{ id: reporting.id, displayName: reporting.displayName }}
+		pinId={reporting.pinId}
+		onclose={() => (reporting = null)}
+		onblocked={() => { reporting = null; load(restaurantId); }}
+	/>
+{/if}
