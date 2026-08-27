@@ -10,6 +10,7 @@ from rest_framework_simplejwt.utils import get_md5_hash_password
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from accounts.views import (
+	BlockViewSet,
 	ChangePasswordView,
 	DietaryPreferenceListView,
 	EmailInvitationView,
@@ -73,6 +74,7 @@ class ThrottledTokenRefreshView(TokenRefreshView):
 
 router = DefaultRouter()
 router.register("friendships", FriendshipViewSet, basename="friendship")
+router.register("blocks", BlockViewSet, basename="block")
 
 urlpatterns = [
 	path("register/", RegisterView.as_view(), name="register"),

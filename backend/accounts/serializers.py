@@ -5,12 +5,14 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from accounts.consent import POLICY_VERSIONS
 from accounts.models import (
+	Block,
 	ConsentRecord,
 	DietaryPreference,
 	EmailInvitation,
 	Friendship,
 	Profile,
 )
+from accounts.services.blocking import is_blocked
 
 User = get_user_model()
 
@@ -215,7 +217,14 @@ class FriendshipSerializer(serializers.ModelSerializer):
 		fields = ("id", "from_user", "to_user", "to_user_id", "status", "created_at")
 		read_only_fields = ("id", "from_user", "status", "created_at")
 
-	def validate_to_user(self, value):
+	def validate_to_user_id(self, value):
+		"""OJO CON EL NOMBRE: DRF resuelve `validate_<campo>` por el nombre del
+		campo declarado, que acá es `to_user_id` —el de escritura—, no por el
+		de su `source`. Mientras este método se llamó `validate_to_user`, las
+		tres validaciones de abajo no corrieron nunca: se podía mandar una
+		solicitud a uno mismo, y la duplicada salía como 500 desde el
+		`unique_together` en vez de 400.
+		"""
 		request = self.context["request"]
 		if value == request.user:
 			raise serializers.ValidationError("You cannot send a friend request to yourself.")
@@ -223,6 +232,11 @@ class FriendshipSerializer(serializers.ModelSerializer):
 			raise serializers.ValidationError("Friend request already sent.")
 		if Friendship.objects.filter(from_user=value, to_user=request.user).exists():
 			raise serializers.ValidationError("This user already sent you a friend request.")
+		# RF5: hay bloqueo en alguna dirección. El mensaje es deliberadamente
+		# el mismo que el de un destinatario inexistente: decir "te bloquearon"
+		# convertiría este endpoint en el oráculo que RF2 existe para cerrar.
+		if is_blocked(request.user, value):
+			raise serializers.ValidationError("This user is not available.")
 		return value
 
 	def create(self, validated_data):
@@ -298,3 +312,19 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
 	# Sólo para traducir los errores de validación de la contraseña: la API no
 	# tiene LocaleMiddleware, así que sin esto salen siempre en español.
 	language = serializers.CharField(required=False, allow_blank=True)
+
+
+class BlockSerializer(serializers.ModelSerializer):
+	"""Un bloqueo, tal como lo ve quien lo hizo.
+
+	Devuelve `user` (el bloqueado) y no `blocker`: este serializer sólo se usa
+	para la lista propia, y quien la pide ya sabe que es él. Nunca se serializa
+	un bloqueo recibido — eso le diría al bloqueado que lo bloquearon (RF2).
+	"""
+
+	user = UserPublicSerializer(source="blocked", read_only=True)
+
+	class Meta:
+		model = Block
+		fields = ("id", "user", "created_at")
+		read_only_fields = fields

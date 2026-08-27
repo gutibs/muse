@@ -10,9 +10,10 @@ from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle, SimpleRateThrottle, UserRateThrottle
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from accounts.models import DietaryPreference, EmailInvitation, Friendship
+from accounts.models import Block, DietaryPreference, EmailInvitation, Friendship
 from accounts.serializers import (
 	AccountDeletionSerializer,
+	BlockSerializer,
 	ChangePasswordSerializer,
 	DietaryPreferenceSerializer,
 	EmailInvitationSerializer,
@@ -24,6 +25,7 @@ from accounts.serializers import (
 	UserPublicSerializer,
 )
 from accounts.services.account_deletion import anonymise_user
+from accounts.services.blocking import block_user, is_blocked, unblock_user
 from accounts.services.email import EmailSendError, send_invitation_email
 from accounts.services.friendships import are_friends
 from accounts.services.password_reset import confirm_reset, request_reset
@@ -197,6 +199,17 @@ class FriendshipViewSet(viewsets.ModelViewSet):
 				{"detail": "status must be 'accepted' or 'declined'."},
 				status=status.HTTP_400_BAD_REQUEST,
 			)
+		# RF6: el bloqueo se comprueba acá y no sólo al crear la solicitud. Es
+		# una carrera real: el otro bloquea mientras esta pantalla está abierta,
+		# y sin este chequeo el PATCH crearía una amistad ACCEPTED posterior al
+		# bloqueo — un bloqueo con una amistad viva debajo.
+		if new_status == Friendship.Status.ACCEPTED and is_blocked(
+			instance.from_user, instance.to_user
+		):
+			return Response(
+				{"detail": "This friend request is no longer available."},
+				status=status.HTTP_400_BAD_REQUEST,
+			)
 		instance.status = new_status
 		instance.save(update_fields=["status", "updated_at"])
 		return Response(self.get_serializer(instance).data)
@@ -346,3 +359,32 @@ class PasswordResetConfirmView(generics.GenericAPIView):
 			language=serializer.validated_data.get("language"),
 		)
 		return Response({"detail": "Password updated."}, status=status.HTTP_200_OK)
+
+
+class BlockViewSet(viewsets.ModelViewSet):
+	"""Bloquear, desbloquear y ver a quiénes bloqueé.
+
+	El detalle se direcciona por el **id del usuario bloqueado**, no por el id
+	de la fila: quien desbloquea conoce a la persona, no el número de su
+	bloqueo.
+	"""
+
+	serializer_class = BlockSerializer
+	http_method_names = ["get", "post", "delete"]
+	pagination_class = None
+	lookup_field = "blocked_id"
+
+	def get_queryset(self):
+		# Sólo los bloqueos que hice yo. Devolver los recibidos le diría al
+		# bloqueado que lo bloquearon (RF2).
+		return Block.objects.filter(blocker=self.request.user).select_related("blocked__profile")
+
+	def create(self, request, *args, **kwargs):
+		target = get_object_or_404(User, pk=request.data.get("user_id"))
+		block = block_user(blocker=request.user, blocked=target)
+		return Response(self.get_serializer(block).data, status=status.HTTP_200_OK)
+
+	def destroy(self, request, *args, **kwargs):
+		target = get_object_or_404(User, pk=kwargs[self.lookup_field])
+		unblock_user(blocker=request.user, blocked=target)
+		return Response(status=status.HTTP_204_NO_CONTENT)
