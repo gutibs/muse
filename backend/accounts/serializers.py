@@ -366,7 +366,14 @@ class BlockSerializer(serializers.ModelSerializer):
 
 class ReportSerializer(serializers.ModelSerializer):
 	"""Alta de una denuncia. Sólo escritura: nadie lista denuncias desde la app
-	—ni el que reporta ni el reportado—, se resuelven en el admin."""
+	—ni el que reporta ni el reportado—, se resuelven en el admin.
+
+	El queryset de `pin_id` se acota a los pins del usuario que se reporta.
+	Con `Pin.objects.all()`, el error distinguía "ese pin no es de esa persona"
+	de "ese pin no existe", y eso confirmaba pares (pin, dueño) de a uno —
+	incluidos los `to_visit` de desconocidos, que ningún endpoint de lectura
+	expone. Acotarlo hace que los dos casos den el mismo error de DRF.
+	"""
 
 	reported_user_id = serializers.PrimaryKeyRelatedField(
 		queryset=User.objects.all(), source="reported_user", write_only=True
@@ -379,6 +386,27 @@ class ReportSerializer(serializers.ModelSerializer):
 		model = Report
 		fields = ("id", "reported_user_id", "pin_id", "reason", "detail", "created_at")
 		read_only_fields = ("id", "created_at")
+
+	def validate(self, attrs):
+		"""Acota el pin al dueño reportado antes de resolverlo.
+
+		Se hace en `validate` y no en `__init__` porque el usuario reportado
+		llega en el payload, no en el contexto. Como `pin_id` ya se resolvió
+		contra `Pin.objects.all()`, acá se descarta el que no corresponde con
+		el MISMO error que DRF da para un id inexistente.
+		"""
+		pin = attrs.get("pin")
+		if pin is not None and pin.user_id != attrs["reported_user"].pk:
+			raise serializers.ValidationError(
+				{
+					"pin_id": [
+						serializers.PrimaryKeyRelatedField.default_error_messages[
+							"does_not_exist"
+						].format(pk_value=pin.pk)
+					]
+				}
+			)
+		return attrs
 
 
 class BlockCreateSerializer(serializers.Serializer):

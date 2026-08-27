@@ -176,3 +176,27 @@ def test_account_deletion_keeps_reports_about_you_and_drops_the_ones_you_made(se
 	remaining = Report.objects.get()
 	assert remaining.reporter == me
 	assert remaining.reported_user is None, "queda la denuncia, sin la identidad"
+
+
+@pytest.mark.critical
+@pytest.mark.django_db
+@patch("accounts.services.reporting.send_report_notification_email")
+def test_the_report_endpoint_does_not_confirm_who_owns_a_pin(send):
+	"""El campo aceptaba cualquier pin del sistema y el error distinguía entre
+	"ese pin no es de esa persona" y "ese pin no existe", así que se podía
+	confirmar pares (pin, dueño) de a uno. Incluye pins `to_visit` de
+	desconocidos, que ningún endpoint de lectura expone."""
+	me, offender, third = UserFactory(), UserFactory(), UserFactory()
+	someone_elses = PinFactory(
+		user=third, restaurant=RestaurantFactory(), status="visited", rating=4, comment="x"
+	)
+
+	mismatch = _report(_auth(me), reportedUserId=offender.id, pinId=someone_elses.id, reason="spam")
+	nonexistent = _report(_auth(me), reportedUserId=offender.id, pinId=999999, reason="spam")
+
+	assert mismatch.status_code == nonexistent.status_code == 400
+	assert str(mismatch.json()).replace(str(someone_elses.id), "<id>") == str(
+		nonexistent.json()
+	).replace(
+		"999999", "<id>"
+	), f"distinguibles: ajeno={mismatch.json()} inexistente={nonexistent.json()}"
