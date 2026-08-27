@@ -22,6 +22,7 @@ from accounts.serializers import (
 	PasswordResetRequestSerializer,
 	ProfileSerializer,
 	RegisterSerializer,
+	ReportSerializer,
 	UserPublicSerializer,
 )
 from accounts.services.account_deletion import anonymise_user
@@ -29,6 +30,7 @@ from accounts.services.blocking import block_user, is_blocked, unblock_user
 from accounts.services.email import EmailSendError, send_invitation_email
 from accounts.services.friendships import are_friends
 from accounts.services.password_reset import confirm_reset, request_reset
+from accounts.services.reporting import create_report
 from accounts.services.visibility import blocked_user_ids, require_can_view
 from pins.selectors import visible_pins
 from pins.serializers import PinSerializer
@@ -392,3 +394,28 @@ class BlockViewSet(viewsets.ModelViewSet):
 		target = get_object_or_404(User, pk=kwargs[self.lookup_field])
 		unblock_user(blocker=request.user, blocked=target)
 		return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ReportThrottle(ClientIPRateThrottle):
+	scope = "report"
+
+
+class ReportCreateView(generics.CreateAPIView):
+	"""Sólo POST. No hay listado: al reportado no se le dice nunca que lo
+	reportaron (RF20), y quien reporta tampoco necesita ver su historial —el
+	seguimiento lo hace el moderador en el admin."""
+
+	serializer_class = ReportSerializer
+	throttle_classes = (ReportThrottle,)
+
+	def create(self, request, *args, **kwargs):
+		serializer = self.get_serializer(data=request.data)
+		serializer.is_valid(raise_exception=True)
+		report = create_report(
+			reporter=request.user,
+			reported_user=serializer.validated_data["reported_user"],
+			pin=serializer.validated_data.get("pin"),
+			reason=serializer.validated_data["reason"],
+			detail=serializer.validated_data.get("detail", ""),
+		)
+		return Response(self.get_serializer(report).data, status=status.HTTP_201_CREATED)

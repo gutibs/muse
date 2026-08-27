@@ -169,6 +169,9 @@ RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
 # (https://operations.osmfoundation.org/policies/nominatim/) requires a
 # descriptive User-Agent identifying the app and a contact email.
 APP_CONTACT_EMAIL = os.environ.get("APP_CONTACT_EMAIL", "contact@lovemuse.app")
+# Adónde llegan las denuncias de contenido. Separado de APP_CONTACT_EMAIL a
+# propósito: esa casilla es pública y ésta la mira quien modera.
+MODERATION_EMAIL = os.environ.get("MODERATION_EMAIL", APP_CONTACT_EMAIL)
 NOMINATIM_USER_AGENT = os.environ.get("NOMINATIM_USER_AGENT", "muse/1.0 (+https://lovemuse.app)")
 
 # DRF
@@ -221,6 +224,9 @@ REST_FRAMEWORK = {
 		# quien acota la fuerza bruta ahí es el tope de 5 intentos por código.
 		"password_reset": "5/hour",
 		"password_reset_confirm": "10/hour",
+		# Denuncias: holgado para que nadie se quede sin poder reportar, pero
+		# con techo para que no se use como canal de spam contra el moderador.
+		"report": "30/hour",
 	},
 	# Cuántos proxies hay entre el cliente y Django. VA ACÁ ADENTRO: DRF lee
 	# sus settings del dict REST_FRAMEWORK, así que un NUM_PROXIES a nivel de

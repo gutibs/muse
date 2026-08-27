@@ -3,6 +3,7 @@ import uuid
 from django.conf import settings
 from django.contrib.gis.db import models as gis_models
 from django.db import models
+from django.utils import timezone
 
 
 class DietaryPreference(models.Model):
@@ -242,3 +243,90 @@ class Block(models.Model):
 
 	def __str__(self):
 		return f"{self.blocker_id} blocked {self.blocked_id}"
+
+
+class Report(models.Model):
+	"""Una denuncia sobre una persona o sobre una reseña suya.
+
+	Existe porque App Store Review Guideline 1.2 exige, para apps con contenido
+	de usuarios, un mecanismo de reporte **y** capacidad de actuar sobre él. El
+	`status` y la nota de resolución son esa capacidad: sin ellos esto sería un
+	buzón sin proceso.
+
+	`reported_comment` y `reported_rating` guardan copia de lo denunciado. El
+	comentario de un Pin es editable: sin la copia, el autor lo cambia por uno
+	inocuo entre la denuncia y la revisión, y el moderador revisa otra cosa.
+
+	`reported_user` es SET_NULL a propósito: si esa persona borra su cuenta, la
+	denuncia sobrevive sin su identidad —puede seguir abierta— igual que los
+	eventos de analytics. Las denuncias que ella *emitió* sí se borran, ver
+	`accounts.services.account_deletion`.
+	"""
+
+	class Reason(models.TextChoices):
+		HARASSMENT = "harassment", "Harassment or bullying"
+		SPAM = "spam", "Spam"
+		INAPPROPRIATE = "inappropriate", "Inappropriate content"
+		IMPERSONATION = "impersonation", "Impersonation"
+		OTHER = "other", "Other"
+
+	class Status(models.TextChoices):
+		PENDING = "pending", "Pending"
+		REVIEWED = "reviewed", "Reviewed"
+		ACTIONED = "actioned", "Actioned"
+		DISMISSED = "dismissed", "Dismissed"
+
+	DETAIL_MAX_LENGTH = 1000
+
+	reporter = models.ForeignKey(
+		settings.AUTH_USER_MODEL,
+		on_delete=models.CASCADE,
+		related_name="reports_made",
+	)
+	reported_user = models.ForeignKey(
+		settings.AUTH_USER_MODEL,
+		on_delete=models.SET_NULL,
+		null=True,
+		related_name="reports_received",
+	)
+	pin = models.ForeignKey(
+		"pins.Pin",
+		on_delete=models.SET_NULL,
+		null=True,
+		blank=True,
+		related_name="+",
+	)
+	reason = models.CharField(max_length=20, choices=Reason.choices)
+	detail = models.TextField(max_length=DETAIL_MAX_LENGTH, blank=True)
+	reported_comment = models.TextField(blank=True)
+	reported_rating = models.PositiveSmallIntegerField(null=True, blank=True)
+	status = models.CharField(max_length=12, choices=Status.choices, default=Status.PENDING)
+	resolution_note = models.TextField(blank=True)
+	resolved_at = models.DateTimeField(null=True, blank=True)
+	created_at = models.DateTimeField(auto_now_add=True)
+
+	class Meta:
+		db_table = "accounts_report"
+		# Sin resolver primero, y dentro de eso lo más viejo arriba: lo que
+		# lleva más tiempo esperando es lo que hay que mirar antes.
+		#
+		# Se ordena por `resolved_at` y no por `status`: el status es un
+		# CharField y ordenaría alfabéticamente, o sea "actioned", "dismissed",
+		# "pending", "reviewed" — las denuncias ya cerradas quedarían arriba de
+		# las que esperan.
+		ordering = [models.F("resolved_at").asc(nulls_first=True), "created_at"]
+		indexes = [models.Index(fields=["status", "created_at"], name="accounts_report_queue_idx")]
+
+	def save(self, *args, **kwargs):
+		# La fecha de resolución no se carga a mano: se estampa cuando el
+		# status deja de ser pendiente. Es la constancia de que se actuó, que
+		# es lo que la guideline mira, y a mano se olvida.
+		if self.status != self.Status.PENDING and self.resolved_at is None:
+			self.resolved_at = timezone.now()
+		elif self.status == self.Status.PENDING:
+			self.resolved_at = None
+		super().save(*args, **kwargs)
+
+	def __str__(self):
+		target = f"pin {self.pin_id}" if self.pin_id else f"user {self.reported_user_id}"
+		return f"{self.get_reason_display()} on {target} ({self.status})"

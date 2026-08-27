@@ -11,7 +11,8 @@ they hang off, scrubbed of every identifying field, plus the analytics events,
 kept for their per-venue counts with the user_id stripped.
 What is destroyed: profile fields, avatar file, friendships in both
 directions, invitations sent by and addressed to the user, feed activity,
-shared list links, consent records, and any pending password reset codes.
+shared list links, consent records, pending password reset codes, and the
+reports this user filed (reports *about* them survive, de-identified).
 """
 
 import logging
@@ -20,7 +21,13 @@ import uuid
 from django.db import transaction
 from django.utils import timezone
 
-from accounts.models import ConsentRecord, EmailInvitation, Friendship, PasswordResetCode
+from accounts.models import (
+	ConsentRecord,
+	EmailInvitation,
+	Friendship,
+	PasswordResetCode,
+	Report,
+)
 from analytics.models import Event
 from feed.models import Activity
 from pins.models import SharedList
@@ -60,6 +67,14 @@ def anonymise_user(user) -> None:
 	# `is_active=False` ya las vuelve incanjeables, una credencial de quien
 	# pidió el borrado no se queda esperando al cron de los 30 días.
 	PasswordResetCode.objects.filter(user=user).delete()
+	# Las denuncias que emitió se borran; las que hay SOBRE esta persona
+	# sobreviven con el usuario desvinculado (el FK es SET_NULL), porque pueden
+	# seguir abiertas. Mismo criterio que los eventos de analytics.
+	Report.objects.filter(reporter=user).delete()
+	# Las denuncias SOBRE esta persona se desidentifican en vez de borrarse,
+	# igual que los eventos de analytics: el FK es SET_NULL pero acá el User
+	# nunca se borra —se anonimiza— así que ese SET_NULL no dispararía solo.
+	Report.objects.filter(reported_user=user).update(reported_user=None)
 
 	profile = user.profile
 	if profile.avatar:

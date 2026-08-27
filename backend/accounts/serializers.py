@@ -11,8 +11,10 @@ from accounts.models import (
 	EmailInvitation,
 	Friendship,
 	Profile,
+	Report,
 )
 from accounts.services.blocking import is_blocked
+from pins.models import Pin
 
 User = get_user_model()
 
@@ -328,3 +330,20 @@ class BlockSerializer(serializers.ModelSerializer):
 		model = Block
 		fields = ("id", "user", "created_at")
 		read_only_fields = fields
+
+
+class ReportSerializer(serializers.ModelSerializer):
+	"""Alta de una denuncia. Sólo escritura: nadie lista denuncias desde la app
+	—ni el que reporta ni el reportado—, se resuelven en el admin."""
+
+	reported_user_id = serializers.PrimaryKeyRelatedField(
+		queryset=User.objects.all(), source="reported_user", write_only=True
+	)
+	pin_id = serializers.PrimaryKeyRelatedField(
+		queryset=Pin.objects.all(), source="pin", write_only=True, required=False, allow_null=True
+	)
+
+	class Meta:
+		model = Report
+		fields = ("id", "reported_user_id", "pin_id", "reason", "detail", "created_at")
+		read_only_fields = ("id", "created_at")

@@ -10,6 +10,7 @@ import logging
 import resend
 from django.conf import settings
 from django.template.loader import render_to_string
+from django.utils.html import escape
 
 logger = logging.getLogger(__name__)
 
@@ -162,4 +163,43 @@ def send_password_reset_email(
 			"resend_id": response.get("id") if isinstance(response, dict) else None,
 		},
 	)
+	return response
+
+
+def send_report_notification_email(*, report) -> dict:
+	"""Avisa al moderador que entró una denuncia.
+
+	Va en inglés y sin template: el destinatario es una sola persona conocida,
+	no un usuario del producto, y un template trilingüe para eso sería
+	ceremonia sin valor. El cuerpo lleva lo necesario para decidir sin abrir el
+	admin, y el id para encontrarlo cuando haga falta.
+	"""
+	_ensure_configured()
+
+	target = f"pin {report.pin_id}" if report.pin_id else f"user {report.reported_user_id}"
+	lines = [
+		f"Report #{report.pk} — {report.get_reason_display()}",
+		f"Reported: {target}",
+		f"Reporter: user {report.reporter_id}",
+	]
+	if report.detail:
+		lines.append(f"Detail: {report.detail}")
+	if report.reported_comment:
+		lines.append(f"Reported review: {report.reported_comment}")
+	body = "\n".join(lines)
+
+	payload = {
+		"from": settings.DEFAULT_FROM_EMAIL,
+		"to": [settings.MODERATION_EMAIL],
+		"subject": f"[Muse] Report #{report.pk}: {report.get_reason_display()}",
+		"text": body,
+		"html": f"<pre>{escape(body)}</pre>",
+	}
+
+	try:
+		response = resend.Emails.send(payload)
+	except Exception as exc:
+		logger.exception("Resend API call failed for report %s", report.pk)
+		raise EmailSendError(f"Failed to send report notification: {exc}", status_code=502) from exc
+
 	return response

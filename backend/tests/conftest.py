@@ -41,5 +41,6 @@ def _disable_throttles(settings):
 			"analytics": "10000/hour",
 			"password_reset": "10000/hour",
 			"password_reset_confirm": "10000/hour",
+			"report": "10000/hour",
 		},
 	}

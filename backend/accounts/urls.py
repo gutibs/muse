@@ -22,6 +22,7 @@ from accounts.views import (
 	ProfileView,
 	PublicProfileView,
 	RegisterView,
+	ReportCreateView,
 	UserPinsView,
 	UserSearchView,
 )
@@ -89,6 +90,7 @@ urlpatterns = [
 		PasswordResetConfirmView.as_view(),
 		name="password_reset_confirm",
 	),
+	path("reports/", ReportCreateView.as_view(), name="report-list"),
 	path("search/", UserSearchView.as_view(), name="user_search"),
 	path("invite/", EmailInvitationView.as_view(), name="email_invite"),
 	path("users/<int:user_id>/", PublicProfileView.as_view(), name="public_profile"),

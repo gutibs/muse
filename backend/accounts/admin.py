@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from accounts.models import ConsentRecord, EmailInvitation, Friendship, Profile
+from accounts.models import Block, ConsentRecord, EmailInvitation, Friendship, Profile, Report
 
 
 @admin.register(Profile)
@@ -50,3 +50,62 @@ class EmailInvitationAdmin(admin.ModelAdmin):
 	list_filter = ("accepted",)
 	search_fields = ("from_user__email", "email")
 	readonly_fields = ("token", "created_at")
+
+
+@admin.register(Report)
+class ReportAdmin(admin.ModelAdmin):
+	"""La cola de moderación. No hay pantalla propia en la app: para el volumen
+	del beta esto alcanza, y es lo que hace que el endpoint de reportes cumpla
+	la Guideline 1.2 —que pide poder actuar, no sólo recibir—.
+
+	El orden lo da el modelo: pendientes primero y, dentro de cada grupo, lo
+	más viejo arriba.
+	"""
+
+	list_display = (
+		"id",
+		"reason",
+		"status",
+		"reported_user",
+		"pin",
+		"reported_comment",
+		"created_at",
+		"resolved_at",
+	)
+	list_filter = ("status", "reason", "created_at")
+	search_fields = (
+		"reporter__email",
+		"reported_user__email",
+		"detail",
+		"reported_comment",
+	)
+	# La denuncia no se edita: se resuelve. Lo único que toca el moderador es
+	# el status y la nota; el resto es el registro de lo que pasó.
+	readonly_fields = (
+		"reporter",
+		"reported_user",
+		"pin",
+		"reason",
+		"detail",
+		"reported_comment",
+		"reported_rating",
+		"created_at",
+		"resolved_at",
+	)
+
+
+@admin.register(Block)
+class BlockAdmin(admin.ModelAdmin):
+	"""Sólo lectura: sirve para entender un reporte —si las dos personas ya se
+	bloquearon, el conflicto puede estar resuelto solo— no para intervenir. Un
+	bloqueo lo pone y lo saca su dueño."""
+
+	list_display = ("blocker", "blocked", "created_at")
+	search_fields = ("blocker__email", "blocked__email")
+	readonly_fields = ("blocker", "blocked", "created_at")
+
+	def has_add_permission(self, request):
+		return False
+
+	def has_change_permission(self, request, obj=None):
+		return False
