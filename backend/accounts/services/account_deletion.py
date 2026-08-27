@@ -11,16 +11,26 @@ they hang off, scrubbed of every identifying field, plus the analytics events,
 kept for their per-venue counts with the user_id stripped.
 What is destroyed: profile fields, avatar file, friendships in both
 directions, invitations sent by and addressed to the user, feed activity,
-shared list links, consent records, and any pending password reset codes.
+shared list links, consent records, pending password reset codes, blocks in
+both directions, and the reports this user filed (reports *about* them
+survive, de-identified).
 """
 
 import logging
 import uuid
 
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 
-from accounts.models import ConsentRecord, EmailInvitation, Friendship, PasswordResetCode
+from accounts.models import (
+	Block,
+	ConsentRecord,
+	EmailInvitation,
+	Friendship,
+	PasswordResetCode,
+	Report,
+)
 from analytics.models import Event
 from feed.models import Activity
 from pins.models import SharedList
@@ -60,6 +70,20 @@ def anonymise_user(user) -> None:
 	# `is_active=False` ya las vuelve incanjeables, una credencial de quien
 	# pidió el borrado no se queda esperando al cron de los 30 días.
 	PasswordResetCode.objects.filter(user=user).delete()
+	# Las denuncias que emitió se borran; las que hay SOBRE esta persona
+	# sobreviven con el usuario desvinculado (el FK es SET_NULL), porque pueden
+	# seguir abiertas. Mismo criterio que los eventos de analytics.
+	# Los bloqueos son parte del grafo social que este contrato destruye, en las
+	# dos direcciones. El CASCADE del modelo no dispara porque acá el User no se
+	# borra, se anonimiza; y sobre una cuenta que ya no puede entrar, un bloqueo
+	# no protege nada — sólo deja registrado a quién bloqueó alguien que ejerció
+	# su derecho de supresión.
+	Block.objects.filter(Q(blocker=user) | Q(blocked=user)).delete()
+	Report.objects.filter(reporter=user).delete()
+	# Las denuncias SOBRE esta persona se desidentifican en vez de borrarse,
+	# igual que los eventos de analytics: el FK es SET_NULL pero acá el User
+	# nunca se borra —se anonimiza— así que ese SET_NULL no dispararía solo.
+	Report.objects.filter(reported_user=user).update(reported_user=None)
 
 	profile = user.profile
 	if profile.avatar:

@@ -42,12 +42,25 @@ export interface PublicUser {
 	city: string;
 }
 
+/** La forma que devuelve `UserAnonymousSafeSerializer`: sin email, para donde
+ * el que mira no necesariamente tiene relación con la persona (reseñas
+ * públicas, el `targetUser` de una actividad de amistad, links compartidos).
+ * `isDeleted` significa que borró su cuenta: hay que mostrar el label
+ * "anónimo" traducido en lugar del nombre. */
+export interface AnonymousUser {
+	id: number;
+	displayName: string;
+	avatar: string | null;
+	city: string;
+	isDeleted: boolean;
+}
+
 export type FriendshipStatus = 'pending' | 'accepted' | 'declined';
 
 export interface Friendship {
 	id: number;
-	fromUser: PublicUser;
-	toUser: PublicUser;
+	fromUser: AnonymousUser;
+	toUser: AnonymousUser;
 	status: FriendshipStatus;
 	createdAt: string;
 }
@@ -57,9 +70,11 @@ export interface AuthTokens {
 	refresh: string;
 }
 
+/** El alta no devuelve sesión ni datos: responde lo mismo exista o no la
+ * cuenta, porque los únicos tokens posibles para un email ya tomado serían los
+ * de esa cuenta. Se entra por el login. */
 export interface RegisterResponse {
-	user: Profile;
-	tokens: AuthTokens;
+	detail: string;
 }
 
 export interface LoginRequest {

@@ -10,9 +10,11 @@ from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle, SimpleRateThrottle, UserRateThrottle
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from accounts.models import DietaryPreference, EmailInvitation, Friendship
+from accounts.models import Block, DietaryPreference, EmailInvitation, Friendship
 from accounts.serializers import (
 	AccountDeletionSerializer,
+	BlockCreateSerializer,
+	BlockSerializer,
 	ChangePasswordSerializer,
 	DietaryPreferenceSerializer,
 	EmailInvitationSerializer,
@@ -21,13 +23,16 @@ from accounts.serializers import (
 	PasswordResetRequestSerializer,
 	ProfileSerializer,
 	RegisterSerializer,
-	UserPublicSerializer,
+	ReportSerializer,
+	UserAnonymousSafeSerializer,
 )
 from accounts.services.account_deletion import anonymise_user
+from accounts.services.blocking import block_user, is_blocked, unblock_user
 from accounts.services.email import EmailSendError, send_invitation_email
 from accounts.services.friendships import are_friends
 from accounts.services.password_reset import confirm_reset, request_reset
-from accounts.services.visibility import require_can_view
+from accounts.services.reporting import create_report
+from accounts.services.visibility import blocked_user_ids, require_can_view
 from pins.selectors import visible_pins
 from pins.serializers import PinSerializer
 
@@ -98,7 +103,10 @@ class RegisterView(generics.CreateAPIView):
 		serializer = self.get_serializer(data=request.data)
 		serializer.is_valid(raise_exception=True)
 		result = serializer.save()
-		return Response(result, status=status.HTTP_201_CREATED)
+		# 202 y no 201: la respuesta es la misma exista o no la cuenta, así que
+		# no puede afirmar que se creó algo. El alta no devuelve sesión —ver el
+		# docstring del serializer— y se entra por el login de siempre.
+		return Response(result, status=status.HTTP_202_ACCEPTED)
 
 
 class ProfileView(generics.RetrieveUpdateDestroyAPIView):
@@ -153,22 +161,31 @@ class ChangePasswordView(generics.GenericAPIView):
 
 
 class UserSearchView(generics.ListAPIView):
-	serializer_class = UserPublicSerializer
+	"""Encontrar a alguien de quien ya tenés el dato exacto.
+
+	No es un directorio: no se busca por coincidencia parcial de nombre. Con
+	`display_name__icontains` y tres caracteres, escribir "ana" devolvía a
+	todas las Ana, Mariana y Susana de la plataforma —con su email— y eso es
+	una lista de gente a la que mandarle solicitudes. Para encontrar a una
+	persona hay que saber su email o su teléfono; si no, se la invita por mail.
+	"""
+
+	serializer_class = UserAnonymousSafeSerializer
 	throttle_classes = (UserSearchThrottle,)
 
 	def get_queryset(self):
 		query = self.request.query_params.get("q", "").strip()
-		# Require at least 3 chars to reduce mass enumeration by short prefixes.
 		if not query or len(query) < 3:
 			return User.objects.none()
 
 		email_ids = User.objects.filter(email__iexact=query).values_list("id", flat=True)
-		name_ids = User.objects.filter(profile__display_name__icontains=query).values_list(
-			"id", flat=True
-		)
 		phone_ids = User.objects.filter(profile__phone__iexact=query).values_list("id", flat=True)
-		matching_ids = set(email_ids) | set(name_ids) | set(phone_ids)
+		matching_ids = set(email_ids) | set(phone_ids)
 		matching_ids.discard(self.request.user.id)
+		# RF10. Esta vista no pasa por ningún service —es la que el plan daba
+		# por perdida— así que el filtro va explícito. En las dos direcciones:
+		# el conjunto de `blocked_user_ids` ya las junta.
+		matching_ids -= blocked_user_ids(self.request.user)
 
 		return User.objects.filter(id__in=matching_ids).select_related("profile")[:20]
 
@@ -195,6 +212,17 @@ class FriendshipViewSet(viewsets.ModelViewSet):
 		if new_status not in (Friendship.Status.ACCEPTED, Friendship.Status.DECLINED):
 			return Response(
 				{"detail": "status must be 'accepted' or 'declined'."},
+				status=status.HTTP_400_BAD_REQUEST,
+			)
+		# RF6: el bloqueo se comprueba acá y no sólo al crear la solicitud. Es
+		# una carrera real: el otro bloquea mientras esta pantalla está abierta,
+		# y sin este chequeo el PATCH crearía una amistad ACCEPTED posterior al
+		# bloqueo — un bloqueo con una amistad viva debajo.
+		if new_status == Friendship.Status.ACCEPTED and is_blocked(
+			instance.from_user, instance.to_user
+		):
+			return Response(
+				{"detail": "This friend request is no longer available."},
 				status=status.HTTP_400_BAD_REQUEST,
 			)
 		instance.status = new_status
@@ -346,3 +374,71 @@ class PasswordResetConfirmView(generics.GenericAPIView):
 			language=serializer.validated_data.get("language"),
 		)
 		return Response({"detail": "Password updated."}, status=status.HTTP_200_OK)
+
+
+class BlockViewSet(viewsets.ModelViewSet):
+	"""Bloquear, desbloquear y ver a quiénes bloqueé.
+
+	El detalle se direcciona por el **id del usuario bloqueado**, no por el id
+	de la fila: quien desbloquea conoce a la persona, no el número de su
+	bloqueo.
+	"""
+
+	serializer_class = BlockSerializer
+	http_method_names = ["get", "post", "delete"]
+	pagination_class = None
+	lookup_field = "blocked_id"
+	# Sin esto el router acepta `[^/.]+` y un DELETE /blocks/abc/ llega al ORM
+	# como pk no numérica: ValueError, o sea 500.
+	lookup_value_regex = "[0-9]+"
+
+	def get_queryset(self):
+		# Sólo los bloqueos que hice yo. Devolver los recibidos le diría al
+		# bloqueado que lo bloquearon (RF2).
+		return Block.objects.filter(blocker=self.request.user).select_related("blocked__profile")
+
+	def create(self, request, *args, **kwargs):
+		# Validado y no pasado crudo a get_object_or_404: ése sólo atrapa
+		# DoesNotExist, así que un "abc" reventaba con ValueError → 500 en un
+		# endpoint público.
+		serializer = BlockCreateSerializer(data=request.data)
+		serializer.is_valid(raise_exception=True)
+		target = serializer.validated_data["user_id"]
+		block = block_user(blocker=request.user, blocked=target)
+		return Response(self.get_serializer(block).data, status=status.HTTP_200_OK)
+
+	def destroy(self, request, *args, **kwargs):
+		target = get_object_or_404(User, pk=kwargs[self.lookup_field])
+		unblock_user(blocker=request.user, blocked=target)
+		return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ReportThrottle(UserRateThrottle):
+	"""Por usuario y no por IP: el endpoint es autenticado, así que se puede
+	identificar al que abusa. Contando por IP, un abusador detrás de un NAT
+	—wifi de oficina, CGNAT de una operadora— le agota el cupo a todos los que
+	comparten esa salida, y reportar es justamente la capacidad que la
+	guideline exige que funcione."""
+
+	scope = "report"
+
+
+class ReportCreateView(generics.CreateAPIView):
+	"""Sólo POST. No hay listado: al reportado no se le dice nunca que lo
+	reportaron (RF20), y quien reporta tampoco necesita ver su historial —el
+	seguimiento lo hace el moderador en el admin."""
+
+	serializer_class = ReportSerializer
+	throttle_classes = (ReportThrottle,)
+
+	def create(self, request, *args, **kwargs):
+		serializer = self.get_serializer(data=request.data)
+		serializer.is_valid(raise_exception=True)
+		report = create_report(
+			reporter=request.user,
+			reported_user=serializer.validated_data["reported_user"],
+			pin=serializer.validated_data.get("pin"),
+			reason=serializer.validated_data["reason"],
+			detail=serializer.validated_data.get("detail", ""),
+		)
+		return Response(self.get_serializer(report).data, status=status.HTTP_201_CREATED)

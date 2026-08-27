@@ -43,7 +43,7 @@
 
 	function activityText(a: Activity): string {
 		if (a.verb === 'joined') return t('feed.joinedMuse');
-		if (a.verb === 'friendship' && a.targetUser) return `${t('feed.becameFriends')} ${a.targetUser.displayName || a.targetUser.email}`;
+		if (a.verb === 'friendship' && a.targetUser) return `${t('feed.becameFriends')} ${a.targetUser.displayName || t('restaurant.anonymous')}`;
 		if (a.verb === 'rated' && a.pin) return `${t('feed.visited')} ${a.pin.restaurantDetail.name}`;
 		if (a.verb === 'pinned' && a.pin) return t('feed.wantsToVisit').replace('{restaurant}', a.pin.restaurantDetail.name);
 		if (a.verb === 'updated' && a.pin) return `${t('feed.updated')} ${a.pin.restaurantDetail.name}`;
@@ -202,7 +202,7 @@
 							<Avatar name={activity.actor.displayName} src={activity.actor.avatar} size={32} />
 							<div class="min-w-0 flex-1">
 								<p class="text-sm text-ink">
-									<span class="font-semibold">{activity.actor.displayName || activity.actor.email}</span>
+									<span class="font-semibold">{activity.actor.displayName || t('restaurant.anonymous')}</span>
 									{' '}
 									<span class="text-ink-muted">{activityText(activity)}</span>
 								</p>

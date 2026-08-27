@@ -1,0 +1,7 @@
+Hola{{ name_suffix }},
+
+Tu cuenta de Muse ya está lista. Entrá con tu email y la contraseña que elegiste.
+
+{{ login_link }}
+
+— El equipo de Muse

@@ -253,7 +253,7 @@
 							>
 								<Avatar name={other.displayName} src={other.avatar} size={44} />
 								<div class="min-w-0 flex-1">
-									<p class="truncate text-sm font-semibold text-ink">{other.displayName || other.email}</p>
+									<p class="truncate text-sm font-semibold text-ink">{other.displayName || t('restaurant.anonymous')}</p>
 									{#if other.city}
 										<p class="text-xs text-ink-muted">{other.city}</p>
 									{/if}
@@ -287,7 +287,7 @@
 									<Avatar name={req.fromUser.displayName} src={req.fromUser.avatar} size={44} />
 									<div class="min-w-0 flex-1">
 										<p class="truncate text-sm font-semibold text-ink">
-											{req.fromUser.displayName || req.fromUser.email}
+											{req.fromUser.displayName || t('restaurant.anonymous')}
 										</p>
 										{#if req.fromUser.city}
 											<p class="text-xs text-ink-muted">{req.fromUser.city}</p>
@@ -383,7 +383,7 @@
 								<li class="flex items-center gap-3 rounded-card bg-white p-4 shadow-card">
 									<Avatar name={user.displayName} src={user.avatar} size={44} />
 									<div class="min-w-0 flex-1">
-										<p class="truncate text-sm font-semibold text-ink">{user.displayName || user.email}</p>
+										<p class="truncate text-sm font-semibold text-ink">{user.displayName || t('restaurant.anonymous')}</p>
 										{#if user.city}<p class="text-xs text-ink-muted">{user.city}</p>{/if}
 									</div>
 									<button

@@ -1,3 +1,5 @@
+import type { AnonymousUser } from './user';
+
 export interface Cuisine {
 	id: number;
 	name: string;
@@ -89,17 +91,7 @@ export interface MenuItem {
 
 export interface Review {
 	id: number;
-	/** Same shape the API uses for a user everywhere else (no email: reviews
-	 * are public to non-friends by design). `isDeleted` means the author
-	 * erased their account — render the localised "anonymous" label instead
-	 * of the byline. See accounts.services.account_deletion. */
-	user: {
-		id: number;
-		displayName: string;
-		avatar: string | null;
-		city: string;
-		isDeleted: boolean;
-	};
+	user: AnonymousUser;
 	rating: number;
 	comment: string;
 	visitedAt: string | null;

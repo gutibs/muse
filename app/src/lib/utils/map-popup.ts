@@ -1,15 +1,14 @@
-import type { Pin, PublicUser, Restaurant } from '$lib/types';
+import type { AnonymousUser, Pin, Restaurant } from '$lib/types';
 import { escapeHtml } from './escape-html';
 
 /**
  * Owner byline source. We accept the partial shape because:
- * - friend pins on the map use `PublicUser` (displayName + email)
+ * - friend pins on the map use `AnonymousUser` (displayName, sin email)
  * - shared lists use `SharedListPublic.owner` which is the same shape
  * Avoiding the full type lets the test harness pass plain objects.
  */
 export interface PopupOwner {
 	displayName?: string | null;
-	email?: string | null;
 }
 
 export interface PopupOptions {
@@ -62,7 +61,7 @@ export function buildRestaurantPopup(opts: PopupOptions): string {
 	parts.push('<div style="font-family:Inter,sans-serif;min-width:140px;">');
 
 	if (owner) {
-		const ownerName = escapeHtml(owner.displayName || owner.email || '');
+		const ownerName = escapeHtml(owner.displayName || '');
 		if (ownerName) {
 			parts.push(
 				`<span style="color:#AF9483;font-size:11px;font-weight:600;">${ownerName}</span><br>`
@@ -117,9 +116,9 @@ export function buildRestaurantPopup(opts: PopupOptions): string {
 
 /**
  * Convenience overload: callers that want only an owner byline can build
- * a `PopupOwner` from a `PublicUser` without leaking the full type.
+ * a `PopupOwner` from an `AnonymousUser` without leaking the full type.
  */
-export function ownerFromUser(u: PublicUser | null | undefined): PopupOwner | null {
+export function ownerFromUser(u: AnonymousUser | null | undefined): PopupOwner | null {
 	if (!u) return null;
-	return { displayName: u.displayName, email: u.email };
+	return { displayName: u.displayName };
 }

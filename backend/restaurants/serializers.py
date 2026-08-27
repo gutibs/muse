@@ -2,7 +2,7 @@ from django.contrib.gis.geos import Point
 from rest_framework import serializers
 
 from accounts.serializers import UserAnonymousSafeSerializer
-from accounts.services.friendships import friend_ids
+from accounts.services.visibility import blocked_user_ids, visible_friend_ids
 from places.services.place_photos import attributions_for_place
 from restaurants.models import Cuisine, MenuItem, Restaurant, Tag
 
@@ -210,8 +210,15 @@ class RestaurantDetailSerializer(RestaurantSerializer):
 		"""Cached per serializer instance: get_reviews and get_friend_stats
 		both need it and would otherwise each hit the database."""
 		if not hasattr(self, "_cached_friend_ids"):
-			self._cached_friend_ids = friend_ids(self.context["request"].user)
+			self._cached_friend_ids = visible_friend_ids(self.context["request"].user)
 		return self._cached_friend_ids
+
+	def _blocked_ids(self):
+		"""Cacheado por instancia, igual que `_friend_ids`: el serializer se
+		crea uno por request, así que esto es una query y no una por campo."""
+		if not hasattr(self, "_cached_blocked_ids"):
+			self._cached_blocked_ids = blocked_user_ids(self.context["request"].user)
+		return self._cached_blocked_ids
 
 	def get_friend_stats(self, obj):
 		from django.db.models import Avg
@@ -237,8 +244,13 @@ class RestaurantDetailSerializer(RestaurantSerializer):
 		from pins.models import Pin
 
 		friend_ids = self._friend_ids()
+		# RF12: el bloqueo se excluye ACÁ, antes del corte. Filtrar la lista ya
+		# cortada haría que quien bloqueó a alguien prolífico viera un puñado de
+		# reseñas en un restaurante que tiene decenas. D-001 no se deroga: para
+		# cualquier tercero sin bloqueo, estas reseñas siguen visibles.
 		pins = list(
 			Pin.objects.filter(restaurant=obj, status="visited", comment__gt="")
+			.exclude(user_id__in=self._blocked_ids())
 			.select_related("user__profile")
 			.order_by("-updated_at")[:20]
 		)

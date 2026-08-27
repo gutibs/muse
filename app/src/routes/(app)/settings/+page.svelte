@@ -2,6 +2,8 @@
 	import LanguagePicker from '$lib/components/LanguagePicker.svelte';
 	import { t } from '$lib/i18n/index.svelte';
 	import { authStore } from '$lib/stores/auth.store.svelte';
+	import Avatar from '$lib/components/Avatar.svelte';
+	import { moderationService, type BlockedEntry } from '$lib/services/moderation.service';
 	import { authService } from '$lib/services/auth.service';
 	import { extractFirstDrfError } from '$lib/utils/api-error';
 	import { logSilent } from '$lib/utils/logger';
@@ -91,6 +93,36 @@
 			deleteSaving = false;
 		}
 	}
+
+	let blocks = $state<BlockedEntry[]>([]);
+	let loadingBlocks = $state(true);
+
+	async function loadBlocks() {
+		loadingBlocks = true;
+		try {
+			blocks = await moderationService.blocks();
+		} catch (err) {
+			// La lista es informativa: si falla, la sección queda vacía en vez
+			// de romper toda la pantalla de ajustes.
+			logSilent('settings:blocks', err);
+			blocks = [];
+		} finally {
+			loadingBlocks = false;
+		}
+	}
+
+	async function unblock(userId: number) {
+		try {
+			await moderationService.unblock(userId);
+			blocks = blocks.filter((b) => b.user.id !== userId);
+		} catch (err) {
+			logSilent('settings:unblock', err);
+		}
+	}
+
+	$effect(() => {
+		loadBlocks();
+	});
 </script>
 
 <div class="flex h-full flex-col">
@@ -177,6 +209,37 @@
 							{pwSaving ? t('settings.updating') : t('settings.updatePassword')}
 						</button>
 					</div>
+				{/if}
+			</div>
+		</section>
+
+		<!-- Personas bloqueadas -->
+		<section class="mt-6">
+			<h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-ink-muted">
+				{t('moderation.blockedList')}
+			</h2>
+			<div class="rounded-card bg-white shadow-card">
+				{#if loadingBlocks}
+					<p class="px-4 py-3 text-sm text-ink-muted">{t('common.loading')}</p>
+				{:else if blocks.length === 0}
+					<p class="px-4 py-3 text-sm text-ink-muted">{t('moderation.blockedEmpty')}</p>
+				{:else}
+					<ul>
+						{#each blocks as entry (entry.id)}
+							<li class="flex items-center gap-3 border-b border-cream-dark px-4 py-3 last:border-0">
+								<Avatar name={entry.user.displayName} src={entry.user.avatar} size={36} />
+								<span class="flex-1 text-sm text-ink">
+									{entry.user.displayName || t('restaurant.anonymous')}
+								</span>
+								<button
+									onclick={() => unblock(entry.user.id)}
+									class="min-h-11 rounded-button px-3 text-sm font-medium text-jade active:opacity-70"
+								>
+									{t('moderation.unblock')}
+								</button>
+							</li>
+						{/each}
+					</ul>
 				{/if}
 			</div>
 		</section>

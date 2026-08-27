@@ -99,14 +99,14 @@
 							<div class="min-w-0 flex-1">
 								<!-- Main line -->
 								<p class="text-sm text-ink">
-									<a href={`/users/${activity.actor.id}`} class="font-semibold text-ink active:text-jade">{activity.actor.displayName || activity.actor.email}</a>
+									<a href={`/users/${activity.actor.id}`} class="font-semibold text-ink active:text-jade">{activity.actor.displayName || t('restaurant.anonymous')}</a>
 									{' '}
 									{#if activity.verb === 'joined'}
 										<span class="text-ink-muted">{t('feed.joinedMuse')} 🎉</span>
 									{:else if activity.verb === 'friendship' && activity.targetUser}
 										<span class="text-ink-muted">{t('feed.becameFriends')}</span>
 										{' '}
-										<span class="font-semibold">{activity.targetUser.displayName || activity.targetUser.email}</span>
+										<span class="font-semibold">{activity.targetUser.displayName || t('restaurant.anonymous')}</span>
 									{:else if activity.verb === 'pinned' && activity.pin}
 										{@const parts = t('feed.wantsToVisit').split('{restaurant}')}
 										<span class="text-ink-muted">{parts[0]}</span><a href={`/map?focus=${activity.pin.restaurantDetail.id}`} class="font-semibold text-ink active:text-jade">{activity.pin.restaurantDetail.name}</a><span class="text-ink-muted">{activity.pin.restaurantDetail.city ? `, ${activity.pin.restaurantDetail.city}` : ''}{parts[1] || ''}</span>

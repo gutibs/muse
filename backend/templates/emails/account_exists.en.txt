@@ -1,0 +1,11 @@
+Hi,
+
+Someone tried to create a Muse account with this email, and one already exists.
+
+If that was you, sign in with your usual password. If you don't remember it, use "Forgot your password?" on the sign-in screen.
+
+{{ login_link }}
+
+If it wasn't you, there's nothing to do: your account hasn't changed and nobody got in.
+
+— The Muse team

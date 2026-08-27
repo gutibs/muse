@@ -1,18 +1,31 @@
+import logging
+
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
-from rest_framework_simplejwt.tokens import RefreshToken
 
 from accounts.consent import POLICY_VERSIONS
 from accounts.models import (
+	Block,
 	ConsentRecord,
 	DietaryPreference,
 	EmailInvitation,
 	Friendship,
 	Profile,
+	Report,
 )
+from accounts.services.blocking import is_blocked
+from accounts.services.email import (
+	EmailSendError,
+	send_account_exists_email,
+	send_welcome_email,
+)
+from accounts.services.visibility import blocked_user_ids
+from pins.models import Pin
 
 User = get_user_model()
+
+logger = logging.getLogger(__name__)
 
 
 class DietaryPreferenceSerializer(serializers.ModelSerializer):
@@ -86,6 +99,10 @@ class ProfileSerializer(serializers.ModelSerializer):
 
 
 class RegisterSerializer(serializers.Serializer):
+	# Un solo cuerpo para los dos caminos: si el texto difiere, aunque sea en
+	# un espacio, vuelve el oráculo.
+	CONFIRMATION_DETAIL = "Check your inbox to finish setting up your account."
+
 	email = serializers.EmailField()
 	password = serializers.CharField(write_only=True, validators=[validate_password])
 	display_name = serializers.CharField(max_length=100, required=False, default="")
@@ -96,10 +113,10 @@ class RegisterSerializer(serializers.Serializer):
 	accept_privacy = serializers.BooleanField(write_only=True)
 
 	def validate_email(self, value):
-		value = value.lower()
-		if User.objects.filter(email__iexact=value).exists():
-			raise serializers.ValidationError("A user with this email already exists.")
-		return value
+		# No se rechaza el email ya tomado: hacerlo le decía a cualquiera, un
+		# email por vez, quién tiene cuenta en Muse. El caso se resuelve en
+		# `create`, que responde igual y le avisa al dueño de la casilla.
+		return value.lower()
 
 	def validate_accept_privacy(self, value):
 		if value is not True:
@@ -115,7 +132,58 @@ class RegisterSerializer(serializers.Serializer):
 			return forwarded.split(",")[0].strip()
 		return request.META.get("REMOTE_ADDR")
 
+	def _consume_invitations(self, user):
+		"""Convierte en amistad las invitaciones dirigidas al email de `user`.
+
+		ACCEPTED y no PENDING: el mail de invitación promete que la amistad se
+		crea sola, y registrarse por ahí es el consentimiento. Ver D-005.
+		"""
+		invitations = EmailInvitation.objects.filter(
+			email__iexact=user.email,
+			accepted=False,
+		)
+		for invitation in invitations:
+			# La amistad se crea sin acto de quien se registra, así que un
+			# bloqueo se revertiría solo por este camino. Hoy no hay forma de
+			# llegar acá —para tener un bloqueo hace falta una cuenta, y con
+			# cuenta no te registrás—, pero el invariante "un bloqueo no se
+			# revierte solo" se rompe en silencio, y alcanza con que exista un
+			# "cambiar mi email" para volverlo alcanzable.
+			if is_blocked(invitation.from_user, user):
+				continue
+			Friendship.objects.create(
+				from_user=invitation.from_user,
+				to_user=user,
+				status=Friendship.Status.ACCEPTED,
+			)
+			invitation.accepted = True
+			invitation.save(update_fields=["accepted"])
+
+	@staticmethod
+	def _notify(send, **kwargs):
+		"""El mail no puede tumbar el alta: perder la cuenta porque Resend está
+		caído es peor que no mandar la confirmación."""
+		try:
+			send(**kwargs)
+		except EmailSendError as exc:
+			logger.error("Account email not sent (status=%s): %s", exc.status_code, exc.message)
+
 	def create(self, validated_data):
+		"""Da de alta la cuenta, o avisa al dueño si el email ya está tomado.
+
+		Los dos caminos devuelven exactamente lo mismo y ninguno devuelve
+		sesión. Ésa es la razón de que el alta ya no loguee: con tokens en la
+		respuesta, el caso del email tomado no podía ser idéntico sin entregar
+		esa cuenta.
+		"""
+		language = self.context["request"].data.get("language")
+		existing = User.objects.filter(email__iexact=validated_data["email"]).first()
+		if existing is not None:
+			# No se toca nada de esa cuenta. El único efecto es el aviso, que va
+			# a la casilla: quien probó no se entera de nada.
+			self._notify(send_account_exists_email, to_email=existing.email, language=language)
+			return {"detail": self.CONFIRMATION_DETAIL}
+
 		user = User.objects.create_user(
 			username=validated_data["email"],
 			email=validated_data["email"],
@@ -138,30 +206,14 @@ class RegisterSerializer(serializers.Serializer):
 			]
 		)
 
-		invitations = EmailInvitation.objects.filter(
-			email__iexact=validated_data["email"],
-			accepted=False,
+		self._consume_invitations(user)
+		self._notify(
+			send_welcome_email,
+			to_email=user.email,
+			name=validated_data.get("display_name", ""),
+			language=language,
 		)
-		for invitation in invitations:
-			# ACCEPTED, not PENDING. The invite email promises the friendship
-			# is created automatically — registering via the invite link is
-			# the user's consent. See docs/PRODUCT_DECISIONS.md D-005.
-			Friendship.objects.create(
-				from_user=invitation.from_user,
-				to_user=user,
-				status=Friendship.Status.ACCEPTED,
-			)
-			invitation.accepted = True
-			invitation.save(update_fields=["accepted"])
-
-		refresh = RefreshToken.for_user(user)
-		return {
-			"user": ProfileSerializer(user.profile).data,
-			"tokens": {
-				"access": str(refresh.access_token),
-				"refresh": str(refresh),
-			},
-		}
+		return {"detail": self.CONFIRMATION_DETAIL}
 
 
 class UserPublicSerializer(serializers.ModelSerializer):
@@ -204,18 +256,46 @@ class AccountDeletionSerializer(serializers.Serializer):
 
 
 class FriendshipSerializer(serializers.ModelSerializer):
-	from_user = UserPublicSerializer(read_only=True)
-	to_user = UserPublicSerializer(read_only=True)
+	"""RF5 se resuelve por el queryset del campo, no por un mensaje.
+
+	Sacar a los bloqueados de `to_user_id.queryset` hace que DRF genere para
+	ellos exactamente el mismo error que para un id que no existe —mismo texto,
+	mismo `code`— porque para el serializer *no existen*. Un mensaje propio,
+	por parecido que fuera, se distingue: la validación del primary key corre
+	antes que `validate_to_user_id`, así que un id inexistente nunca llega a
+	nuestro código y el error propio delataba el bloqueo. Y decirle a un
+	acosador "te bloquearon" es el resultado que RF2 existe para evitar.
+	"""
+
+	# Sin email: la contraparte de una amistad —y sobre todo la de una solicitud
+	# que todavía no aceptaste— es alguien cuyo email no tenés por qué recibir.
+	from_user = UserAnonymousSafeSerializer(read_only=True)
+	to_user = UserAnonymousSafeSerializer(read_only=True)
 	to_user_id = serializers.PrimaryKeyRelatedField(
 		queryset=User.objects.all(), source="to_user", write_only=True
 	)
+
+	def __init__(self, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+		request = self.context.get("request")
+		if request is not None and request.user.is_authenticated:
+			self.fields["to_user_id"].queryset = User.objects.exclude(
+				id__in=blocked_user_ids(request.user)
+			)
 
 	class Meta:
 		model = Friendship
 		fields = ("id", "from_user", "to_user", "to_user_id", "status", "created_at")
 		read_only_fields = ("id", "from_user", "status", "created_at")
 
-	def validate_to_user(self, value):
+	def validate_to_user_id(self, value):
+		"""OJO CON EL NOMBRE: DRF resuelve `validate_<campo>` por el nombre del
+		campo declarado, que acá es `to_user_id` —el de escritura—, no por el
+		de su `source`. Mientras este método se llamó `validate_to_user`, las
+		tres validaciones de abajo no corrieron nunca: se podía mandar una
+		solicitud a uno mismo, y la duplicada salía como 500 desde el
+		`unique_together` en vez de 400.
+		"""
 		request = self.context["request"]
 		if value == request.user:
 			raise serializers.ValidationError("You cannot send a friend request to yourself.")
@@ -240,10 +320,7 @@ class EmailInvitationSerializer(serializers.ModelSerializer):
 	def validate_email(self, value):
 		value = value.lower()
 		request = self.context["request"]
-		if User.objects.filter(email__iexact=value).exists():
-			raise serializers.ValidationError(
-				"This user is already on Muse. Search for them by email instead."
-			)
+
 		existing = EmailInvitation.objects.filter(
 			from_user=request.user, email__iexact=value
 		).first()
@@ -298,3 +375,79 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
 	# Sólo para traducir los errores de validación de la contraseña: la API no
 	# tiene LocaleMiddleware, así que sin esto salen siempre en español.
 	language = serializers.CharField(required=False, allow_blank=True)
+
+
+class BlockSerializer(serializers.ModelSerializer):
+	"""Un bloqueo, tal como lo ve quien lo hizo.
+
+	Devuelve `user` (el bloqueado) y no `blocker`: este serializer sólo se usa
+	para la lista propia, y quien la pide ya sabe que es él. Nunca se serializa
+	un bloqueo recibido — eso le diría al bloqueado que lo bloquearon (RF2).
+	"""
+
+	# Sin email: se puede bloquear a CUALQUIERA por id, sin relación previa, así
+	# que con UserPublicSerializer alcanzaba con recorrer ids —bloquear, leer,
+	# desbloquear— para cosechar las direcciones de toda la base. Es la misma
+	# fuga que se arregló en el feed; nada de la app usa este campo.
+	user = UserAnonymousSafeSerializer(source="blocked", read_only=True)
+
+	class Meta:
+		model = Block
+		fields = ("id", "user", "created_at")
+		read_only_fields = fields
+
+
+class ReportSerializer(serializers.ModelSerializer):
+	"""Alta de una denuncia. Sólo escritura: nadie lista denuncias desde la app
+	—ni el que reporta ni el reportado—, se resuelven en el admin.
+
+	El queryset de `pin_id` se acota a los pins del usuario que se reporta.
+	Con `Pin.objects.all()`, el error distinguía "ese pin no es de esa persona"
+	de "ese pin no existe", y eso confirmaba pares (pin, dueño) de a uno —
+	incluidos los `to_visit` de desconocidos, que ningún endpoint de lectura
+	expone. Acotarlo hace que los dos casos den el mismo error de DRF.
+	"""
+
+	reported_user_id = serializers.PrimaryKeyRelatedField(
+		queryset=User.objects.all(), source="reported_user", write_only=True
+	)
+	pin_id = serializers.PrimaryKeyRelatedField(
+		queryset=Pin.objects.all(), source="pin", write_only=True, required=False, allow_null=True
+	)
+
+	class Meta:
+		model = Report
+		fields = ("id", "reported_user_id", "pin_id", "reason", "detail", "created_at")
+		read_only_fields = ("id", "created_at")
+
+	def validate(self, attrs):
+		"""Acota el pin al dueño reportado antes de resolverlo.
+
+		Se hace en `validate` y no en `__init__` porque el usuario reportado
+		llega en el payload, no en el contexto. Como `pin_id` ya se resolvió
+		contra `Pin.objects.all()`, acá se descarta el que no corresponde con
+		el MISMO error que DRF da para un id inexistente.
+		"""
+		pin = attrs.get("pin")
+		if pin is not None and pin.user_id != attrs["reported_user"].pk:
+			raise serializers.ValidationError(
+				{
+					"pin_id": [
+						serializers.PrimaryKeyRelatedField.default_error_messages[
+							"does_not_exist"
+						].format(pk_value=pin.pk)
+					]
+				}
+			)
+		return attrs
+
+
+class BlockCreateSerializer(serializers.Serializer):
+	"""Sólo valida la entrada de `POST /auth/blocks/`.
+
+	Existe para que un `userId` ausente o no numérico dé 400 y no un 500: el
+	`get_object_or_404` que había atrapa `DoesNotExist`, no el `ValueError` que
+	tira el ORM cuando la pk no es un número.
+	"""
+
+	user_id = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())

@@ -90,17 +90,21 @@ class AuthStore {
 		acceptPrivacy: boolean,
 		displayName?: string
 	) {
-		const result = await authService.register({
-			email,
-			password,
-			displayName,
-			acceptPrivacy
-		});
-		this.accessToken = result.tokens.access;
-		this.refreshToken = result.tokens.refresh;
-		localStorage.setItem(TOKEN_KEY, result.tokens.access);
-		localStorage.setItem(REFRESH_KEY, result.tokens.refresh);
-		this.user = result.user;
+		await authService.register({ email, password, displayName, acceptPrivacy });
+
+		// El alta ya no devuelve sesión: el backend responde lo mismo exista o
+		// no la cuenta, y los únicos tokens posibles para un email tomado
+		// serían los de esa cuenta. Se intenta entrar con lo que la persona
+		// acaba de escribir: si el alta era real funciona y el registro sigue
+		// sin fricción; si el email ya era de otro, falla y quien lo intentó
+		// ve "revisá tu correo" — que es cierto, el aviso le llegó al dueño.
+		try {
+			await this.login(email, password);
+			return true;
+		} catch (err) {
+			logSilent('auth:register:autologin', err);
+			return false;
+		}
 	}
 
 	/** Cambia la contraseña y se queda con el par de tokens que devuelve el

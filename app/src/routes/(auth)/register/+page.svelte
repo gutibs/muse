@@ -31,6 +31,7 @@
 	let confirmPassword = $state('');
 	let error = $state('');
 	let submitting = $state(false);
+	let checkYourInbox = $state(false);
 	let showPassword = $state(false);
 	let showConfirmPassword = $state(false);
 	// Active consent — unchecked by default, required to enable submit. One
@@ -65,7 +66,18 @@
 
 		submitting = true;
 		try {
-			await authStore.register(email, password, acceptPrivacy, displayName || undefined);
+			const signedIn = await authStore.register(
+				email,
+				password,
+				acceptPrivacy,
+				displayName || undefined
+			);
+			if (!signedIn) {
+				// Ese email ya tenía cuenta. No se lo decimos —sería confirmar
+				// quién está en Muse— y el aviso ya salió a la casilla.
+				checkYourInbox = true;
+				return;
+			}
 			// Both lookups are non-blocking — the user can finish registration
 			// even if either list fails to load (UI just renders empty grids).
 			try {
@@ -106,6 +118,21 @@
 		goto('/home');
 	}
 </script>
+
+{#if checkYourInbox}
+	<div class="flex h-full flex-col items-center justify-center bg-cream px-6">
+		<div class="w-full max-w-sm text-center">
+			<h1 class="mb-2 font-serif text-2xl font-bold text-jade-dark">{t('register.checkInbox')}</h1>
+			<p class="mb-8 text-sm text-ink-light">{t('register.checkInboxBody')}</p>
+			<a
+				href="/login"
+				class="flex min-h-12 w-full items-center justify-center rounded-button bg-jade text-base font-semibold text-white active:scale-[0.98]"
+			>
+				{t('auth.signIn')}
+			</a>
+		</div>
+	</div>
+{:else}
 
 <!-- STEP 1: Account creation -->
 {#if step === 1}
@@ -341,4 +368,5 @@
 			</button>
 		</div>
 	</div>
+{/if}
 {/if}
