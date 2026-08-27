@@ -43,6 +43,7 @@ class PinSerializer(serializers.ModelSerializer):
 			"tag_ids",
 			"tags_detail",
 			"is_favourite",
+			"visibility",
 			"created_at",
 			"updated_at",
 		)

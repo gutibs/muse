@@ -14,6 +14,7 @@ surface. They all serialize through this module.
 from rest_framework import serializers
 
 from accounts.serializers import UserAnonymousSafeSerializer
+from accounts.services.visibility import public_pin_filter
 from pins.models import Pin, SharedList
 
 # A shared list is a link sent to friends, not a catalogue dump. The cap
@@ -98,8 +99,18 @@ class SharedListPublicSerializer(serializers.ModelSerializer):
 		return self._filtered_pins(obj)
 
 	def _curated_pins(self, obj):
-		"""Los pins elegidos a mano, en su orden, con su nota."""
-		items = obj.items.select_related("pin__restaurant").prefetch_related("pin__tags")
+		"""Los pins elegidos a mano, en su orden, con su nota.
+
+		Filtrados por nivel igual que la lista `auto`: elegir un pin a mano
+		para una lista no lo hace compartible si su dueño lo marcó privado
+		(decisión 3 del spec). El item queda en la lista y vuelve a aparecer
+		si le sube el nivel.
+		"""
+		items = (
+			obj.items.filter(public_pin_filter(prefix="pin__"))
+			.select_related("pin__restaurant")
+			.prefetch_related("pin__tags")
+		)
 		salida = []
 		for item in items[:CURATED_ITEM_LIMIT]:
 			fila = PublicPinSerializer(item.pin).data
@@ -108,7 +119,14 @@ class SharedListPublicSerializer(serializers.ModelSerializer):
 		return salida
 
 	def _filtered_pins(self, obj):
-		qs = Pin.objects.filter(user=obj.user).select_related("restaurant").prefetch_related("tags")
+		# Quien abre el link no tiene sesión, así que sólo entra lo público:
+		# un pin `friends` no tiene amistad que verificar contra un anónimo.
+		qs = (
+			Pin.objects.filter(user=obj.user)
+			.filter(public_pin_filter())
+			.select_related("restaurant")
+			.prefetch_related("tags")
+		)
 		if obj.status_filter != "all":
 			qs = qs.filter(status=obj.status_filter)
 		return PublicPinSerializer(qs[:PUBLIC_PIN_LIMIT], many=True).data

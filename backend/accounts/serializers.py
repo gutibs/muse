@@ -20,7 +20,7 @@ from accounts.services.email import (
 	send_account_exists_email,
 	send_welcome_email,
 )
-from accounts.services.visibility import blocked_user_ids
+from accounts.services.visibility import blocked_user_ids, visible_pin_filter
 from pins.models import Pin
 
 User = get_user_model()
@@ -64,6 +64,7 @@ class ProfileSerializer(serializers.ModelSerializer):
 			"dietary_preferences",
 			"dietary_preferences_detail",
 			"analytics_opt_out",
+			"default_pin_visibility",
 			"stats",
 			"created_at",
 		)
@@ -87,10 +88,15 @@ class ProfileSerializer(serializers.ModelSerializer):
 
 	def get_stats(self, obj):
 		user = obj.user
+		# Los contadores cuentan lo que el viewer puede ver y no todo lo que
+		# hay: un contador es cardinalidad, y "42 lugares" arriba de una lista
+		# de 30 filtra que hay 12 escondidos. Sobre el perfil propio no cambia
+		# nada, el dueño se ve todo lo suyo.
+		pins = user.pins.filter(visible_pin_filter(self.context["request"].user))
 		return {
-			"pin_count": user.pins.count(),
-			"visited_count": user.pins.filter(status="visited").count(),
-			"to_visit_count": user.pins.filter(status="to_visit").count(),
+			"pin_count": pins.count(),
+			"visited_count": pins.filter(status="visited").count(),
+			"to_visit_count": pins.filter(status="to_visit").count(),
 			"friend_count": (
 				user.friendships_sent.filter(status="accepted").count()
 				+ user.friendships_received.filter(status="accepted").count()
