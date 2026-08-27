@@ -1,9 +1,9 @@
 # F2.A — Tres niveles de privacidad por pin
 
-**Estado: borrador para revisar.** Toca permisos, así que por regla del
-proyecto va mini-spec previa y TDD. Hay cuatro decisiones de producto sin
-tomar, marcadas como **ABIERTA** más abajo; ninguna línea de código antes de
-cerrarlas.
+**Estado: listo para implementar (2026-08-27).** Toca permisos, así que por
+regla del proyecto va mini-spec previa y TDD. Las cuatro decisiones de
+producto que lo bloqueaban las **cerró Jess el 2026-08-27** y están abajo con
+su respuesta.
 
 Base: mapeo exhaustivo del backend (2026-08-21) sobre quién lee un pin hoy.
 
@@ -81,37 +81,51 @@ Dos funciones nuevas, y el resto de las superficies pasan a usarlas:
 
 Los seis puntos ciegos se enganchan de a uno, cada uno con su test.
 
-## Las cuatro decisiones abiertas
+## Las cuatro decisiones, cerradas por Jess (2026-08-27)
 
-**ABIERTA 1 — ¿Qué pasa con D-001?** Los tres niveles la contradicen de
-frente. La salida natural: D-001 pasa a valer **para los pins públicos**, que
-son el default, y el autor puede restringir el suyo. Eso mantiene la
-propuesta de valor y le da la perilla a quien escribe. Si se elige esto,
-`docs/PRODUCT_DECISIONS.md` se actualiza en el mismo commit.
+**1 — D-001 pasa a valer para los pins públicos.** Que son el default, así
+que la propuesta de valor no se mueve: las reseñas siguen siendo públicas
+salvo que su autor decida otra cosa. `docs/PRODUCT_DECISIONS.md` se actualiza
+en el mismo commit que la implementación.
 
-**ABIERTA 2 — ¿Un pin privado cuenta en el promedio del restaurante?**
-Excluirlo es coherente ("privado es privado"), pero hace que el promedio del
-restaurante dependa de quién mira. Incluirlo mantiene un número estable y no
-revela nada individual, aunque con dos reseñas el promedio delata bastante.
+**2 — El promedio del restaurante incluye los pins privados.** El número
+queda estable e igual para todos los que miran la ficha, en vez de depender
+de quién es el viewer. El `Count("pins")` que va al lado cuenta sobre el
+mismo universo, para que promedio y conteo no queden con denominadores
+distintos.
 
-**ABIERTA 3 — ¿Se puede poner un pin privado en una lista curada?** Elegirlo
-a mano para una lista es un acto explícito de compartirlo, así que
-probablemente sí, y el nivel no debería estorbar. Lo que sí parece claro es
-que una lista `auto` (por filtro) **no** debe publicar pins privados:
-compartir un filtro no es elegir cada pin.
+**2.bis — `get_friend_stats` es la excepción y NO incluye privados.**
+Derivada de la anterior, decidida junto con ella. El promedio "de tus
+amigos" se calcula sobre pocos datos: con un solo amigo pineado, ese número
+*es* el rating de esa persona, así que incluir un pin privado ahí lo
+publicaría. Sólo entran los pins de amigos que el viewer puede ver.
 
-**ABIERTA 4 — ¿El feed muestra un pin que pasó a privado?** La `Activity` ya
-ocurrió y el amigo quizás ya la vio. Filtrarlo es más consistente; dejarlo es
-más barato. Con `feed/serializers.py:10` serializando el pin **en su estado
-actual**, hoy el comentario editado se ve actualizado en una actividad vieja,
-así que filtrar es el camino coherente con lo que ya hace.
+**3 — Un pin privado no entra en una lista compartida, ni curada ni `auto`.**
+El criterio queda parejo: privado es sólo para el dueño, en toda superficie.
+Elegirlo a mano no lo convierte en compartible; si se lo quiere en una lista,
+primero se le cambia el nivel.
+
+**4 — El feed filtra el pin que pasó a privado.** Aunque la `Activity` ya
+haya ocurrido y el amigo ya la haya visto. Es lo coherente con el punto 3 y
+con lo que el feed ya hace hoy: `feed/serializers.py:10` serializa el pin en
+su estado actual, así que un comentario editado ya se ve actualizado en una
+actividad vieja.
 
 ## Testing
 
 TDD, y los invariantes que van marcados `@pytest.mark.critical`:
 
 - Un pin `private` no aparece en: reseñas del restaurante, feed de un amigo,
-  perfil de un amigo, ni en una lista compartida `auto`.
+  perfil de un amigo, ni en una lista compartida — **tampoco en una `curated`
+  donde el dueño lo eligió a mano** (decisión 3).
+- Una `Activity` cuyo pin pasó a `private` desaparece del feed del amigo que
+  antes la veía (decisión 4).
+- El promedio y el conteo de la ficha del restaurante **no cambian** cuando
+  un pin pasa a `private`: dan lo mismo para el dueño, un amigo y un
+  desconocido (decisión 2).
+- `get_friend_stats` **sí** cambia: el pin privado de un amigo no entra en
+  ese promedio (decisión 2.bis). Con un único amigo pineado y su pin en
+  `private`, la ficha no devuelve stats de amigos.
 - Un pin `friends` aparece para un amigo y no para un desconocido, en las
   seis superficies.
 - Un pin sin `visibility` (NULL) se comporta según el default del perfil.

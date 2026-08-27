@@ -13,6 +13,7 @@ levels — belong here, so that every surface inherits them instead of only
 the one that happened to be edited.
 """
 
+from accounts.services.visibility import visible_pin_filter
 from pins.models import Pin
 
 # Sentinel the frontend sends to mean "don't filter". Accepted explicitly so
@@ -28,10 +29,16 @@ def visible_pins(viewer, *, owner=None, status=None, tag=None, city=None, favour
 	caller's job — use `accounts.services.visibility.require_can_view` before
 	calling this for someone else's pins, so the caller controls whether an
 	unauthorised viewer gets a 403 or an empty list.
+
+	El nivel de cada pin se aplica acá y no en las views: `require_can_view`
+	decide si el viewer puede mirar a esta persona, `visible_pin_filter`
+	decide cuáles de sus pins. Sobre los propios no cambia nada — el dueño
+	siempre se ve todo lo suyo.
 	"""
 	owner = owner or viewer
 	qs = (
 		Pin.objects.filter(user=owner)
+		.filter(visible_pin_filter(viewer))
 		.select_related("restaurant")
 		.prefetch_related("tags", "restaurant__cuisines")
 	)

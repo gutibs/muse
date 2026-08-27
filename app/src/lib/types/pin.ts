@@ -2,6 +2,12 @@ import type { Restaurant, Tag } from './restaurant';
 
 export type PinStatus = 'visited' | 'to_visit';
 
+/**
+ * Quién ve este pin. `null` en `Pin.visibility` no es un cuarto valor: quiere
+ * decir "lo que diga el default de mi perfil" (ver `pin-visibility.ts`).
+ */
+export type PinVisibility = 'public' | 'friends' | 'private';
+
 export interface Pin {
 	id: number;
 	restaurant: number;
@@ -13,6 +19,8 @@ export interface Pin {
 	tagsDetail: Tag[];
 	/** Marca privada del dueño del pin. No viaja en los links compartidos. */
 	isFavourite: boolean;
+	/** `null` = heredá el `defaultPinVisibility` del perfil. */
+	visibility: PinVisibility | null;
 	createdAt: string;
 	updatedAt: string;
 }
@@ -24,6 +32,8 @@ export interface PinCreate {
 	comment?: string;
 	visitedAt?: string;
 	tagIds?: number[];
+	/** Omitirlo deja el pin heredando el default del perfil. */
+	visibility?: PinVisibility;
 }
 
 export type SharedListFilter = 'all' | 'visited' | 'to_visit';

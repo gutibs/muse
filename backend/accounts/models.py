@@ -5,6 +5,8 @@ from django.contrib.gis.db import models as gis_models
 from django.db import models
 from django.utils import timezone
 
+from pins.constants import Visibility
+
 
 class DietaryPreference(models.Model):
 	"""Closed set of dietary preferences a user can have. Replaces the
@@ -57,6 +59,15 @@ class Profile(models.Model):
 	# los que emite el servidor. Lo prometen las políticas publicadas, así que
 	# tiene que ser verdad en el código.
 	analytics_opt_out = models.BooleanField(default=False)
+	# El nivel que hereda un pin que no eligió el suyo (`Pin.visibility` NULL).
+	# El default es `public` y no es una preferencia: con cualquier otro valor,
+	# los pins que ya existen cambian de visibilidad solos y las fichas de
+	# restaurante se vacían de un día para el otro.
+	default_pin_visibility = models.CharField(
+		max_length=10,
+		choices=Visibility.choices,
+		default=Visibility.PUBLIC,
+	)
 	# Set when the user exercises their right to erasure. The row stays so the
 	# person's reviews keep hanging off a valid FK (see D-009), but everything
 	# identifying is wiped. Anything rendering an author must treat a non-null

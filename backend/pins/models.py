@@ -5,11 +5,17 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
+from pins.constants import Visibility
+
 
 class Pin(models.Model):
 	class Status(models.TextChoices):
 		VISITED = "visited", "Visited"
 		TO_VISIT = "to_visit", "To Visit"
+
+	# Alias para que el resto del código lea `Pin.Visibility.PRIVATE`, que es
+	# como se leen `Pin.Status` y `SharedList.Kind`.
+	Visibility = Visibility
 
 	user = models.ForeignKey(
 		settings.AUTH_USER_MODEL,
@@ -42,6 +48,16 @@ class Pin(models.Model):
 	# haría que marcar favorito pisara el pin que ya está, y
 	# `SharedList.status_filter` heredaría una opción que no es un estado.
 	is_favourite = models.BooleanField(default=False, db_index=True)
+	# Nullable a propósito: NULL significa "lo que diga mi default", así que
+	# cambiar la preferencia del perfil mueve los pins que nunca se tocaron y
+	# respeta los que sí. Quién ve qué se resuelve en un solo lugar,
+	# `accounts.services.visibility.visible_pin_filter`.
+	visibility = models.CharField(
+		max_length=10,
+		choices=Visibility.choices,
+		null=True,
+		blank=True,
+	)
 	created_at = models.DateTimeField(auto_now_add=True)
 	updated_at = models.DateTimeField(auto_now=True)
 

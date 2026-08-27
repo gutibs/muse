@@ -5,19 +5,22 @@
 	import LocationPicker from '$lib/components/LocationPicker.svelte';
 	import TagChips from '$lib/components/TagChips.svelte';
 	import RatingStars from '$lib/components/RatingStars.svelte';
+	import SegmentedControl from '$lib/components/SegmentedControl.svelte';
 	import StatusToggle from '$lib/components/StatusToggle.svelte';
 	import TagCheckboxes from '$lib/components/TagCheckboxes.svelte';
 	import { t } from '$lib/i18n/index.svelte';
 	import { googleImportErrorKey, importPlace } from '$lib/services/google-import';
 	import { pinsService } from '$lib/services/pins.service';
+	import { authStore } from '$lib/stores/auth.store.svelte';
 	import { placesService, type PlaceSuggestion } from '$lib/services/places.service';
 	import { restaurantsService } from '$lib/services/restaurants.service';
-	import type { Cuisine, PinStatus, Restaurant, Tag } from '$lib/types';
+	import type { Cuisine, PinStatus, PinVisibility, Restaurant, Tag } from '$lib/types';
 	import { AXES } from '$lib/utils/taxonomy';
 	import { suggestOccasion } from '$lib/utils/suggest-occasion';
 	import { ApiError } from '$lib/types';
 	import { extractFirstDrfError } from '$lib/utils/api-error';
 	import { logSilent } from '$lib/utils/logger';
+	import { VISIBILITY_OPTIONS, visibilityToSubmit } from '$lib/utils/pin-visibility';
 
 	// State
 	let step = $state(1);
@@ -51,6 +54,13 @@
 	let rating = $state(0);
 	let comment = $state('');
 	let selectedTags = $state<number[]>([]);
+	// Arranca en la preferencia del perfil, y mientras no se toque el pin se
+	// guarda sin nivel propio: así sigue moviéndose con esa preferencia.
+	const profileVisibility = $derived(authStore.user?.defaultPinVisibility ?? 'public');
+	let visibility = $state<PinVisibility>('public');
+	$effect(() => {
+		visibility = profileVisibility;
+	});
 
 	// Reference data
 	let cuisines = $state<Cuisine[]>([]);
@@ -249,6 +259,7 @@
 				rating: status === 'visited' ? rating : undefined,
 				comment: comment || undefined,
 				tagIds: selectedTags.length > 0 ? selectedTags : undefined,
+				visibility: visibilityToSubmit(visibility, null, profileVisibility),
 			});
 
 			goto('/map');
@@ -498,6 +509,13 @@
 				<div>
 					<span class="mb-2 block text-sm font-medium text-ink-light">{t('pin.status')}</span>
 					<StatusToggle bind:value={status} />
+				</div>
+
+				<!-- Quién lo ve -->
+				<div>
+					<span class="mb-2 block text-sm font-medium text-ink-light">{t('pin.visibility')}</span>
+					<SegmentedControl bind:value={visibility} options={VISIBILITY_OPTIONS()} />
+					<p class="mt-1.5 text-xs text-ink-muted">{t('pin.visibilityHelp')}</p>
 				</div>
 
 				<!-- Rating (only if visited) -->

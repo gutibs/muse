@@ -2,7 +2,11 @@ from django.contrib.gis.geos import Point
 from rest_framework import serializers
 
 from accounts.serializers import UserAnonymousSafeSerializer
-from accounts.services.visibility import blocked_user_ids, visible_friend_ids
+from accounts.services.visibility import (
+	blocked_user_ids,
+	visible_friend_ids,
+	visible_pin_filter,
+)
 from places.services.place_photos import attributions_for_place
 from restaurants.models import Cuisine, MenuItem, Restaurant, Tag
 
@@ -229,7 +233,13 @@ class RestaurantDetailSerializer(RestaurantSerializer):
 		if not friend_ids:
 			return {"rating_avg": None, "rated_count": 0, "on_list_count": 0}
 
-		friend_pins = Pin.objects.filter(restaurant=obj, user_id__in=friend_ids)
+		# El filtro de visibilidad además del `user_id__in`: el promedio de
+		# amigos se calcula sobre pocos datos y con un solo amigo pineado *es*
+		# el rating de esa persona, así que un pin que su dueño restringió no
+		# entra acá aunque el promedio global sí lo cuente (decisión 2.bis).
+		friend_pins = Pin.objects.filter(restaurant=obj, user_id__in=friend_ids).filter(
+			visible_pin_filter(self.context["request"].user)
+		)
 		rated = friend_pins.filter(status="visited", rating__isnull=False)
 		on_list = friend_pins.filter(status="to_visit")
 
@@ -244,13 +254,15 @@ class RestaurantDetailSerializer(RestaurantSerializer):
 		from pins.models import Pin
 
 		friend_ids = self._friend_ids()
-		# RF12: el bloqueo se excluye ACÁ, antes del corte. Filtrar la lista ya
-		# cortada haría que quien bloqueó a alguien prolífico viera un puñado de
-		# reseñas en un restaurante que tiene decenas. D-001 no se deroga: para
-		# cualquier tercero sin bloqueo, estas reseñas siguen visibles.
+		# D-001 no se deroga, se acota (F2.A): para cualquier tercero sin
+		# bloqueo, las reseñas de los pins **públicos** —el default— siguen
+		# visibles. Las que su autor restringió, no.
 		pins = list(
 			Pin.objects.filter(restaurant=obj, status="visited", comment__gt="")
-			.exclude(user_id__in=self._blocked_ids())
+			# El nivel y el bloqueo se aplican ACÁ, antes del corte. Filtrar la
+			# lista ya cortada haría que quien bloqueó a alguien prolífico viera
+			# un puñado de reseñas en un restaurante que tiene decenas.
+			.filter(visible_pin_filter(self.context["request"].user))
 			.select_related("user__profile")
 			.order_by("-updated_at")[:20]
 		)
