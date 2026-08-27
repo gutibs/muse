@@ -27,6 +27,10 @@
 	let showReport = $state(false);
 	let confirmingBlock = $state(false);
 	let blocking = $state(false);
+	/** Error del bloqueo, separado del de la pantalla: escribir en `error`
+	 * cambiaba el perfil entero por un cartel, y el usuario perdía la hoja de
+	 * confirmación sin forma de reintentar. */
+	let blockError = $state('');
 
 	/** Al bloquear, esta pantalla deja de ser accesible: el backend devuelve
 	 * 403 en el perfil y en los pins. Volvemos a amigos en vez de recargar
@@ -38,8 +42,7 @@
 			goto('/friends');
 		} catch (err) {
 			logSilent('user-profile:block', err);
-			error = t('common.error');
-			confirmingBlock = false;
+			blockError = t('common.error');
 		} finally {
 			blocking = false;
 		}
@@ -136,7 +139,7 @@
 	{#if confirmingBlock && profile}
 		<!-- svelte-ignore a11y_click_events_have_key_events -->
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
-		<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-6" onclick={() => (confirmingBlock = false)}>
+		<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-6" onclick={() => { confirmingBlock = false; blockError = ''; }}>
 			<!-- svelte-ignore a11y_click_events_have_key_events -->
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
 			<div class="w-full max-w-sm rounded-card bg-white p-6 shadow-elevated" onclick={(e) => e.stopPropagation()}>
@@ -144,6 +147,9 @@
 					{t('moderation.blockTitle').replace('{name}', profile.displayName || t('restaurant.anonymous'))}
 				</h2>
 				<p class="mt-2 text-sm text-ink-light">{t('moderation.blockBody')}</p>
+				{#if blockError}
+					<div class="mt-3 rounded-button bg-blush-light/20 px-4 py-3 text-sm text-blush">{blockError}</div>
+				{/if}
 				<button
 					onclick={confirmBlock}
 					disabled={blocking}
@@ -152,7 +158,7 @@
 					{t('moderation.block')}
 				</button>
 				<button
-					onclick={() => (confirmingBlock = false)}
+					onclick={() => { confirmingBlock = false; blockError = ''; }}
 					class="mt-3 flex min-h-11 w-full items-center justify-center rounded-button text-sm font-medium text-ink-light active:opacity-70"
 				>
 					{t('common.cancel')}

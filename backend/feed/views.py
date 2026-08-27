@@ -1,6 +1,6 @@
 from rest_framework import generics
 
-from accounts.services.visibility import blocked_user_ids, visible_friend_ids
+from accounts.services.visibility import visible_friend_and_blocked_ids
 from feed.models import Activity
 from feed.serializers import ActivitySerializer
 
@@ -9,8 +9,7 @@ class FeedView(generics.ListAPIView):
 	serializer_class = ActivitySerializer
 
 	def get_queryset(self):
-		ids = visible_friend_ids(self.request.user)
-		hidden = blocked_user_ids(self.request.user)
+		ids, hidden = visible_friend_and_blocked_ids(self.request.user)
 
 		return (
 			Activity.objects.filter(actor_id__in=ids)

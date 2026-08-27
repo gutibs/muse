@@ -61,7 +61,11 @@ def visible_user_ids(viewer) -> set[int]:
 	"""
 	if not getattr(viewer, "is_authenticated", False):
 		return set()
-	return friend_ids(viewer) | {viewer.id}
+	# Resta el bloqueo igual que `visible_friend_ids`. Hoy no la llama nadie en
+	# producción, pero se llama "todos los usuarios cuyos datos puedo ver": la
+	# próxima superficie que la tome heredaría un bypass del bloqueo y ningún
+	# test se quejaría.
+	return (friend_ids(viewer) - blocked_user_ids(viewer)) | {viewer.id}
 
 
 def blocked_user_ids(viewer) -> set[int]:
@@ -91,3 +95,13 @@ def visible_friend_ids(viewer) -> set[int]:
 	mostrar la actividad propia (ver el docstring de esa función).
 	"""
 	return friend_ids(viewer) - blocked_user_ids(viewer)
+
+
+def visible_friend_and_blocked_ids(viewer) -> tuple[set[int], set[int]]:
+	"""`(amigos visibles, bloqueados)` con una sola consulta de bloqueos.
+
+	El feed necesita las dos cosas —a quién mostrar y a quién excluir como
+	`target_user`— y pedirlas por separado corría la misma query dos veces.
+	"""
+	blocked = blocked_user_ids(viewer)
+	return friend_ids(viewer) - blocked, blocked

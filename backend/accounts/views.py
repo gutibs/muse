@@ -13,6 +13,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from accounts.models import Block, DietaryPreference, EmailInvitation, Friendship
 from accounts.serializers import (
 	AccountDeletionSerializer,
+	BlockCreateSerializer,
 	BlockSerializer,
 	ChangePasswordSerializer,
 	DietaryPreferenceSerializer,
@@ -379,6 +380,9 @@ class BlockViewSet(viewsets.ModelViewSet):
 	http_method_names = ["get", "post", "delete"]
 	pagination_class = None
 	lookup_field = "blocked_id"
+	# Sin esto el router acepta `[^/.]+` y un DELETE /blocks/abc/ llega al ORM
+	# como pk no numérica: ValueError, o sea 500.
+	lookup_value_regex = "[0-9]+"
 
 	def get_queryset(self):
 		# Sólo los bloqueos que hice yo. Devolver los recibidos le diría al
@@ -386,7 +390,12 @@ class BlockViewSet(viewsets.ModelViewSet):
 		return Block.objects.filter(blocker=self.request.user).select_related("blocked__profile")
 
 	def create(self, request, *args, **kwargs):
-		target = get_object_or_404(User, pk=request.data.get("user_id"))
+		# Validado y no pasado crudo a get_object_or_404: ése sólo atrapa
+		# DoesNotExist, así que un "abc" reventaba con ValueError → 500 en un
+		# endpoint público.
+		serializer = BlockCreateSerializer(data=request.data)
+		serializer.is_valid(raise_exception=True)
+		target = serializer.validated_data["user_id"]
 		block = block_user(blocker=request.user, blocked=target)
 		return Response(self.get_serializer(block).data, status=status.HTTP_200_OK)
 
@@ -396,7 +405,13 @@ class BlockViewSet(viewsets.ModelViewSet):
 		return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class ReportThrottle(ClientIPRateThrottle):
+class ReportThrottle(UserRateThrottle):
+	"""Por usuario y no por IP: el endpoint es autenticado, así que se puede
+	identificar al que abusa. Contando por IP, un abusador detrás de un NAT
+	—wifi de oficina, CGNAT de una operadora— le agota el cupo a todos los que
+	comparten esa salida, y reportar es justamente la capacidad que la
+	guideline exige que funcione."""
+
 	scope = "report"
 
 

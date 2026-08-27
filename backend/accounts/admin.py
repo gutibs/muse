@@ -93,6 +93,11 @@ class ReportAdmin(admin.ModelAdmin):
 		"resolved_at",
 	)
 
+	def has_delete_permission(self, request, obj=None):
+		# Una denuncia se cierra con el status, no borrándola: la fila es la
+		# constancia de que se actuó, que es lo que pide la Guideline 1.2.
+		return False
+
 
 @admin.register(Block)
 class BlockAdmin(admin.ModelAdmin):
@@ -108,4 +113,9 @@ class BlockAdmin(admin.ModelAdmin):
 		return False
 
 	def has_change_permission(self, request, obj=None):
+		return False
+
+	def has_delete_permission(self, request, obj=None):
+		# Borrarlo desde acá sería desbloquear en nombre de la víctima, sin
+		# dejar rastro: `unblock_user` ni se entera, así que no hay log.
 		return False

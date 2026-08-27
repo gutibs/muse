@@ -14,6 +14,7 @@ from accounts.models import (
 	Report,
 )
 from accounts.services.blocking import is_blocked
+from accounts.services.visibility import blocked_user_ids
 from pins.models import Pin
 
 User = get_user_model()
@@ -119,6 +120,33 @@ class RegisterSerializer(serializers.Serializer):
 			return forwarded.split(",")[0].strip()
 		return request.META.get("REMOTE_ADDR")
 
+	def _consume_invitations(self, user):
+		"""Convierte en amistad las invitaciones dirigidas al email de `user`.
+
+		ACCEPTED y no PENDING: el mail de invitación promete que la amistad se
+		crea sola, y registrarse por ahí es el consentimiento. Ver D-005.
+		"""
+		invitations = EmailInvitation.objects.filter(
+			email__iexact=user.email,
+			accepted=False,
+		)
+		for invitation in invitations:
+			# La amistad se crea sin acto de quien se registra, así que un
+			# bloqueo se revertiría solo por este camino. Hoy no hay forma de
+			# llegar acá —para tener un bloqueo hace falta una cuenta, y con
+			# cuenta no te registrás—, pero el invariante "un bloqueo no se
+			# revierte solo" se rompe en silencio, y alcanza con que exista un
+			# "cambiar mi email" para volverlo alcanzable.
+			if is_blocked(invitation.from_user, user):
+				continue
+			Friendship.objects.create(
+				from_user=invitation.from_user,
+				to_user=user,
+				status=Friendship.Status.ACCEPTED,
+			)
+			invitation.accepted = True
+			invitation.save(update_fields=["accepted"])
+
 	def create(self, validated_data):
 		user = User.objects.create_user(
 			username=validated_data["email"],
@@ -142,21 +170,7 @@ class RegisterSerializer(serializers.Serializer):
 			]
 		)
 
-		invitations = EmailInvitation.objects.filter(
-			email__iexact=validated_data["email"],
-			accepted=False,
-		)
-		for invitation in invitations:
-			# ACCEPTED, not PENDING. The invite email promises the friendship
-			# is created automatically — registering via the invite link is
-			# the user's consent. See docs/PRODUCT_DECISIONS.md D-005.
-			Friendship.objects.create(
-				from_user=invitation.from_user,
-				to_user=user,
-				status=Friendship.Status.ACCEPTED,
-			)
-			invitation.accepted = True
-			invitation.save(update_fields=["accepted"])
+		self._consume_invitations(user)
 
 		refresh = RefreshToken.for_user(user)
 		return {
@@ -208,11 +222,30 @@ class AccountDeletionSerializer(serializers.Serializer):
 
 
 class FriendshipSerializer(serializers.ModelSerializer):
+	"""RF5 se resuelve por el queryset del campo, no por un mensaje.
+
+	Sacar a los bloqueados de `to_user_id.queryset` hace que DRF genere para
+	ellos exactamente el mismo error que para un id que no existe —mismo texto,
+	mismo `code`— porque para el serializer *no existen*. Un mensaje propio,
+	por parecido que fuera, se distingue: la validación del primary key corre
+	antes que `validate_to_user_id`, así que un id inexistente nunca llega a
+	nuestro código y el error propio delataba el bloqueo. Y decirle a un
+	acosador "te bloquearon" es el resultado que RF2 existe para evitar.
+	"""
+
 	from_user = UserPublicSerializer(read_only=True)
 	to_user = UserPublicSerializer(read_only=True)
 	to_user_id = serializers.PrimaryKeyRelatedField(
 		queryset=User.objects.all(), source="to_user", write_only=True
 	)
+
+	def __init__(self, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+		request = self.context.get("request")
+		if request is not None and request.user.is_authenticated:
+			self.fields["to_user_id"].queryset = User.objects.exclude(
+				id__in=blocked_user_ids(request.user)
+			)
 
 	class Meta:
 		model = Friendship
@@ -234,11 +267,6 @@ class FriendshipSerializer(serializers.ModelSerializer):
 			raise serializers.ValidationError("Friend request already sent.")
 		if Friendship.objects.filter(from_user=value, to_user=request.user).exists():
 			raise serializers.ValidationError("This user already sent you a friend request.")
-		# RF5: hay bloqueo en alguna dirección. El mensaje es deliberadamente
-		# el mismo que el de un destinatario inexistente: decir "te bloquearon"
-		# convertiría este endpoint en el oráculo que RF2 existe para cerrar.
-		if is_blocked(request.user, value):
-			raise serializers.ValidationError("This user is not available.")
 		return value
 
 	def create(self, validated_data):
@@ -324,7 +352,11 @@ class BlockSerializer(serializers.ModelSerializer):
 	un bloqueo recibido — eso le diría al bloqueado que lo bloquearon (RF2).
 	"""
 
-	user = UserPublicSerializer(source="blocked", read_only=True)
+	# Sin email: se puede bloquear a CUALQUIERA por id, sin relación previa, así
+	# que con UserPublicSerializer alcanzaba con recorrer ids —bloquear, leer,
+	# desbloquear— para cosechar las direcciones de toda la base. Es la misma
+	# fuga que se arregló en el feed; nada de la app usa este campo.
+	user = UserAnonymousSafeSerializer(source="blocked", read_only=True)
 
 	class Meta:
 		model = Block
@@ -347,3 +379,14 @@ class ReportSerializer(serializers.ModelSerializer):
 		model = Report
 		fields = ("id", "reported_user_id", "pin_id", "reason", "detail", "created_at")
 		read_only_fields = ("id", "created_at")
+
+
+class BlockCreateSerializer(serializers.Serializer):
+	"""Sólo valida la entrada de `POST /auth/blocks/`.
+
+	Existe para que un `userId` ausente o no numérico dé 400 y no un 500: el
+	`get_object_or_404` que había atrapa `DoesNotExist`, no el `ValueError` que
+	tira el ORM cuando la pk no es un número.
+	"""
+
+	user_id = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
