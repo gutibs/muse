@@ -334,7 +334,17 @@
 			<!-- Reviews -->
 			<div class="px-5 pb-6 pt-4">
 				{#if !restaurant.reviews?.length}
-					<p class="py-8 text-center text-sm text-ink-muted">{t('restaurant.notRatedYet')}</p>
+					<!-- Dos motivos distintos para no tener reseñas acá, y decirlos al
+					     revés miente. Sin promedio, nadie calificó todavía y la
+					     invitación a ser el primero corresponde. Con promedio, hay
+					     calificaciones que este viewer no puede ver —privadas, de
+					     alguien que bloqueó, o sin comentario— y "sin calificación
+					     aún" contradice el número que está tres párrafos más arriba. -->
+					<p class="py-8 text-center text-sm text-ink-muted">
+						{restaurant.averageRating == null
+							? t('restaurant.notRatedYet')
+							: t('restaurant.noVisibleReviews')}
+					</p>
 				{:else}
 					<ul class="space-y-3">
 						{#each restaurant.reviews as review (review.id)}
