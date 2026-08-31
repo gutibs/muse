@@ -282,7 +282,7 @@
 				class="flex min-h-11 items-center justify-between rounded-card bg-white px-4 py-3 shadow-card active:scale-[0.99]"
 			>
 				<span class="flex items-center gap-2 text-sm font-medium text-ink">
-					<InsiderBadge size="sm" />
+					<InsiderBadge size="sm" labelled={false} />
 					{t('settings.badges')}
 				</span>
 				<svg

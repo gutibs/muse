@@ -20,10 +20,16 @@
 		variant = 'icon',
 		size = 'md',
 		tone = 'brand',
+		labelled = true,
 		class: klass = '',
 	}: {
 		variant?: 'icon' | 'full';
 		size?: 'sm' | 'md';
+		/** `false` cuando el badge va adentro de algo que ya se nombra solo —el
+		 * chip "Sólo Insiders", por ejemplo—. Si no, un lector de pantalla
+		 * anuncia "Insider verificado Insiders": el glifo ahí es decoración y
+		 * la etiqueta la pone el control que lo contiene. */
+		labelled?: boolean;
 		/** `inherit` para cuando el badge va sobre un fondo de color y tiene
 		 * que tomar el color del texto que lo rodea, como en el chip activo
 		 * del mapa. Prop y no una clase de más: dos `text-*` en el mismo
@@ -64,9 +70,11 @@
 	     siempre, que es lo que lee un lector de pantalla. -->
 	<span
 		class="inline-flex {tone === 'brand' ? 'text-jade-dark' : ''}"
-		title={t('badges.insider')}
+		title={labelled ? t('badges.insider') : undefined}
 	>
 		{@render glyph()}
-		<span class="sr-only">{t('badges.insider')}</span>
+		{#if labelled}
+			<span class="sr-only">{t('badges.insider')}</span>
+		{/if}
 	</span>
 {/if}

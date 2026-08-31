@@ -458,7 +458,7 @@
 				class="flex w-fit items-center gap-1.5 rounded-full px-3 py-2 text-xs font-medium shadow-elevated active:scale-95
 					{onlyInsiders ? 'bg-jade-dark text-white' : 'border border-cream-dark bg-white/90 text-ink-muted'}"
 			>
-				<InsiderBadge size="sm" tone={onlyInsiders ? 'inherit' : 'brand'} />
+				<InsiderBadge size="sm" labelled={false} tone={onlyInsiders ? 'inherit' : 'brand'} />
 				{t('map.onlyInsiders')}
 			</button>
 		{/if}

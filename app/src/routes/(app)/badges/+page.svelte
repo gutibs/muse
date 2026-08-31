@@ -14,12 +14,21 @@
 	import PinStatusBadge from '$lib/components/PinStatusBadge.svelte';
 	import StarIcon from '$lib/components/StarIcon.svelte';
 	import { t } from '$lib/i18n/index.svelte';
+	import { goto } from '$app/navigation';
+
+	function goBack() {
+		if (history.length > 1) history.back();
+		else goto('/settings');
+	}
 </script>
 
 <div class="flex h-full flex-col">
 	<header class="flex shrink-0 items-center gap-3 px-4 py-3">
-		<a
-			href="/settings"
+		<!-- Vuelve a donde estabas y no a una pantalla fija: acá se llega desde
+		     Ajustes y desde el badge del propio perfil. Con `/badges` abierta
+		     directo por URL no hay a dónde volver, y ahí sí va Ajustes. -->
+		<button
+			onclick={goBack}
 			class="flex min-h-11 min-w-11 items-center justify-center rounded-lg active:scale-95"
 			aria-label={t('common.back')}
 		>
@@ -34,7 +43,7 @@
 			>
 				<polyline points="15 18 9 12 15 6" />
 			</svg>
-		</a>
+		</button>
 		<h1 class="text-lg font-semibold text-ink">{t('badges.title')}</h1>
 	</header>
 

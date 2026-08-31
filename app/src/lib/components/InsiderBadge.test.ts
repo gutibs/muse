@@ -24,6 +24,14 @@ describe('InsiderBadge', () => {
 		expect(container.innerHTML).not.toContain('text-jade-dark');
 	});
 
+	it('stays silent inside a control that already names itself', () => {
+		// El chip "Sólo Insiders" tiene su propia etiqueta. Con la del badge
+		// encima, un lector de pantalla lee "Insider verificado Insiders".
+		const { container } = render(InsiderBadge, { variant: 'icon', labelled: false });
+		expect(container.querySelector('.sr-only')).toBeNull();
+		expect(container.querySelector('[title]')).toBeNull();
+	});
+
 	it('paints the brand colour by default', () => {
 		const { container } = render(InsiderBadge, { variant: 'icon' });
 		expect(container.innerHTML).toContain('text-jade-dark');
