@@ -3,6 +3,7 @@
 	import { page } from '$app/state';
 	import { untrack } from 'svelte';
 	import Avatar from '$lib/components/Avatar.svelte';
+	import UserName from '$lib/components/UserName.svelte';
 	import DietaryBadges from '$lib/components/DietaryBadges.svelte';
 	import { t } from '$lib/i18n/index.svelte';
 	import {
@@ -368,7 +369,7 @@
 													<span class="text-sm font-semibold text-ink-muted">{t('restaurant.anonymous')}</span>
 												{:else}
 													<a href={`/users/${review.user.id}`} class="text-sm font-semibold text-ink active:text-jade">
-														{review.user.displayName || t('restaurant.anonymous')}
+														<UserName user={review.user} />
 													</a>
 												{/if}
 												{#if review.isFriend}

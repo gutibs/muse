@@ -1,8 +1,8 @@
 <script lang="ts">
-	import Avatar from '$lib/components/Avatar.svelte';
+	import UserIdentity from '$lib/components/UserIdentity.svelte';
 	import { friendsService, type EmailInvitation } from '$lib/services/friends.service';
 	import { t, i18n } from '$lib/i18n/index.svelte';
-	import type { Friendship, PublicUser } from '$lib/types';
+	import type { AnonymousUser, Friendship } from '$lib/types';
 	import { getOtherUser } from '$lib/utils/friendship';
 	import { extractFirstDrfError } from '$lib/utils/api-error';
 	import { logSilent } from '$lib/utils/logger';
@@ -36,7 +36,7 @@
 
 	// Search / add
 	let searchQuery = $state('');
-	let searchResults = $state<PublicUser[]>([]);
+	let searchResults = $state<AnonymousUser[]>([]);
 	let searching = $state(false);
 	let searchError = $state('');
 
@@ -96,7 +96,7 @@
 		}
 	}
 
-	async function sendRequest(user: PublicUser) {
+	async function sendRequest(user: AnonymousUser) {
 		sending[user.id] = true;
 		searchError = '';
 		try {
@@ -251,13 +251,7 @@
 								href={`/users/${other.id}`}
 								class="flex items-center gap-3 rounded-card bg-white p-4 shadow-card active:scale-[0.98]"
 							>
-								<Avatar name={other.displayName} src={other.avatar} size={44} />
-								<div class="min-w-0 flex-1">
-									<p class="truncate text-sm font-semibold text-ink">{other.displayName || t('restaurant.anonymous')}</p>
-									{#if other.city}
-										<p class="text-xs text-ink-muted">{other.city}</p>
-									{/if}
-								</div>
+								<UserIdentity user={other} size={44} subtitle={other.city} class="flex-1" />
 								<svg class="h-4 w-4 text-ink-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 									<polyline points="9 18 15 12 9 6" />
 								</svg>
@@ -284,15 +278,12 @@
 						{#each requests as req (req.id)}
 							<li class="rounded-card bg-white p-4 shadow-card">
 								<div class="flex items-center gap-3">
-									<Avatar name={req.fromUser.displayName} src={req.fromUser.avatar} size={44} />
-									<div class="min-w-0 flex-1">
-										<p class="truncate text-sm font-semibold text-ink">
-											{req.fromUser.displayName || t('restaurant.anonymous')}
-										</p>
-										{#if req.fromUser.city}
-											<p class="text-xs text-ink-muted">{req.fromUser.city}</p>
-										{/if}
-									</div>
+									<UserIdentity
+										user={req.fromUser}
+										size={44}
+										subtitle={req.fromUser.city}
+										class="flex-1"
+									/>
 								</div>
 								<div class="mt-3 flex gap-2">
 									<button
@@ -381,11 +372,7 @@
 						<ul class="mt-3 space-y-2">
 							{#each searchResults as user (user.id)}
 								<li class="flex items-center gap-3 rounded-card bg-white p-4 shadow-card">
-									<Avatar name={user.displayName} src={user.avatar} size={44} />
-									<div class="min-w-0 flex-1">
-										<p class="truncate text-sm font-semibold text-ink">{user.displayName || t('restaurant.anonymous')}</p>
-										{#if user.city}<p class="text-xs text-ink-muted">{user.city}</p>{/if}
-									</div>
+									<UserIdentity user={user} size={44} subtitle={user.city} class="flex-1" />
 									<button
 										onclick={() => sendRequest(user)}
 										disabled={sending[user.id]}

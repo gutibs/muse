@@ -2,6 +2,7 @@
 	import { browser } from '$app/environment';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
+	import InsiderBadge from '$lib/components/InsiderBadge.svelte';
 	import StarIcon from '$lib/components/StarIcon.svelte';
 	import CityAutocomplete from '$lib/components/CityAutocomplete.svelte';
 	import MapView from '$lib/components/MapView.svelte';
@@ -24,6 +25,10 @@
 	// Favoritos: filtra los markers ya dibujados, igual que el de cocina, sin
 	// volver a pedirle nada al servidor.
 	let onlyFavourites = $state(false);
+	// Insiders: el dato del dueño viene con la amistad, así que este filtro
+	// tampoco toca el servidor. Sólo aplica a pins ajenos — sobre los propios
+	// "recomendado por un Insider" no significa nada.
+	let onlyInsiders = $state(false);
 	let showSearch = $state(false);
 	let friendLayers = $state<L.LayerGroup | null>(null);
 	let mapRef = $state<L.Map | null>(null);
@@ -35,8 +40,10 @@
 		cuisineSlugs: string[];
 		isFriend: boolean;
 		isFavourite: boolean;
+		isInsider: boolean;
 	};
 	let allMarkers = $state<MarkerEntry[]>([]);
+	let hasInsiderPins = $derived(allMarkers.some((m) => m.isInsider));
 
 	// Surface the discrepancy reported by Jess: a pin can appear "on the list"
 	// but be missing from the map when the underlying restaurant has no
@@ -74,6 +81,11 @@
 		applyMarkerFilter();
 	}
 
+	function toggleOnlyInsiders() {
+		onlyInsiders = !onlyInsiders;
+		applyMarkerFilter();
+	}
+
 	function applyMarkerFilter() {
 		if (!mapRef) return;
 		const cuisineFilter = cuisineSearch;
@@ -82,7 +94,12 @@
 			// Los pins de amigos no tienen favorito: el favorito es del dueño
 			// del pin, así que el filtro sólo aplica a los propios.
 			const favouriteOk = !onlyFavourites || (!entry.isFriend && entry.isFavourite);
-			const shouldShow = matches && favouriteOk && (!entry.isFriend || showFriendPins);
+			// Con el filtro puesto, los pins propios se van también: la
+			// pregunta es "dónde va la gente que sabe", y los tuyos ya los
+			// conocés.
+			const insiderOk = !onlyInsiders || entry.isInsider;
+			const shouldShow =
+				matches && favouriteOk && insiderOk && (!entry.isFriend || showFriendPins);
 			// Friend markers live inside friendLayers (a LayerGroup); own markers live on the map.
 			const container: L.Map | L.LayerGroup | null = entry.isFriend ? friendLayers : mapRef;
 			if (!container) continue;
@@ -193,6 +210,7 @@
 							cuisineSlugs: (r.cuisinesDetail ?? []).map((c) => c.slug),
 							isFriend: true,
 							isFavourite: false,
+							isInsider: other.isVerifiedInsider === true,
 						});
 					}
 				} catch (err) {
@@ -263,6 +281,9 @@
 				cuisineSlugs: (r.cuisinesDetail ?? []).map((c) => c.slug),
 				isFriend: false,
 				isFavourite: pin.isFavourite,
+				// Los propios nunca son "de un Insider" aunque vos lo seas: el
+				// filtro sirve para descubrir, y tus pins ya los conocés.
+				isInsider: false,
 			});
 		}
 
@@ -426,6 +447,21 @@
 			<StarIcon size="sm" filled={onlyFavourites} />
 			{t('pin.onlyFavourites')}
 		</button>
+
+		<!-- Sólo Insiders: mismo mecanismo, sobre los pins de amigos. Aparece
+		     únicamente si hay alguno, para no ofrecer un filtro que deja el
+		     mapa vacío. -->
+		{#if hasInsiderPins}
+			<button
+				onclick={toggleOnlyInsiders}
+				aria-pressed={onlyInsiders}
+				class="flex w-fit items-center gap-1.5 rounded-full px-3 py-2 text-xs font-medium shadow-elevated active:scale-95
+					{onlyInsiders ? 'bg-jade-dark text-white' : 'border border-cream-dark bg-white/90 text-ink-muted'}"
+			>
+				<InsiderBadge size="sm" tone={onlyInsiders ? 'inherit' : 'brand'} />
+				{t('map.onlyInsiders')}
+			</button>
+		{/if}
 	</div>
 
 	<!-- Legend — inline chips, always visible -->

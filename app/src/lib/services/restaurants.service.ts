@@ -2,11 +2,12 @@ import { api } from './api.service';
 import type { Cuisine, Tag, TagKind, Restaurant, RestaurantCreate, RestaurantDetail, PaginatedResponse } from '$lib/types';
 
 export const restaurantsService = {
-	list(params?: { search?: string; city?: string; cuisine?: string; page?: number }): Promise<PaginatedResponse<Restaurant>> {
+	list(params?: { search?: string; city?: string; cuisine?: string; insider?: boolean; page?: number }): Promise<PaginatedResponse<Restaurant>> {
 		const query = new URLSearchParams();
 		if (params?.search) query.set('search', params.search);
 		if (params?.city) query.set('city', params.city);
 		if (params?.cuisine) query.set('cuisine', params.cuisine);
+		if (params?.insider) query.set('insider', 'true');
 		if (params?.page) query.set('page', String(params.page));
 		const qs = query.toString();
 		return api.get(`/restaurants/${qs ? `?${qs}` : ''}`);
