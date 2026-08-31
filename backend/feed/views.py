@@ -15,7 +15,7 @@ class FeedView(generics.ListAPIView):
 	def get_queryset(self):
 		ids, hidden = visible_friend_and_blocked_ids(self.request.user)
 
-		return (
+		qs = (
 			Activity.objects.filter(actor_id__in=ids)
 			# El `target_user` no se filtraba: la actividad de amistad de un
 			# amigo tuyo con alguien que bloqueaste te lo mostraba igual.
@@ -32,3 +32,12 @@ class FeedView(generics.ListAPIView):
 			)
 			.prefetch_related("pin__tags", "pin__restaurant__cuisines")
 		)
+
+		# F1.7 — `?insider=true` acota, nunca amplía: se aplica sobre el
+		# queryset que ya pasó por la visibilidad de arriba, así que un
+		# Insider que no es tu amigo sigue sin aparecer. El booleano se lee
+		# como en pins (`?favourite=`), para no inventar un segundo dialecto.
+		if self.request.query_params.get("insider") in ("true", "1"):
+			qs = qs.filter(actor__profile__is_verified_insider=True)
+
+		return qs

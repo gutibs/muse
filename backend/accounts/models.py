@@ -68,6 +68,12 @@ class Profile(models.Model):
 		choices=Visibility.choices,
 		default=Visibility.PUBLIC,
 	)
+	# F1.7 — la marca que Muse otorga a mano desde el admin. Es de sólo
+	# lectura por la API: si entrara por `ProfileSerializer`, cualquiera se
+	# verificaría con un PATCH y el badge dejaría de significar nada.
+	# Indexado porque se filtra por él en el feed y en el listado de
+	# restaurantes, no sólo para mostrarlo.
+	is_verified_insider = models.BooleanField(default=False, db_index=True)
 	# Set when the user exercises their right to erasure. The row stays so the
 	# person's reviews keep hanging off a valid FK (see D-009), but everything
 	# identifying is wiped. Anything rendering an author must treat a non-null

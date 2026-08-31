@@ -74,7 +74,14 @@ def test_review_author_shape_matches_the_shared_user_serializer():
 	resp = _client(UserFactory()).get(reverse("restaurant-detail", kwargs={"pk": restaurant.pk}))
 
 	user_block = resp.json()["reviews"][0]["user"]
-	assert set(user_block) == {"id", "displayName", "avatar", "city", "isDeleted"}
+	assert set(user_block) == {
+		"id",
+		"displayName",
+		"avatar",
+		"city",
+		"isDeleted",
+		"isVerifiedInsider",
+	}
 	assert user_block["displayName"] == "Jane"
 	assert user_block["isDeleted"] is False
 	assert "email" not in user_block

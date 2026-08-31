@@ -1,14 +1,57 @@
+import logging
+
 from django.contrib import admin
 
 from accounts.models import Block, ConsentRecord, EmailInvitation, Friendship, Profile, Report
 
+logger = logging.getLogger(__name__)
+
 
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
-	list_display = ("user", "display_name", "city", "created_at")
+	"""El panel desde el que se otorga y se quita el Verified Insider.
+
+	Es el único camino: el campo es de sólo lectura por la API. Hay dos formas
+	porque resuelven cosas distintas — el tilde en el listado para una persona
+	suelta, las acciones en masa para varias de una.
+	"""
+
+	list_display = ("user", "display_name", "city", "is_verified_insider", "created_at")
 	search_fields = ("user__email", "user__username", "display_name", "city")
-	list_filter = ("city",)
+	list_filter = ("is_verified_insider", "city")
+	list_editable = ("is_verified_insider",)
 	readonly_fields = ("created_at", "updated_at")
+	actions = ("grant_insider", "revoke_insider")
+
+	@admin.action(description="Marcar como Verified Insider")
+	def grant_insider(self, request, queryset):
+		self._set_insider(request, queryset, True)
+
+	@admin.action(description="Quitar Verified Insider")
+	def revoke_insider(self, request, queryset):
+		self._set_insider(request, queryset, False)
+
+	def _set_insider(self, request, queryset, value):
+		"""El `.update()` no pasa por el form, así que tampoco por LogEntry.
+
+		Django escribe la entrada de auditoría desde `ModelAdmin.save_model`,
+		que una acción en masa no llama. Sin este log, otorgar el badge a
+		veinte personas de una no deja rastro de quién lo hizo: queda el
+		booleano y nada más.
+		"""
+		affected = list(queryset.values_list("user__username", flat=True))
+		updated = queryset.update(is_verified_insider=value)
+		logger.info(
+			"Verified Insider %s by %s for %d profile(s): %s",
+			"granted" if value else "revoked",
+			getattr(request.user, "username", "?"),
+			updated,
+			", ".join(affected),
+		)
+		self.message_user(
+			request,
+			f"{updated} perfil(es) {'marcados como' if value else 'sin'} Verified Insider.",
+		)
 
 
 @admin.register(Friendship)

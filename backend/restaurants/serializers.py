@@ -266,7 +266,17 @@ class RestaurantDetailSerializer(RestaurantSerializer):
 			.select_related("user__profile")
 			.order_by("-updated_at")[:20]
 		)
-		pins.sort(key=lambda p: (0 if p.user_id in friend_ids else 1, -p.updated_at.timestamp()))
+		# Amistad primero, badge después: quién te conoce pesa más que quién
+		# está verificado, y ese orden ya era una decisión tomada. El Insider
+		# ordena *dentro* de cada grupo. El corte de 20 queda antes, sobre las
+		# más recientes: esto cambia qué se lee primero, no qué reseñas hay.
+		pins.sort(
+			key=lambda p: (
+				0 if p.user_id in friend_ids else 1,
+				0 if p.user.profile.is_verified_insider else 1,
+				-p.updated_at.timestamp(),
+			)
+		)
 		# UserAnonymousSafeSerializer, not a hand-rolled dict: same author shape
 		# as every other endpoint, no email (reviews are public to non-friends
 		# by design, D-001), `is_deleted` for the anonymous byline, and an

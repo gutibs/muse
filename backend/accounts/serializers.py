@@ -65,15 +65,20 @@ class ProfileSerializer(serializers.ModelSerializer):
 			"dietary_preferences_detail",
 			"analytics_opt_out",
 			"default_pin_visibility",
+			"is_verified_insider",
 			"stats",
 			"created_at",
 		)
+		# `is_verified_insider` es de sólo lectura o el badge no vale nada: lo
+		# otorga Muse desde el admin, y un campo escribible acá lo convierte en
+		# un PATCH que cualquiera manda sobre su propio perfil.
 		read_only_fields = (
 			"id",
 			"email",
 			"stats",
 			"favourite_cuisine_detail",
 			"dietary_preferences_detail",
+			"is_verified_insider",
 			"created_at",
 		)
 
@@ -248,10 +253,25 @@ class UserPublicSerializer(serializers.ModelSerializer):
 	avatar = serializers.ImageField(source="profile.avatar")
 	city = serializers.CharField(source="profile.city")
 	is_deleted = serializers.SerializerMethodField()
+	# El badge se declara acá, en la base, y no en cada superficie: de esta
+	# clase cuelgan las seis formas en que una persona ve a otra (reseñas,
+	# link compartido, feed, amistades, bloqueos y búsqueda), y una marca que
+	# aparece en unas sí y en otras no se lee como que la persona la perdió.
+	is_verified_insider = serializers.BooleanField(
+		source="profile.is_verified_insider", read_only=True
+	)
 
 	class Meta:
 		model = User
-		fields = ("id", "email", "display_name", "avatar", "city", "is_deleted")
+		fields = (
+			"id",
+			"email",
+			"display_name",
+			"avatar",
+			"city",
+			"is_deleted",
+			"is_verified_insider",
+		)
 
 	def get_is_deleted(self, obj) -> bool:
 		return getattr(obj.profile, "deleted_at", None) is not None
@@ -266,7 +286,7 @@ class UserAnonymousSafeSerializer(UserPublicSerializer):
 	"""
 
 	class Meta(UserPublicSerializer.Meta):
-		fields = ("id", "display_name", "avatar", "city", "is_deleted")
+		fields = ("id", "display_name", "avatar", "city", "is_deleted", "is_verified_insider")
 
 
 class AccountDeletionSerializer(serializers.Serializer):
