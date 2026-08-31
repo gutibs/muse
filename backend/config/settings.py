@@ -282,3 +282,49 @@ if not DEBUG:
 	SECURE_CONTENT_TYPE_NOSNIFF = True
 	SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 	X_FRAME_OPTIONS = "DENY"
+
+
+# Logging
+#
+# Sin este bloque, Django sólo configura sus propios loggers: los de las apps
+# —`accounts`, `places`, `restaurants`— caen en el handler de último recurso de
+# Python, que emite WARNING para arriba, sin formato y sin timestamp. Todo lo
+# que el proyecto escribe con `logger.info` se perdía: el rastro de quién
+# otorgó un badge, el resultado de un rollup, las decisiones del importador.
+# Verificado en local ejecutando una acción del admin y no encontrando su
+# línea en la salida del contenedor.
+#
+# El nivel se puede subir por entorno sin tocar código; el default es INFO
+# porque es donde el proyecto escribe lo que después hay que poder mirar.
+LOG_LEVEL = os.environ.get("DJANGO_LOG_LEVEL", "INFO").upper()
+
+LOGGING = {
+	"version": 1,
+	"disable_existing_loggers": False,
+	"formatters": {
+		"standard": {
+			"format": "{levelname} {asctime} {name} {message}",
+			"style": "{",
+		},
+	},
+	"handlers": {
+		"console": {
+			"class": "logging.StreamHandler",
+			"formatter": "standard",
+		},
+	},
+	# Root con handler: cualquier logger de app hereda de acá y no hace falta
+	# declararlos uno por uno a medida que aparecen.
+	"root": {"handlers": ["console"], "level": LOG_LEVEL},
+	"loggers": {
+		"django": {"handlers": ["console"], "level": LOG_LEVEL, "propagate": False},
+		# El log de acceso de runserver, que en dev es una línea por request y
+		# en producción lo emite gunicorn. A WARNING no se pierde nada: los
+		# errores siguen saliendo.
+		"django.server": {
+			"handlers": ["console"],
+			"level": os.environ.get("DJANGO_SERVER_LOG_LEVEL", "INFO").upper(),
+			"propagate": False,
+		},
+	},
+}
