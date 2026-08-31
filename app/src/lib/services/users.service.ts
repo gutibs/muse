@@ -1,8 +1,8 @@
 import { api } from './api.service';
-import type { Pin, Profile } from '$lib/types';
+import type { ForeignProfile, Pin } from '$lib/types';
 
 export const usersService = {
-	getProfile(userId: number): Promise<Profile> {
+	getProfile(userId: number): Promise<ForeignProfile> {
 		return api.get(`/auth/users/${userId}/`);
 	},
 

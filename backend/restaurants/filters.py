@@ -30,7 +30,31 @@ class RestaurantFilterSet(filters.FilterSet):
 	search = filters.CharFilter(field_name="name", lookup_expr="icontains")
 	city = filters.CharFilter(field_name="city", lookup_expr="icontains")
 	cuisine = CommaSeparatedFilter(field_name="cuisines__slug", distinct=True)
+	insider = filters.BooleanFilter(method="filter_insider", label="Pinned by a Verified Insider")
 
 	class Meta:
 		model = Restaurant
-		fields = ["search", "city", "cuisine"]
+		fields = ["search", "city", "cuisine", "insider"]
+
+	def filter_insider(self, queryset, name, value):
+		"""Restaurantes donde pineó alguien verificado — y que vos podés ver.
+
+		El `visible_pin_filter` no es opcional ni una precaución de más: sin
+		él la pregunta "¿dónde pinean los Insiders?" se contesta con pins
+		privados, y el restaurante aparece en el listado *porque* alguien lo
+		guardó en secreto. El filtro sería entonces un oráculo sobre datos que
+		su dueño marcó como suyos, que es justo lo que F2.A vino a cerrar.
+
+		Import diferido como en `restaurants/serializers.py`: `pins` importa
+		este paquete.
+		"""
+		if not value:
+			return queryset
+
+		from accounts.services.visibility import visible_pin_filter
+		from pins.models import Pin
+
+		visible_insider_pins = Pin.objects.filter(
+			visible_pin_filter(self.request.user if self.request else None)
+		).filter(user__profile__is_verified_insider=True)
+		return queryset.filter(pk__in=visible_insider_pins.values("restaurant_id"))

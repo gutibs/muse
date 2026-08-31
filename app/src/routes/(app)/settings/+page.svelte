@@ -1,9 +1,10 @@
 <script lang="ts">
+	import InsiderBadge from '$lib/components/InsiderBadge.svelte';
 	import LanguagePicker from '$lib/components/LanguagePicker.svelte';
 	import SegmentedControl from '$lib/components/SegmentedControl.svelte';
 	import { t } from '$lib/i18n/index.svelte';
 	import { authStore } from '$lib/stores/auth.store.svelte';
-	import Avatar from '$lib/components/Avatar.svelte';
+	import UserIdentity from '$lib/components/UserIdentity.svelte';
 	import { moderationService, type BlockedEntry } from '$lib/services/moderation.service';
 	import { authService } from '$lib/services/auth.service';
 	import { extractFirstDrfError } from '$lib/utils/api-error';
@@ -252,10 +253,7 @@
 					<ul>
 						{#each blocks as entry (entry.id)}
 							<li class="flex items-center gap-3 border-b border-cream-dark px-4 py-3 last:border-0">
-								<Avatar name={entry.user.displayName} src={entry.user.avatar} size={36} />
-								<span class="flex-1 text-sm text-ink">
-									{entry.user.displayName || t('restaurant.anonymous')}
-								</span>
+								<UserIdentity user={entry.user} size={36} class="flex-1" />
 								<button
 									onclick={() => unblock(entry.user.id)}
 									class="min-h-11 rounded-button px-3 text-sm font-medium text-jade active:opacity-70"
@@ -273,6 +271,32 @@
 		<section class="mt-6">
 			<h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-ink-muted">{t('profile.language')}</h2>
 			<LanguagePicker />
+		</section>
+
+		<!-- Qué significa cada marca. Va acá y no escondida en una ayuda:
+		     el badge de Insider aparece como glifo suelto en media app, y
+		     tiene que haber un lugar donde mirar qué era. -->
+		<section class="mt-6">
+			<a
+				href="/badges"
+				class="flex min-h-11 items-center justify-between rounded-card bg-white px-4 py-3 shadow-card active:scale-[0.99]"
+			>
+				<span class="flex items-center gap-2 text-sm font-medium text-ink">
+					<InsiderBadge size="sm" labelled={false} />
+					{t('settings.badges')}
+				</span>
+				<svg
+					class="h-4 w-4 text-ink-muted"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+				>
+					<polyline points="9 18 15 12 9 6" />
+				</svg>
+			</a>
 		</section>
 
 		<!-- Privacy -->

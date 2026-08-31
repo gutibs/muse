@@ -100,6 +100,7 @@ export interface SharedListPublic {
 		avatar: string | null;
 		city: string;
 		isDeleted: boolean;
+		isVerifiedInsider: boolean;
 	};
 	pins: PublicPin[];
 	createdAt: string;

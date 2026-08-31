@@ -315,7 +315,7 @@ entero y no hay nada que instrumentar hasta que los botones existan.
   número a OpenTable, tiene que poder responder si es un tap o una navegación
   efectiva, si hay dedupe, y qué pasa con los bots.
 
-### F1.7 — Verified Insider badge
+### F1.7 — Verified Insider badge ✅ HECHO (2026-08-31)
 
 `Profile.is_verified_insider = BooleanField(default=False, db_index=True)`, editable
 en masa desde el admin.
@@ -326,6 +326,22 @@ obligatorio.
 
 Va también en `UserAnonymousSafeSerializer` — en un link público es donde más valor
 tiene.
+
+**Entregado con más alcance que estas líneas**, por pedido explícito: el badge no
+es decorativo. Se otorga y se quita desde el admin por dos caminos (tilde en el
+listado y acciones en masa, con log de auditoría propio), filtra en cuatro
+superficies —mapa, feed, búsqueda de restaurantes y orden de reseñas—, la persona
+lo ve en su propio perfil, y `/badges` explica qué significa cada marca de la app.
+Detalle y razones en `docs/PRODUCT_DECISIONS.md` D-010.
+
+Tres cosas aparecieron al construirlo y se cerraron acá:
+- `GET /auth/users/<id>/` entregaba el email y el teléfono a cualquier amigo.
+- `anonymise_user` no limpiaba el badge: una cuenta borrada seguía marcada.
+- `settings.py` no tenía configuración de `LOGGING`, así que todo `logger.info`
+  del proyecto se perdía.
+
+**Sigue pendiente el criterio escrito** de qué califica a una persona como
+Insider. Hasta que exista, el campo queda en `false` para todos.
 
 ---
 

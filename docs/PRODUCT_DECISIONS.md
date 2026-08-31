@@ -243,3 +243,60 @@ sacar la confirmación por contraseña por fricción: es la única barrera entre
 un token filtrado y un borrado irreversible.
 
 **Estado**: vigente.
+
+---
+
+## D-010: El Verified Insider lo otorga Muse a mano, y el campo es de sólo lectura
+
+**Contexto**: F1.7 pide una marca que distinga a quien conoce la escena
+gastronómica local. Jess decidió que la lista se arma a mano, con foco en Hong
+Kong: no hay criterio automático por cantidad de pins ni por antigüedad.
+
+**Decisión**: `Profile.is_verified_insider`, un booleano que sólo se escribe
+desde el admin de Django. La API nunca lo acepta: está en `read_only_fields`
+del `ProfileSerializer`, con dos tests marcados críticos que lo fijan —uno de
+comportamiento y otro sobre el serializer, porque el primero pasa igual si
+alguien saca el campo de `fields`—.
+
+Sin eso, cualquiera se verifica con un PATCH sobre su propio perfil y la marca
+deja de significar nada. Es el único riesgo que el plan declaraba para este
+bloque, y es silencioso: nada falla, sólo deja de ser verdad lo que el badge
+afirma.
+
+**Se declara en `UserPublicSerializer`**, la clase base de la que cuelgan las
+seis formas en que una persona ve a otra. Una marca que aparece en unas
+superficies y falta en otras se lee como que la persona la perdió.
+
+**Filtra, no sólo decora**: chip en el mapa, filtro en el feed, filtro en la
+búsqueda de restaurantes y orden en las reseñas de una ficha. En la ficha el
+Insider sube, pero por debajo de tus amigos: quién te conoce pesa más que quién
+está verificado, y ese orden ya era una decisión anterior.
+
+**El filtro de restaurantes pasa por `visible_pin_filter`**. "¿Dónde pinean los
+Insiders?" se contesta mirando pins, así que sin esa política el listado
+delataría pins privados: el restaurante aparecería *porque* alguien lo guardó en
+secreto. Es el oráculo que F2.A vino a cerrar, reabierto por la puerta de al
+lado. Hay un test crítico dedicado.
+
+**Borrar la cuenta se lleva el badge**: es identidad, no preferencia (ver
+[D-009]). Una cuenta anonimizada que lo conserve firma sus reseñas como
+"Anónimo, verificado por Muse" y sigue contando en el filtro.
+
+**Materializa en**:
+- `backend/accounts/models.py:Profile.is_verified_insider` + migración `0016`
+- `backend/accounts/serializers.py` (`UserPublicSerializer`, `read_only_fields`)
+- `backend/accounts/admin.py:ProfileAdmin` (tilde en el listado + acciones en masa)
+- `backend/restaurants/filters.py:RestaurantFilterSet.filter_insider`
+- `backend/feed/views.py:FeedView.get_queryset`
+- `app/src/lib/components/InsiderBadge.svelte` (el glifo, en un solo lugar)
+- `app/src/routes/(app)/badges/+page.svelte` (qué significa cada marca)
+
+**No hagas**: exponer el campo a escritura "para un panel de administración en
+la app", ni filtrar por Insider armando el subquery a mano sin la política de
+visibilidad.
+
+**Pendiente**: el criterio escrito de qué califica a una persona. Hasta que
+exista, el campo queda en `false` para todos y la marca no se ve en ningún
+lado.
+
+**Estado**: vigente.

@@ -1,6 +1,6 @@
 import { api } from './api.service';
 import { i18n } from '$lib/i18n/index.svelte';
-import type { Friendship, PaginatedResponse, PublicUser } from '$lib/types';
+import type { AnonymousUser, Friendship, PaginatedResponse } from '$lib/types';
 
 export type EmailInvitation = {
 	id: number;
@@ -42,8 +42,8 @@ export const friendsService = {
 		return Array.isArray(res) ? res : res.results;
 	},
 
-	async search(query: string): Promise<PublicUser[]> {
-		const res = await api.get<PaginatedResponse<PublicUser> | PublicUser[]>(
+	async search(query: string): Promise<AnonymousUser[]> {
+		const res = await api.get<PaginatedResponse<AnonymousUser> | AnonymousUser[]>(
 			`/auth/search/?q=${encodeURIComponent(query)}`
 		);
 		return Array.isArray(res) ? res : res.results;

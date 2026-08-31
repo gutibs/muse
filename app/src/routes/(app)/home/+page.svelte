@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import Avatar from '$lib/components/Avatar.svelte';
+	import UserName from '$lib/components/UserName.svelte';
 	import MuseLogo from '$lib/components/MuseLogo.svelte';
 	import { t } from '$lib/i18n/index.svelte';
 	import { feedService } from '$lib/services/feed.service';
@@ -41,6 +42,10 @@
 		return () => { cancelled = true; };
 	});
 
+	// El nombre del `targetUser` se concatena adentro del texto, así que acá
+	// no entra `UserName` ni su badge: haría falta partir la frase en nodos y
+	// rearmarla por idioma. Es la única superficie de la app donde el nombre
+	// de una persona no es un elemento propio.
 	function activityText(a: Activity): string {
 		if (a.verb === 'joined') return t('feed.joinedMuse');
 		if (a.verb === 'friendship' && a.targetUser) return `${t('feed.becameFriends')} ${a.targetUser.displayName || t('restaurant.anonymous')}`;
@@ -202,7 +207,7 @@
 							<Avatar name={activity.actor.displayName} src={activity.actor.avatar} size={32} />
 							<div class="min-w-0 flex-1">
 								<p class="text-sm text-ink">
-									<span class="font-semibold">{activity.actor.displayName || t('restaurant.anonymous')}</span>
+									<span class="font-semibold"><UserName user={activity.actor} /></span>
 									{' '}
 									<span class="text-ink-muted">{activityText(activity)}</span>
 								</p>

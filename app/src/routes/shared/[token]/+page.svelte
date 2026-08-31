@@ -2,6 +2,7 @@
 	import { tagLabel } from '$lib/utils/taxonomy';
 	import { page } from '$app/state';
 	import Avatar from '$lib/components/Avatar.svelte';
+	import InsiderBadge from '$lib/components/InsiderBadge.svelte';
 	import PinsMap, { type MapItem } from '$lib/components/PinsMap.svelte';
 	import { t } from '$lib/i18n/index.svelte';
 	import type { SharedListPublic } from '$lib/types';
@@ -75,6 +76,16 @@
 					</p>
 				</div>
 			</div>
+
+			<!-- Acá el badge va con el nombre y la explicación al lado, no como
+			     glifo suelto: quien abre este link puede no tener cuenta, y es
+			     el lector con menos contexto de todos para descifrar un ícono. -->
+			{#if data.owner.isVerifiedInsider}
+				<div class="mt-3 flex items-start gap-2 rounded-card bg-jade-dark/5 px-3 py-2">
+					<InsiderBadge variant="full" class="shrink-0" />
+					<p class="text-xs leading-snug text-ink-light">{t('badges.insiderWhat')}</p>
+				</div>
+			{/if}
 
 			<div class="mt-3 flex gap-1 rounded-card bg-cream-dark p-1">
 				<button
@@ -152,7 +163,7 @@
 					items={mapItems}
 					accent={pinAccent}
 					link={false}
-					fitOptions={{ padding: [40, 40], maxZoom: 13 }}
+					fitOptions={{ padding: [24, 24], maxZoom: 13 }}
 				/>
 			{/if}
 		</div>

@@ -34,17 +34,17 @@ export interface Profile {
 	analyticsOptOut: boolean;
 	/** Nivel que heredan los pins que no eligieron el suyo. */
 	defaultPinVisibility: PinVisibility;
+	/** Sólo lectura: lo otorga Muse desde el admin, no se manda nunca. */
+	isVerifiedInsider: boolean;
 	stats: UserStats;
 	createdAt: string;
 }
 
-export interface PublicUser {
-	id: number;
-	email: string;
-	displayName: string;
-	avatar: string | null;
-	city: string;
-}
+/** El perfil de otra persona, tal como lo devuelve `ForeignProfileSerializer`.
+ * Es el `Profile` sin los datos de contacto: el permiso del endpoint decide a
+ * quién podés mirar, no qué campos suyos ves. Un perfil ajeno no trae email ni
+ * teléfono ni aunque sean amigos. */
+export type ForeignProfile = Omit<Profile, 'email' | 'phone'>;
 
 /** La forma que devuelve `UserAnonymousSafeSerializer`: sin email, para donde
  * el que mira no necesariamente tiene relación con la persona (reseñas
@@ -57,6 +57,9 @@ export interface AnonymousUser {
 	avatar: string | null;
 	city: string;
 	isDeleted: boolean;
+	/** F1.7 — la marca que Muse otorga a mano. Viaja en las seis superficies
+	 * porque se declara en el serializer base, no en cada una. */
+	isVerifiedInsider: boolean;
 }
 
 export type FriendshipStatus = 'pending' | 'accepted' | 'declined';

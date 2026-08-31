@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { tagLabel } from '$lib/utils/taxonomy';
 	import Avatar from '$lib/components/Avatar.svelte';
+	import InsiderBadge from '$lib/components/InsiderBadge.svelte';
+	import UserName from '$lib/components/UserName.svelte';
 	import { feedService } from '$lib/services/feed.service';
 	import { t } from '$lib/i18n/index.svelte';
 	import type { Activity } from '$lib/types';
@@ -13,13 +15,21 @@
 	let loadingMore = $state(false);
 	let nextPage = $state<number | null>(null);
 	let error = $state('');
+	let insiderOnly = $state(false);
+
+	function toggleInsiderOnly() {
+		insiderOnly = !insiderOnly;
+		// Se recarga desde la primera página: el filtro cambia el conjunto, y
+		// seguir paginando el anterior mezclaría dos listas distintas.
+		load(1);
+	}
 
 	async function load(page = 1) {
 		if (page === 1) loading = true;
 		else loadingMore = true;
 		error = '';
 		try {
-			const res = await feedService.list(page);
+			const res = await feedService.list(page, insiderOnly);
 			if (page === 1) activities = res.results;
 			else activities = [...activities, ...res.results];
 			nextPage = res.next ? page + 1 : null;
@@ -54,6 +64,21 @@
 	</header>
 
 	<main class="flex-1 overflow-y-auto px-5 pb-6">
+		<!-- Primer filtro de esta pantalla. Va dentro del main y no en el
+		     header para que scrollee con la lista: en el header comería alto
+		     útil en cada pantalla de teléfono. -->
+		<div class="pb-3">
+			<button
+				onclick={toggleInsiderOnly}
+				aria-pressed={insiderOnly}
+				class="flex w-fit items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium active:scale-95
+					{insiderOnly ? 'bg-jade-dark text-white' : 'border border-cream-dark bg-white text-ink-muted'}"
+			>
+				<InsiderBadge size="sm" labelled={false} tone={insiderOnly ? 'inherit' : 'brand'} />
+				{t('feed.onlyInsiders')}
+			</button>
+		</div>
+
 		{#if loading}
 			<div class="flex justify-center py-16">
 				<div class="h-7 w-7 animate-spin rounded-full border-2 border-jade border-t-transparent"></div>
@@ -74,14 +99,27 @@
 						<path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/>
 					</svg>
 				</div>
-				<p class="text-sm font-medium text-ink">{t('feed.empty')}</p>
-				<p class="mt-1 text-xs text-ink-muted">{t('feed.emptyDesc')}</p>
-				<a
-					href="/friends"
-					class="mt-4 rounded-button bg-jade px-5 py-2.5 text-sm font-semibold text-white active:scale-[0.98]"
-				>
-					{t('feed.findFriends')}
-				</a>
+				<!-- Con el filtro puesto, "no tenés amigos todavía" es falso y
+				     manda a la pantalla equivocada: lo que falta es actividad de
+				     Insiders, y el camino es apagar el filtro. -->
+				{#if insiderOnly}
+					<p class="text-sm font-medium text-ink">{t('feed.emptyInsiders')}</p>
+					<button
+						onclick={toggleInsiderOnly}
+						class="mt-4 rounded-button bg-jade px-5 py-2.5 text-sm font-semibold text-white active:scale-[0.98]"
+					>
+						{t('feed.showAll')}
+					</button>
+				{:else}
+					<p class="text-sm font-medium text-ink">{t('feed.empty')}</p>
+					<p class="mt-1 text-xs text-ink-muted">{t('feed.emptyDesc')}</p>
+					<a
+						href="/friends"
+						class="mt-4 rounded-button bg-jade px-5 py-2.5 text-sm font-semibold text-white active:scale-[0.98]"
+					>
+						{t('feed.findFriends')}
+					</a>
+				{/if}
 			</div>
 
 		{:else}
@@ -99,14 +137,14 @@
 							<div class="min-w-0 flex-1">
 								<!-- Main line -->
 								<p class="text-sm text-ink">
-									<a href={`/users/${activity.actor.id}`} class="font-semibold text-ink active:text-jade">{activity.actor.displayName || t('restaurant.anonymous')}</a>
+									<a href={`/users/${activity.actor.id}`} class="font-semibold text-ink active:text-jade"><UserName user={activity.actor} /></a>
 									{' '}
 									{#if activity.verb === 'joined'}
 										<span class="text-ink-muted">{t('feed.joinedMuse')} 🎉</span>
 									{:else if activity.verb === 'friendship' && activity.targetUser}
 										<span class="text-ink-muted">{t('feed.becameFriends')}</span>
 										{' '}
-										<span class="font-semibold">{activity.targetUser.displayName || t('restaurant.anonymous')}</span>
+										<span class="font-semibold"><UserName user={activity.targetUser} /></span>
 									{:else if activity.verb === 'pinned' && activity.pin}
 										{@const parts = t('feed.wantsToVisit').split('{restaurant}')}
 										<span class="text-ink-muted">{parts[0]}</span><a href={`/map?focus=${activity.pin.restaurantDetail.id}`} class="font-semibold text-ink active:text-jade">{activity.pin.restaurantDetail.name}</a><span class="text-ink-muted">{activity.pin.restaurantDetail.city ? `, ${activity.pin.restaurantDetail.city}` : ''}{parts[1] || ''}</span>

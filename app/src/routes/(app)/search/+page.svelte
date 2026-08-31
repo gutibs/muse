@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import CityAutocomplete from '$lib/components/CityAutocomplete.svelte';
+	import InsiderBadge from '$lib/components/InsiderBadge.svelte';
 	import DietaryBadges from '$lib/components/DietaryBadges.svelte';
 	import PinsMap, { type MapItem } from '$lib/components/PinsMap.svelte';
 	import { t } from '$lib/i18n/index.svelte';
@@ -19,6 +20,12 @@
 	let query = $state('');
 	let cityFilter = $state('');
 	let cuisineFilter = $state('');
+	let insiderOnly = $state(false);
+
+	function toggleInsiderOnly() {
+		insiderOnly = !insiderOnly;
+		runSearch();
+	}
 
 	let cuisines = $state<Cuisine[]>([]);
 	let results = $state<Restaurant[]>([]);
@@ -88,10 +95,11 @@
 	}
 
 	async function runSearch() {
-		const params: { search?: string; city?: string; cuisine?: string } = {};
+		const params: { search?: string; city?: string; cuisine?: string; insider?: boolean } = {};
 		if (query.trim()) params.search = query.trim();
 		if (cityFilter.trim()) params.city = cityFilter.trim();
 		if (cuisineFilter) params.cuisine = cuisineFilter;
+		if (insiderOnly) params.insider = true;
 
 		// No filters → fall back to nearby
 		if (Object.keys(params).length === 0) {
@@ -203,6 +211,20 @@
 				onPick={() => runSearch()}
 				onSubmit={() => runSearch()}
 			/>
+		</div>
+
+		<!-- Sólo recomendados por Insiders. Es un eje más y se cruza con los
+		     otros: el backend los combina con AND. -->
+		<div class="mt-2">
+			<button
+				onclick={toggleInsiderOnly}
+				aria-pressed={insiderOnly}
+				class="flex w-fit items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium active:scale-95
+					{insiderOnly ? 'bg-jade-dark text-white' : 'border border-cream-dark bg-white text-ink-muted'}"
+			>
+				<InsiderBadge size="sm" labelled={false} tone={insiderOnly ? 'inherit' : 'brand'} />
+				{t('search.insiderOnly')}
+			</button>
 		</div>
 
 		<!-- Cuisine filter -->

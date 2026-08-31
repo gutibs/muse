@@ -1,10 +1,11 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import Avatar from '$lib/components/Avatar.svelte';
+	import InsiderBadge from '$lib/components/InsiderBadge.svelte';
 	import PinsMap, { type MapItem } from '$lib/components/PinsMap.svelte';
 	import { t } from '$lib/i18n/index.svelte';
 	import { usersService } from '$lib/services/users.service';
-	import type { Pin, Profile } from '$lib/types';
+	import type { ForeignProfile, Pin } from '$lib/types';
 	import { ApiError } from '$lib/types';
 	import RatingHearts from '$lib/components/RatingHearts.svelte';
 	import PinCard from '$lib/components/PinCard.svelte';
@@ -17,7 +18,9 @@
 
 	let userId = $derived(Number(page.params.userId));
 
-	let profile = $state<Profile | null>(null);
+	// ForeignProfile: el endpoint de un perfil ajeno no manda email ni
+	// teléfono, y el tipo tiene que decir la verdad sobre lo que llega.
+	let profile = $state<ForeignProfile | null>(null);
 	let pins = $state<Pin[]>([]);
 	let loading = $state(true);
 	let error = $state('');
@@ -195,7 +198,9 @@
 				<div class="flex items-center gap-4 rounded-card bg-white p-4 shadow-card">
 					<Avatar name={profile.displayName} src={profile.avatar} size={56} />
 					<div class="min-w-0 flex-1">
-						<p class="truncate text-base font-semibold text-ink">{profile.displayName || profile.email}</p>
+						<p class="truncate text-base font-semibold text-ink">
+							{profile.displayName || t('restaurant.anonymous')}
+						</p>
 						{#if profile.city}
 							<p class="text-xs text-ink-muted">{profile.city}</p>
 						{/if}
@@ -204,6 +209,19 @@
 						{/if}
 					</div>
 				</div>
+
+				<!-- Con nombre y explicación: es la pantalla de esa persona, hay
+				     lugar, y es donde tiene sentido contar qué significa la marca
+				     en vez de dejar un glifo suelto. -->
+				{#if profile.isVerifiedInsider}
+					<a
+						href="/badges"
+						class="mt-3 flex items-start gap-2 rounded-card bg-jade-dark/5 px-3 py-2 active:opacity-80"
+					>
+						<InsiderBadge variant="full" class="shrink-0" />
+						<p class="text-xs leading-snug text-ink-light">{t('badges.insiderWhat')}</p>
+					</a>
+				{/if}
 
 				<!-- Stats -->
 				<div class="mt-3 flex gap-3">

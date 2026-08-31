@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Avatar from '$lib/components/Avatar.svelte';
+	import InsiderBadge from '$lib/components/InsiderBadge.svelte';
 	import CityAutocomplete from '$lib/components/CityAutocomplete.svelte';
 	import { authService } from '$lib/services/auth.service';
 	import { pinsService } from '$lib/services/pins.service';
@@ -319,6 +320,14 @@
 
 					<!-- Badges row -->
 					<div class="mt-3 flex flex-wrap justify-center gap-2">
+						<!-- Primero: es la única marca que otorga Muse, y el resto
+						     de la fila son datos que la persona cargó sola. Linkea
+						     a la pantalla que explica qué significa. -->
+						{#if authStore.user?.isVerifiedInsider}
+							<a href="/badges" class="active:opacity-80">
+								<InsiderBadge variant="full" />
+							</a>
+						{/if}
 						{#if authStore.user?.city}
 							<span class="flex items-center gap-1 rounded-full bg-cream-dark px-3 py-1 text-xs text-ink-light">
 								<svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7Z"/></svg>
