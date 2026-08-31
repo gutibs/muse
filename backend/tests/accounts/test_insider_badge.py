@@ -143,3 +143,25 @@ def _admin_request():
 	request.session = {}
 	request._messages = FallbackStorage(request)
 	return request
+
+
+# --- Borrar la cuenta se lleva el badge -------------------------------------
+
+
+@pytest.mark.critical
+@pytest.mark.django_db
+def test_erasing_an_account_removes_the_badge():
+	"""El badge es identidad, y el borrado promete destruir la identidad.
+
+	Sin esto la reseña sobreviviente queda firmada como "Anónimo" con la
+	marca de Muse al lado, y la cuenta sigue contando en el filtro de
+	Insiders.
+	"""
+	from accounts.services.account_deletion import anonymise_user
+
+	user = _insider()
+
+	anonymise_user(user)
+
+	user.profile.refresh_from_db()
+	assert user.profile.is_verified_insider is False

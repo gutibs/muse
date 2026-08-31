@@ -99,6 +99,11 @@ def anonymise_user(user) -> None:
 	profile.phone = ""
 	profile.location = None
 	profile.favourite_cuisine = None
+	# El badge es identidad, no preferencia: una cuenta anonimizada que lo
+	# conserve firma sus reseñas como "Anónimo, verificado por Muse" y sigue
+	# contando en el filtro de Insiders, que es justamente lo que este
+	# contrato promete destruir.
+	profile.is_verified_insider = False
 	profile.deleted_at = timezone.now()
 	profile.dietary_preferences.clear()
 	profile.save()
