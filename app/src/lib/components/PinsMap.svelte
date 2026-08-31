@@ -58,7 +58,10 @@
 		statusLabelFor,
 		onItemClick,
 		autoLocate = false,
-		fitOptions = { padding: [40, 40], maxZoom: 14 },
+		// 24 y no 40: el padding se descuenta del ancho útil, y en un teléfono
+		// de 390px esos 32px de más eran la diferencia entre encuadrar una
+		// lista de dos continentes y dejar uno afuera.
+		fitOptions = { padding: [24, 24], maxZoom: 14 },
 	}: Props = $props();
 
 	let mapContainer = $state<HTMLDivElement | undefined>(undefined);
@@ -121,9 +124,28 @@
 			positions.push([coords.lat, coords.lng]);
 		}
 
-		if (positions.length > 0) {
+		if (positions.length === 0) return;
+
+		// El encuadre se calcula contra el tamaño del contenedor, y en el
+		// primer render ese tamaño todavía no existe: el div se acaba de
+		// insertar y el layout no corrió. Leaflet encuadra entonces sobre un
+		// viewport de cero y los markers terminan fuera de la vista — el mapa
+		// de una lista compartida se abría en Asia Central con sus tres
+		// restaurantes afuera, y la mitad de las tiles sin pedir.
+		//
+		// `invalidateSize` le dice a Leaflet que vuelva a medir antes de
+		// encuadrar; el timeout deja que el layout corra primero.
+		//
+		// `setTimeout` y NO `requestAnimationFrame`: el navegador no dispara
+		// rAF en una pestaña que no está visible, así que el encuadre no
+		// ocurría nunca y el mapa se quedaba en su vista inicial —el centro
+		// del mundo— con los markers donde cayeran. Un timeout corre igual.
+		const fit = () => {
+			if (!mapInstance) return;
+			mapInstance.invalidateSize();
 			mapInstance.fitBounds(positions, fitOptions);
-		}
+		};
+		setTimeout(fit, 0);
 	}
 
 	$effect(() => {

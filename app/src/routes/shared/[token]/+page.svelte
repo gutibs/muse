@@ -163,7 +163,7 @@
 					items={mapItems}
 					accent={pinAccent}
 					link={false}
-					fitOptions={{ padding: [40, 40], maxZoom: 13 }}
+					fitOptions={{ padding: [24, 24], maxZoom: 13 }}
 				/>
 			{/if}
 		</div>

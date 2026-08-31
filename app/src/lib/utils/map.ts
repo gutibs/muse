@@ -90,7 +90,17 @@ export function createMap(
 		// position we want rather than at Leaflet's defaults.
 		zoomControl: false,
 		attributionControl: false,
-		minZoom: 3,
+		// 2 y no 3: con 3 no se puede encuadrar una lista repartida en dos
+		// continentes, y `fitBounds` dejaba los extremos afuera — el mapa de
+		// una lista compartida con Londres y Hong Kong se abría prácticamente
+		// vacío. No es un caso raro: el catálogo real tiene Buenos Aires,
+		// Londres, Nueva York y Hong Kong, y hay cuentas con pins en varios.
+		//
+		// 2 y no 1, aunque 1 encuadre spans todavía más grandes: al zoom 1 el
+		// mundo mide 512px, menos que el alto de un teléfono, y entonces
+		// `maxBounds` con viscosidad dura no puede centrarlo — empuja el mapa
+		// y el encuadre queda corrido. Medido en 390x624.
+		minZoom: 2,
 		maxBoundsViscosity: 1.0,
 		maxBounds: [
 			[-85, -180],
