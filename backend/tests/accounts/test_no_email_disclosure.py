@@ -148,3 +148,50 @@ def test_inviting_someone_who_already_has_an_account_reveals_nothing():
 	), f"distinguibles: en Muse={on_muse.status_code} nuevo={fresh.status_code}"
 	assert "already" not in on_muse.content.decode().lower()
 	assert "ya está" not in on_muse.content.decode().lower()
+
+
+# --- Perfil de otra persona -------------------------------------------------
+
+
+@pytest.mark.critical
+@pytest.mark.django_db
+def test_a_friends_profile_carries_neither_email_nor_phone():
+	"""El agujero que le quedaba al invariante.
+
+	`PublicProfileView` servía el `ProfileSerializer` entero, que trae email y
+	teléfono, y `require_can_view` sólo comprueba la amistad: no filtra
+	campos. Los amigos son justamente quienes más fácil llegan a ese endpoint.
+	"""
+	me = UserFactory(username="me", email="me@example.com")
+	friend = _named("friend", "friend@example.com", "Amiga")
+	friend.profile.phone = "+852 5555 0000"
+	friend.profile.save()
+	Friendship.objects.create(from_user=me, to_user=friend, status=Friendship.Status.ACCEPTED)
+
+	resp = _auth(me).get(reverse("public_profile", kwargs={"user_id": friend.id}))
+
+	assert resp.status_code == 200, resp.content
+	body = resp.content.decode()
+	assert friend.email not in body
+	assert "5555 0000" not in body
+	assert "email" not in resp.json()
+	assert "phone" not in resp.json()
+
+
+@pytest.mark.critical
+@pytest.mark.django_db
+def test_the_foreign_profile_still_carries_what_the_screen_needs():
+	"""Recortar de más rompe la pantalla, que es otra forma de fallar."""
+	me = UserFactory(username="me", email="me@example.com")
+	friend = _named("friend", "friend@example.com", "Amiga")
+	friend.profile.bio = "Como en todos lados"
+	friend.profile.city = "Hong Kong"
+	friend.profile.save()
+	Friendship.objects.create(from_user=me, to_user=friend, status=Friendship.Status.ACCEPTED)
+
+	body = _auth(me).get(reverse("public_profile", kwargs={"user_id": friend.id})).json()
+
+	assert body["displayName"] == "Amiga"
+	assert body["bio"] == "Como en todos lados"
+	assert body["city"] == "Hong Kong"
+	assert "stats" in body

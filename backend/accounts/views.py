@@ -18,6 +18,7 @@ from accounts.serializers import (
 	ChangePasswordSerializer,
 	DietaryPreferenceSerializer,
 	EmailInvitationSerializer,
+	ForeignProfileSerializer,
 	FriendshipSerializer,
 	PasswordResetConfirmSerializer,
 	PasswordResetRequestSerializer,
@@ -297,7 +298,10 @@ class EmailInvitationView(generics.ListCreateAPIView):
 
 
 class PublicProfileView(generics.RetrieveAPIView):
-	serializer_class = ProfileSerializer
+	# ForeignProfileSerializer y no ProfileSerializer: el permiso de abajo
+	# decide a quién podés mirar, no qué campos suyos ves. Ver el docstring
+	# del serializer.
+	serializer_class = ForeignProfileSerializer
 
 	def get_object(self):
 		user = get_object_or_404(

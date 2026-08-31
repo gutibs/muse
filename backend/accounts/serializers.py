@@ -104,6 +104,27 @@ class ProfileSerializer(serializers.ModelSerializer):
 		}
 
 
+class ForeignProfileSerializer(ProfileSerializer):
+	"""El perfil de otra persona: lo mismo, menos los datos de contacto.
+
+	`PublicProfileView` servía el `ProfileSerializer` entero, que trae `email`
+	y `phone`. Su permiso —`require_can_view`— decide si podés mirar a esa
+	persona, no qué campos suyos ves, así que cualquier amistad aceptada
+	alcanzaba para leer la dirección y el teléfono de alguien. El invariante
+	"ningún endpoint entrega el email de otra persona" ya estaba escrito y
+	testeado para búsqueda, amistades, feed e invitaciones; a este endpoint no
+	había llegado.
+
+	El resto del payload se conserva tal cual: la pantalla de perfil ajeno
+	muestra bio, ciudad, cocina, dietarias y stats, y recortar de más la
+	rompe.
+	"""
+
+	class Meta(ProfileSerializer.Meta):
+		fields = tuple(f for f in ProfileSerializer.Meta.fields if f not in ("email", "phone"))
+		read_only_fields = tuple(f for f in ProfileSerializer.Meta.read_only_fields if f != "email")
+
+
 class RegisterSerializer(serializers.Serializer):
 	# Un solo cuerpo para los dos caminos: si el texto difiere, aunque sea en
 	# un espacio, vuelve el oráculo.
