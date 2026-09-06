@@ -28,7 +28,19 @@ on:
       - '.github/workflows/test.yml'
 
 jobs:
+  # La suite entera antes de tocar producción. Se llama a `test.yml` en vez de
+  # duplicar los pasos acá, así hay una sola definición de qué es "los tests".
+  #
+  # Por qué no `workflow_run`, que es lo que uno busca primero: ese trigger no
+  # admite `paths`, así que habría que renunciar al path filter de arriba —el
+  # que evita desplegar por un cambio en docs/— o reimplementarlo adentro del
+  # job. Con `workflow_call` el filtro sigue decidiendo si el deploy corre, y
+  # los tests quedan como puerta.
+  tests:
+    uses: ./.github/workflows/test.yml
+
   deploy:
+    needs: tests
     runs-on: ubuntu-latest
     steps:
       - name: Deploy via SSH

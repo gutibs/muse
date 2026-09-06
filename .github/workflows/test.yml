@@ -8,6 +8,11 @@ on:
   push:
     branches: [main]
   pull_request:
+  # `deploy.yml` llama a esta suite como paso previo, y sólo despliega si pasa.
+  # Hasta el 2026-09-06 los dos workflows arrancaban en paralelo con el mismo
+  # push: la suite podía terminar en rojo con producción ya actualizada, así
+  # que los 433 tests no frenaban nada.
+  workflow_call:
 
 jobs:
   backend:
