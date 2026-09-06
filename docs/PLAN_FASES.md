@@ -478,6 +478,29 @@ La pieza difícil ya está construida: `import_from_google_place_id`
 | Emails | **No factible con esfuerzo razonable.** OAuth de Gmail con scope restringido exige security assessment de terceros: miles de dólares y meses de trámite |
 | SMS | **No factible.** No hay acceso programático al historial de mensajes en iOS |
 
+### F2.H — Versión mínima soportada (update obligatorio)
+
+Pedido el 2026-09-06, probando el APK V1.3.0: el teléfono tenía instalada la V1.2.0, de
+antes de que cambiara el contrato del registro. Hoy nada avisa de eso — la app vieja
+sigue arrancando y falla donde el contrato cambió, en silencio y a la cara del usuario.
+
+- Endpoint anónimo (`GET /api/v1/app-version/`) devolviendo `min_supported` y
+  `latest`, por plataforma. La app lo consulta al arrancar y compara contra
+  `__APP_VERSION__`.
+- Dos niveles, no uno: **bloqueante** por debajo de `min_supported` (pantalla sin salida,
+  con el link a la tienda) y **sugerencia descartable** entre `min_supported` y `latest`.
+  Un solo nivel obliga a elegir entre molestar de más o no poder frenar una versión rota.
+- **Falla abierto.** Si el endpoint no responde —timeout, backend caído, avión— la app
+  entra igual. Un chequeo que falla cerrado convierte cualquier caída del backend en
+  todas las apps del mundo bloqueadas, que es peor que el problema que resuelve.
+- El número vive en la base (o en env), **no hardcodeado en el build**: el sentido de
+  esto es poder subir el piso sin compilar una app nueva.
+- **Depende de la distribución**: la pantalla bloqueante necesita a dónde mandar a la
+  persona. Sin las tiendas aprobadas todavía, el link no existe; mientras tanto sería una
+  URL de descarga directa. Eso define cuándo se puede construir de verdad.
+- Comparar versiones **semánticamente**, nunca como texto: `"1.10.0" < "1.9.0"` es cierto
+  como string y falso como versión.
+
 ---
 
 ## Escala a 100k usuarios
