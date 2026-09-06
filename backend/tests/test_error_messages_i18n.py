@@ -119,3 +119,59 @@ def test_ningun_mensaje_nuevo_queda_sin_envolver():
 				culpables.append(f"{archivo.relative_to(BACKEND)}:{numero}: {linea.strip()}")
 
 	assert not culpables, "Mensajes sin gettext:\n" + "\n".join(culpables)
+
+
+# Un par msgid/msgstr de una línea, que es la forma de todas nuestras entradas.
+ENTRADA_PO = re.compile(r'^msgid "(?P<id>.+)"\n^msgstr "(?P<str>.*)"$', re.MULTILINE)
+
+# Mensajes genéricos que DRF ya trae traducidos en sus propios catálogos.
+# Para estos gana el suyo, no el nuestro: `gettext("Not found.")` en español
+# devuelve "No encontrado." aunque nuestro .po diga "No se encontró.". Las
+# dos son correctas y el usuario ve una traducción igual, así que sólo
+# verificamos que no salga en inglés.
+TRADUCE_EL_FRAMEWORK = {"Not found."}
+
+
+@pytest.mark.parametrize("idioma", ["es", "it"])
+def test_los_catalogos_compilados_estan_al_dia(idioma):
+	"""El .mo versionado tiene que decir lo mismo que el .po.
+
+	Los .mo van al repo (ver .gitignore): sin ellos, clonar y correr pytest da
+	cuatro rojos que no son del cambio de uno — pasó en CI el 2026-09-06. El
+	precio de versionar un artefacto compilado es que puede quedar viejo, y eso
+	no se ve a simple vista: los mensajes simplemente salen en inglés.
+
+	Si esto falla, corré `python manage.py compilemessages`.
+	"""
+	from django.utils import translation
+
+	po = (BACKEND / "locale" / idioma / "LC_MESSAGES" / "django.po").read_text(encoding="utf-8")
+	entradas = [(m["id"], m["str"]) for m in ENTRADA_PO.finditer(po) if m["str"]]
+	assert len(entradas) >= 28, f"el .po de {idioma} quedó con {len(entradas)} traducciones"
+
+	desactualizadas = []
+	with translation.override(idioma):
+		for original, esperado in entradas:
+			# El .po escapa las comillas; al comparar contra lo que devuelve
+			# gettext hay que deshacerlo.
+			original = original.replace('\\"', '"')
+			esperado = esperado.replace('\\"', '"')
+			obtenido = translation.gettext(original)
+
+			if original in TRADUCE_EL_FRAMEWORK:
+				# Acá gana el catálogo de DRF, no el nuestro, así que la
+				# redacción no tiene por qué coincidir con nuestro .po. Lo que
+				# importa es que al usuario no le llegue el inglés.
+				if obtenido == original:
+					desactualizadas.append(f"  {original!r} salió sin traducir")
+				continue
+
+			if obtenido != esperado:
+				desactualizadas.append(
+					f"  {original!r}\n    .po dice {esperado!r}\n    .mo dice {obtenido!r}"
+				)
+
+	assert not desactualizadas, (
+		f"El .mo de {idioma} no coincide con su .po. Corré `compilemessages`:\n"
+		+ "\n".join(desactualizadas)
+	)

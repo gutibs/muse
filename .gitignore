@@ -42,6 +42,9 @@ muse-tester-build.apk
 # Ajustes locales de Claude Code (por máquina, no van al repo)
 .claude/settings.local.json
 
-# Catálogos compilados de gettext: los .po van al repo, los .mo los genera
-# `compilemessages` en el build (ver backend/Dockerfile.prod).
-*.mo
+# Los .mo (catálogos compilados de gettext) SÍ van al repo. Se probó lo
+# contrario el 2026-09-06 y CI se puso en rojo: la imagen de test no corre
+# `compilemessages` —sólo la de producción—, así que los tests de i18n veían
+# los mensajes sin traducir. Con los .mo versionados, clonar y correr pytest
+# alcanza. `test_los_catalogos_compilados_estan_al_dia` falla si alguien toca
+# un .po y se olvida de recompilar.
