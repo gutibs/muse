@@ -98,6 +98,15 @@ podés romper sin romper el producto:
   - `prune_events` consolida antes de borrar y sólo borra meses cerrados
   - Una URL de reserva de dominio desconocido queda `pending` y no se
     serializa
+  - **Todo mensaje de error que ve el usuario pasa por `gettext_lazy`.** La API
+    responde en el idioma del `Accept-Language` que manda la app, y el fallback
+    sin header es inglés (los APK ya publicados no lo mandan).
+    `tests/test_error_messages_i18n.py` falla nombrando archivo y línea si
+    aparece un literal suelto dentro de `ValidationError(...)` o de un
+    `{"detail": ...}`. Cuando agregues uno: envolvelo en `_()`, corré
+    `makemessages -l es -l it` y traducí las entradas nuevas en
+    `backend/locale/<lang>/LC_MESSAGES/django.po`. Los `.mo` no van al repo:
+    los compila el build (`Dockerfile.prod`)
 - **Cualquier cambio en `accounts/`, `pins/`, `restaurants/from_google` debe correr la suite.**
   Si rompiste alguno, el bug está en tu cambio.
 - **Corré con `--create-db`.** `pytest.ini` trae `--reuse-db`: al agregar una
