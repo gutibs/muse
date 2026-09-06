@@ -295,8 +295,24 @@ lado. Hay un test crítico dedicado.
 la app", ni filtrar por Insider armando el subquery a mano sin la política de
 visibilidad.
 
-**Pendiente**: el criterio escrito de qué califica a una persona. Hasta que
-exista, el campo queda en `false` para todos y la marca no se ve en ningún
-lado.
+**El criterio, resuelto el 2026-09-06**: no hay regla escrita, y es
+deliberado. Gustavo decide caso por caso desde el toggle del admin —"por lo
+menos por ahora"—. Es discrecional, no automático: ninguna cantidad de pins,
+antigüedad ni actividad otorga la marca sola.
+
+Eso deja de ser un pendiente y pasa a ser la política vigente, con dos
+consecuencias que conviene tener presentes:
+
+- **Nada cambia en el código.** El admin ya es exactamente eso: un tilde por
+  persona y acciones en masa, con el campo cerrado a la API. La decisión no
+  pide construir nada, sólo tildar a alguien.
+- **El día que haya volumen, esto no escala y hay que revisarlo.** Mientras la
+  lista sean unas pocas personas de Hong Kong, decidir a mano es lo correcto y
+  lo más barato. Cuando otorgarlo deje de ser abarcable, o cuando alguien
+  pregunte por qué a él no, va a hacer falta una regla escrita — y ahí el
+  problema deja de ser técnico.
+
+Mientras nadie esté tildado el campo queda en `false` para todos y la marca no
+se ve en ningún lado, que es como está desplegado hoy.
 
 **Estado**: vigente.

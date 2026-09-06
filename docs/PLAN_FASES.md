@@ -530,7 +530,8 @@ en vivo sobre la tabla de eventos. Las dos están cubiertas arriba.
   pueden estar en un SKU más caro). Sin ese dato, F1.3 se entrega sin autoselección.
 - **Revisión legal de analytics.** La política actual declara "aggregate analytics";
   los eventos con user_id no son agregados.
-- **Criterio escrito de Verified Insider** antes de tildar al primero.
+- ~~Criterio escrito de Verified Insider~~ — resuelto el 2026-09-06: no hay regla
+  escrita, se otorga a discreción desde el toggle del admin. Ver D-010.
 - **Qué cuenta como "click"** para el número que va a ver OpenTable.
 - **Números de escala en tramos** para el inversor: son estimaciones con rango, no
   cotizaciones, y van a terminar frente a un tercero.
