@@ -1,4 +1,5 @@
 from django.db import IntegrityError, transaction
+from django.utils.translation import gettext_lazy as _
 from rest_framework import generics, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -47,7 +48,7 @@ class PinViewSet(viewsets.ModelViewSet):
 		valor = request.data.get("isFavourite", request.data.get("is_favourite"))
 		if not isinstance(valor, bool):
 			return Response(
-				{"detail": "isFavourite must be a boolean."},
+				{"detail": _("isFavourite must be a boolean.")},
 				status=status.HTTP_400_BAD_REQUEST,
 			)
 
@@ -71,7 +72,7 @@ class PinViewSet(viewsets.ModelViewSet):
 		except IntegrityError:
 			restaurant_id = request.data.get("restaurant") or request.data.get("restaurantId")
 			existing = Pin.objects.filter(user=request.user, restaurant_id=restaurant_id).first()
-			payload = {"detail": "You already pinned this restaurant."}
+			payload = {"detail": _("You already pinned this restaurant.")}
 			if existing:
 				payload["pinId"] = existing.id
 			return Response(payload, status=status.HTTP_409_CONFLICT)

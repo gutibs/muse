@@ -2,6 +2,7 @@ import logging
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
+from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
 from accounts.consent import POLICY_VERSIONS
@@ -133,7 +134,7 @@ class ForeignProfileSerializer(ProfileSerializer):
 class RegisterSerializer(serializers.Serializer):
 	# Un solo cuerpo para los dos caminos: si el texto difiere, aunque sea en
 	# un espacio, vuelve el oráculo.
-	CONFIRMATION_DETAIL = "Check your inbox to finish setting up your account."
+	CONFIRMATION_DETAIL = _("Check your inbox to finish setting up your account.")
 
 	email = serializers.EmailField()
 	password = serializers.CharField(write_only=True, validators=[validate_password])
@@ -152,7 +153,7 @@ class RegisterSerializer(serializers.Serializer):
 
 	def validate_accept_privacy(self, value):
 		if value is not True:
-			raise serializers.ValidationError("You must accept the privacy policy to register.")
+			raise serializers.ValidationError(_("You must accept the privacy policy to register."))
 		return value
 
 	def _client_ip(self):
@@ -298,7 +299,7 @@ class AccountDeletionSerializer(serializers.Serializer):
 
 	def validate_current_password(self, value):
 		if not self.context["request"].user.check_password(value):
-			raise serializers.ValidationError("Current password is incorrect.")
+			raise serializers.ValidationError(_("Current password is incorrect."))
 		return value
 
 
@@ -345,11 +346,11 @@ class FriendshipSerializer(serializers.ModelSerializer):
 		"""
 		request = self.context["request"]
 		if value == request.user:
-			raise serializers.ValidationError("You cannot send a friend request to yourself.")
+			raise serializers.ValidationError(_("You cannot send a friend request to yourself."))
 		if Friendship.objects.filter(from_user=request.user, to_user=value).exists():
-			raise serializers.ValidationError("Friend request already sent.")
+			raise serializers.ValidationError(_("Friend request already sent."))
 		if Friendship.objects.filter(from_user=value, to_user=request.user).exists():
-			raise serializers.ValidationError("This user already sent you a friend request.")
+			raise serializers.ValidationError(_("This user already sent you a friend request."))
 		return value
 
 	def create(self, validated_data):
@@ -372,7 +373,7 @@ class EmailInvitationSerializer(serializers.ModelSerializer):
 			from_user=request.user, email__iexact=value
 		).first()
 		if existing and existing.accepted:
-			raise serializers.ValidationError("This person already accepted your invitation.")
+			raise serializers.ValidationError(_("This person already accepted your invitation."))
 		return value
 
 	def create(self, validated_data):
@@ -399,7 +400,7 @@ class ChangePasswordSerializer(serializers.Serializer):
 
 	def validate_current_password(self, value):
 		if not self.context["request"].user.check_password(value):
-			raise serializers.ValidationError("Current password is incorrect.")
+			raise serializers.ValidationError(_("Current password is incorrect."))
 		return value
 
 

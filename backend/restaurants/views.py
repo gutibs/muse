@@ -3,6 +3,7 @@ import logging
 from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.geos import Point
 from django.db.models import Avg, Count
+from django.utils.translation import gettext_lazy as _
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
@@ -93,14 +94,14 @@ class RestaurantViewSet(viewsets.ModelViewSet):
 		"""Allow retrieving a specific restaurant even if pending (for the user who created it)."""
 		instance = self._base_queryset().filter(pk=self.kwargs["pk"]).first()
 		if not instance:
-			return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+			return Response({"detail": _("Not found.")}, status=status.HTTP_404_NOT_FOUND)
 		# Non-staff can only see approved OR their own pending
 		if (
 			instance.approval_status != Restaurant.ApprovalStatus.APPROVED
 			and not (request.user.is_staff or request.user.is_superuser)
 			and instance.created_by != request.user
 		):
-			return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+			return Response({"detail": _("Not found.")}, status=status.HTTP_404_NOT_FOUND)
 		serializer = self.get_serializer(instance)
 		return Response(serializer.data)
 
@@ -142,7 +143,9 @@ class RestaurantViewSet(viewsets.ModelViewSet):
 		"""
 		place_id = request.data.get("placeId") or request.data.get("place_id")
 		if not place_id:
-			return Response({"detail": "placeId is required."}, status=status.HTTP_400_BAD_REQUEST)
+			return Response(
+				{"detail": _("placeId is required.")}, status=status.HTTP_400_BAD_REQUEST
+			)
 
 		try:
 			restaurant, created = import_from_google_place_id(place_id, request.user)
@@ -155,7 +158,7 @@ class RestaurantViewSet(viewsets.ModelViewSet):
 			# vuelta desde el autocomplete y se pineaba como si nada.
 			return Response(
 				{
-					"detail": "This place is permanently closed.",
+					"detail": _("This place is permanently closed."),
 					"restaurantId": restaurant.id,
 				},
 				status=status.HTTP_409_CONFLICT,

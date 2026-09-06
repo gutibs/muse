@@ -1,4 +1,5 @@
 from django.contrib.gis.geos import Point
+from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
 from accounts.serializers import UserAnonymousSafeSerializer
@@ -149,9 +150,11 @@ class RestaurantSerializer(serializers.ModelSerializer):
 		if lat is not None and lng is not None:
 			data["location"] = Point(lng, lat, srid=4326)
 		elif lat is not None or lng is not None:
-			raise serializers.ValidationError("latitude and longitude must be provided together.")
+			raise serializers.ValidationError(
+				_("latitude and longitude must be provided together.")
+			)
 		elif not self.instance:
-			raise serializers.ValidationError("latitude and longitude are required.")
+			raise serializers.ValidationError(_("latitude and longitude are required."))
 		return data
 
 	def create(self, validated_data):

@@ -13,6 +13,7 @@ import logging
 import requests
 from django.conf import settings
 from django.http import HttpResponseRedirect
+from django.utils.translation import gettext_lazy as _
 from rest_framework import status
 from rest_framework.decorators import (
 	api_view,
@@ -164,7 +165,7 @@ class PlacesAnonThrottle(AnonRateThrottle):
 
 def _not_configured():
 	return Response(
-		{"detail": "Google Places API is not configured."},
+		{"detail": _("Google Places API is not configured.")},
 		status=status.HTTP_503_SERVICE_UNAVAILABLE,
 	)
 
@@ -340,7 +341,7 @@ class ReverseGeocodeView(APIView):
 		except requests.RequestException:
 			logger.exception("nominatim reverse-geocode failed for lat=%s lng=%s", lat, lng)
 			return Response(
-				{"detail": "reverse geocode failed"},
+				{"detail": _("reverse geocode failed")},
 				status=status.HTTP_502_BAD_GATEWAY,
 			)
 

@@ -1,0 +1,127 @@
+# Mensajes de error de la API de Muse, en Italiano.
+# Los emite el backend y los muestra la app tal como llegan.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Muse\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-06 18:20-0300\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: Italiano\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+#: accounts/serializers.py:137
+msgid "Check your inbox to finish setting up your account."
+msgstr "Controlla la tua email per completare la creazione dell'account."
+
+#: accounts/serializers.py:156
+msgid "You must accept the privacy policy to register."
+msgstr "Devi accettare l'informativa sulla privacy per registrarti."
+
+#: accounts/serializers.py:302 accounts/serializers.py:403
+msgid "Current password is incorrect."
+msgstr "La password attuale non è corretta."
+
+#: accounts/serializers.py:349
+msgid "You cannot send a friend request to yourself."
+msgstr "Non puoi inviare una richiesta di amicizia a te stesso."
+
+#: accounts/serializers.py:351
+msgid "Friend request already sent."
+msgstr "Richiesta di amicizia già inviata."
+
+#: accounts/serializers.py:353
+msgid "This user already sent you a friend request."
+msgstr "Questa persona ti ha già inviato una richiesta di amicizia."
+
+#: accounts/serializers.py:376
+msgid "This person already accepted your invitation."
+msgstr "Questa persona ha già accettato il tuo invito."
+
+#: accounts/views.py:210
+msgid "Only the recipient can respond to a friend request."
+msgstr "Solo chi riceve la richiesta può rispondere."
+
+#: accounts/views.py:216
+msgid "status must be 'accepted' or 'declined'."
+msgstr "status deve essere 'accepted' o 'declined'."
+
+#: accounts/views.py:227
+msgid "This friend request is no longer available."
+msgstr "Questa richiesta di amicizia non è più disponibile."
+
+#: accounts/views.py:336
+msgid "If an account exists for that email, a code has been sent."
+msgstr "Se esiste un account con quell'email, abbiamo inviato un codice."
+
+#: accounts/views.py:381
+msgid "Password updated."
+msgstr "Password aggiornata."
+
+#: pins/serializers.py:131
+msgid "The same place is in the list twice."
+msgstr "Lo stesso locale è due volte nella lista."
+
+#: pins/views.py:51
+msgid "isFavourite must be a boolean."
+msgstr "isFavourite deve essere un booleano."
+
+#: pins/views.py:75
+msgid "You already pinned this restaurant."
+msgstr "Hai già salvato questo ristorante."
+
+#: places/geo.py:32
+msgid "lat and lng are required."
+msgstr "lat e lng sono obbligatori."
+
+#: places/geo.py:38
+msgid "lat and lng must be numeric."
+msgstr "lat e lng devono essere numerici."
+
+#: places/geo.py:41
+msgid "lat/lng out of range."
+msgstr "lat/lng fuori intervallo."
+
+#: places/geo.py:59
+msgid "radius must be numeric."
+msgstr "radius deve essere numerico."
+
+#: places/geo.py:62
+msgid "radius must be greater than 0."
+msgstr "radius deve essere maggiore di 0."
+
+#: places/views.py:168
+msgid "Google Places API is not configured."
+msgstr "L'API di Google Places non è configurata."
+
+#: places/views.py:344
+msgid "reverse geocode failed"
+msgstr "geocodifica inversa fallita"
+
+#: restaurants/serializers.py:153
+msgid "latitude and longitude must be provided together."
+msgstr "latitude e longitude devono essere fornite insieme."
+
+#: restaurants/serializers.py:155
+msgid "latitude and longitude are required."
+msgstr "latitude e longitude sono obbligatorie."
+
+#: restaurants/services/reservations.py:78
+msgid "The reservation URL has no host."
+msgstr "L'URL di prenotazione non ha un dominio."
+
+#: restaurants/views.py:97 restaurants/views.py:104
+msgid "Not found."
+msgstr "Non trovato."
+
+#: restaurants/views.py:146
+msgid "placeId is required."
+msgstr "placeId è obbligatorio."
+
+#: restaurants/views.py:159
+msgid "This place is permanently closed."
+msgstr "Questo locale è chiuso definitivamente."

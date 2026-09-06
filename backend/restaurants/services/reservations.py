@@ -24,6 +24,7 @@ from dataclasses import dataclass
 from urllib.parse import urlparse
 
 from django.core.exceptions import ValidationError
+from django.utils.translation import gettext_lazy as _
 
 from restaurants.models import Restaurant
 
@@ -74,7 +75,7 @@ def _host(url: str) -> str:
 		raise ValidationError(f"Unsupported URL scheme: {parsed.scheme or '(none)'}")
 	host = (parsed.hostname or "").lower()
 	if not host:
-		raise ValidationError("The reservation URL has no host.")
+		raise ValidationError(_("The reservation URL has no host."))
 	return host.removeprefix("www.")
 
 

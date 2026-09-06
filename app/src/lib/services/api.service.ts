@@ -1,6 +1,18 @@
+import { i18n } from '$lib/i18n/index.svelte';
 import { ApiError, AuthError, type PaginatedResponse } from '$lib/types';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api/v1';
+
+/**
+ * Idioma en el que queremos los mensajes de error del backend.
+ *
+ * Sin esto, la API contesta siempre en inglés: sus mensajes pasan por gettext
+ * y `LocaleMiddleware` los resuelve mirando este header. Un usuario con la app
+ * en español leía "Current password is incorrect." al borrar su cuenta.
+ */
+function acceptLanguage(): Record<string, string> {
+	return { 'Accept-Language': i18n.locale };
+}
 
 // Sin VITE_API_BASE_URL, API_BASE queda relativo y en desarrollo eso significa
 // pedirle la API al dev server de Vite: 404 en todo, y la UI sólo muestra
@@ -76,6 +88,7 @@ async function request<T>(path: string, options?: RequestInit, alreadyRetried = 
 	const token = getAccessToken();
 	const headers: Record<string, string> = {
 		'Content-Type': 'application/json',
+		...acceptLanguage(),
 		...(token ? { Authorization: `Bearer ${token}` } : {}),
 	};
 
@@ -132,7 +145,11 @@ async function requestAnon<T>(path: string, options?: RequestInit): Promise<T> {
 		response = await fetch(`${API_BASE}${path}`, {
 			...options,
 			signal: controller.signal,
-			headers: { 'Content-Type': 'application/json', ...(options?.headers as Record<string, string>) },
+			headers: {
+				'Content-Type': 'application/json',
+				...acceptLanguage(),
+				...(options?.headers as Record<string, string>),
+			},
 		});
 	} catch (fetchErr) {
 		console.error('[api] anonymous fetch failed:', fetchErr);

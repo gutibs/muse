@@ -41,3 +41,7 @@ muse-tester-build.apk
 
 # Ajustes locales de Claude Code (por máquina, no van al repo)
 .claude/settings.local.json
+
+# Catálogos compilados de gettext: los .po van al repo, los .mo los genera
+# `compilemessages` en el build (ver backend/Dockerfile.prod).
+*.mo

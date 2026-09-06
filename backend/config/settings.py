@@ -57,6 +57,11 @@ MIDDLEWARE = [
 	"django.middleware.common.CommonMiddleware",
 	"django.middleware.csrf.CsrfViewMiddleware",
 	"django.contrib.auth.middleware.AuthenticationMiddleware",
+	# Traduce las respuestas de la API al idioma que pide el cliente en
+	# `Accept-Language` (la app lo manda con el idioma elegido en pantalla).
+	# Va ANTES del middleware del admin, que fuerza inglés para /admin/ y tiene
+	# que poder pisar lo que éste haya activado.
+	"django.middleware.locale.LocaleMiddleware",
 	"config.admin_locale.AdminEnglishLocaleMiddleware",
 	"django.contrib.messages.middleware.MessageMiddleware",
 	"django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -100,7 +105,21 @@ AUTH_PASSWORD_VALIDATORS = [
 	{"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
-LANGUAGE_CODE = "es"
+# Idioma de respaldo cuando el cliente no pide ninguno. Es "en" y no "es"
+# a propósito: los mensajes fuente están escritos en inglés, y es el default
+# tanto de la app (`i18n/index.svelte.ts`) como de la landing. Con "es" acá,
+# los APK ya publicados —que no mandan `Accept-Language`— pasarían a recibir
+# los errores en español sin haberlo pedido.
+LANGUAGE_CODE = "en"
+
+LANGUAGES = [
+	("en", "English"),
+	("es", "Español"),
+	("it", "Italiano"),
+]
+
+LOCALE_PATHS = [BASE_DIR / "locale"]
+
 TIME_ZONE = "America/Argentina/Buenos_Aires"
 USE_I18N = True
 USE_TZ = True

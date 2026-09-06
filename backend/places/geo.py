@@ -9,6 +9,7 @@ takes a lat/lng inherits the guards instead of re-deriving them.
 Raises DRF's ValidationError, which the framework renders as a 400.
 """
 
+from django.utils.translation import gettext_lazy as _
 from rest_framework.exceptions import ValidationError
 
 # A restaurant discovery radius beyond this is never a real user intent; it
@@ -28,16 +29,16 @@ def parse_lat_lng(params) -> tuple[float, float]:
 	lng_raw = params.get("lng")
 
 	if not lat_raw or not lng_raw:
-		raise ValidationError({"detail": "lat and lng are required."})
+		raise ValidationError({"detail": _("lat and lng are required.")})
 
 	try:
 		lat = float(lat_raw)
 		lng = float(lng_raw)
 	except (TypeError, ValueError):
-		raise ValidationError({"detail": "lat and lng must be numeric."}) from None
+		raise ValidationError({"detail": _("lat and lng must be numeric.")}) from None
 
 	if not (-90 <= lat <= 90 and -180 <= lng <= 180):
-		raise ValidationError({"detail": "lat/lng out of range."})
+		raise ValidationError({"detail": _("lat/lng out of range.")})
 
 	return lat, lng
 
@@ -55,9 +56,9 @@ def parse_radius_km(params, *, default: float = DEFAULT_RADIUS_KM) -> float:
 	try:
 		radius = float(raw)
 	except (TypeError, ValueError):
-		raise ValidationError({"detail": "radius must be numeric."}) from None
+		raise ValidationError({"detail": _("radius must be numeric.")}) from None
 
 	if radius <= 0:
-		raise ValidationError({"detail": "radius must be greater than 0."})
+		raise ValidationError({"detail": _("radius must be greater than 0.")})
 
 	return min(radius, MAX_RADIUS_KM)

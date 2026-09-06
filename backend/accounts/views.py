@@ -4,6 +4,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
+from django.utils.translation import gettext_lazy as _
 from rest_framework import generics, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -206,13 +207,13 @@ class FriendshipViewSet(viewsets.ModelViewSet):
 		# Only the recipient can accept/decline
 		if instance.to_user != request.user:
 			return Response(
-				{"detail": "Only the recipient can respond to a friend request."},
+				{"detail": _("Only the recipient can respond to a friend request.")},
 				status=status.HTTP_403_FORBIDDEN,
 			)
 		new_status = request.data.get("status")
 		if new_status not in (Friendship.Status.ACCEPTED, Friendship.Status.DECLINED):
 			return Response(
-				{"detail": "status must be 'accepted' or 'declined'."},
+				{"detail": _("status must be 'accepted' or 'declined'.")},
 				status=status.HTTP_400_BAD_REQUEST,
 			)
 		# RF6: el bloqueo se comprueba acá y no sólo al crear la solicitud. Es
@@ -223,7 +224,7 @@ class FriendshipViewSet(viewsets.ModelViewSet):
 			instance.from_user, instance.to_user
 		):
 			return Response(
-				{"detail": "This friend request is no longer available."},
+				{"detail": _("This friend request is no longer available.")},
 				status=status.HTTP_400_BAD_REQUEST,
 			)
 		instance.status = new_status
@@ -332,7 +333,9 @@ class UserPinsView(generics.ListAPIView):
 # El cuerpo es literalmente el mismo objeto para todos los caminos de
 # PasswordResetView: exista la cuenta, no exista, o falle Resend (RF2). Si
 # alguna vez hay que tocarlo, se toca acá y sigue siendo uno solo.
-PASSWORD_RESET_ACCEPTED = {"detail": "If an account exists for that email, a code has been sent."}
+PASSWORD_RESET_ACCEPTED = {
+	"detail": _("If an account exists for that email, a code has been sent.")
+}
 
 
 class PasswordResetView(generics.GenericAPIView):
@@ -377,7 +380,7 @@ class PasswordResetConfirmView(generics.GenericAPIView):
 			new_password=serializer.validated_data["new_password"],
 			language=serializer.validated_data.get("language"),
 		)
-		return Response({"detail": "Password updated."}, status=status.HTTP_200_OK)
+		return Response({"detail": _("Password updated.")}, status=status.HTTP_200_OK)
 
 
 class BlockViewSet(viewsets.ModelViewSet):

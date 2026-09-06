@@ -1,3 +1,4 @@
+from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
 from pins.models import Pin, SharedList, SharedListItem
@@ -127,7 +128,7 @@ class SharedListSerializer(serializers.ModelSerializer):
 				f"A shortlist holds up to {CURATED_ITEM_LIMIT} places."
 			)
 		if len(set(value)) != len(value):
-			raise serializers.ValidationError("The same place is in the list twice.")
+			raise serializers.ValidationError(_("The same place is in the list twice."))
 
 		# Sólo pins propios: sin esto, cualquiera podría armar una lista
 		# pública con las reseñas de otra persona.
