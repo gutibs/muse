@@ -1,6 +1,7 @@
 <script lang="ts">
 	import InsiderBadge from '$lib/components/InsiderBadge.svelte';
 	import LanguagePicker from '$lib/components/LanguagePicker.svelte';
+	import PasswordInput from '$lib/components/PasswordInput.svelte';
 	import SegmentedControl from '$lib/components/SegmentedControl.svelte';
 	import { t } from '$lib/i18n/index.svelte';
 	import { authStore } from '$lib/stores/auth.store.svelte';
@@ -199,32 +200,26 @@
 
 						<div>
 							<label for="currentPw" class="mb-1 block text-xs font-medium text-ink-light">{t('settings.currentPassword')}</label>
-							<input
+							<PasswordInput
 								id="currentPw"
-								type="password"
 								bind:value={currentPassword}
 								autocomplete="current-password"
-								class="w-full rounded-input border border-cream-dark bg-white px-4 py-3 text-base text-ink outline-none focus:border-jade"
 							/>
 						</div>
 						<div>
 							<label for="newPw" class="mb-1 block text-xs font-medium text-ink-light">{t('settings.newPassword')}</label>
-							<input
+							<PasswordInput
 								id="newPw"
-								type="password"
 								bind:value={newPassword}
 								autocomplete="new-password"
-								class="w-full rounded-input border border-cream-dark bg-white px-4 py-3 text-base text-ink outline-none focus:border-jade"
 							/>
 						</div>
 						<div>
 							<label for="confirmPw" class="mb-1 block text-xs font-medium text-ink-light">{t('settings.confirmPassword')}</label>
-							<input
+							<PasswordInput
 								id="confirmPw"
-								type="password"
 								bind:value={confirmPassword}
 								autocomplete="new-password"
-								class="w-full rounded-input border border-cream-dark bg-white px-4 py-3 text-base text-ink outline-none focus:border-jade"
 							/>
 						</div>
 						<button
@@ -374,12 +369,11 @@
 
 						<div>
 							<label for="deletePw" class="mb-1 block text-xs font-medium text-ink-light">{t('settings.deleteAccountPassword')}</label>
-							<input
+							<PasswordInput
 								id="deletePw"
-								type="password"
 								bind:value={deletePassword}
 								autocomplete="current-password"
-								class="w-full rounded-input border border-cream-dark bg-white px-4 py-3 text-base text-ink outline-none focus:border-blush"
+								class="focus:border-blush"
 							/>
 						</div>
 

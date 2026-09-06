@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { i18n, t } from '$lib/i18n/index.svelte';
+	import PasswordInput from '$lib/components/PasswordInput.svelte';
 	import { passwordResetService } from '$lib/services/password-reset.service';
 	import { logSilent } from '$lib/utils/logger';
 	import { ApiError } from '$lib/types';
@@ -162,14 +163,12 @@
 				<label for="reset-new-password" class="block text-sm font-medium text-ink-light">
 					{t('login.resetNewPasswordLabel')}
 				</label>
-				<input
+				<PasswordInput
 					id="reset-new-password"
 					name="newPassword"
-					type="password"
 					bind:value={newPassword}
 					required
 					autocomplete="new-password"
-					class="w-full rounded-input border border-cream-dark bg-white px-4 py-3 text-base text-ink outline-none transition-colors focus:border-jade"
 				/>
 				<button
 					type="submit"

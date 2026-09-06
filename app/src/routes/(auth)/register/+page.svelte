@@ -3,6 +3,7 @@
 	import CityAutocomplete from '$lib/components/CityAutocomplete.svelte';
 	import LanguagePicker from '$lib/components/LanguagePicker.svelte';
 	import MuseLogo from '$lib/components/MuseLogo.svelte';
+	import PasswordInput from '$lib/components/PasswordInput.svelte';
 	import PasswordStrength from '$lib/components/PasswordStrength.svelte';
 	import { t } from '$lib/i18n/index.svelte';
 	import { authService } from '$lib/services/auth.service';
@@ -11,7 +12,7 @@
 	import type { Cuisine, DietaryPreference } from '$lib/types';
 	import { extractFirstDrfError } from '$lib/utils/api-error';
 	import { logSilent } from '$lib/utils/logger';
-	import { LEGAL_URLS } from '$lib/legal';
+	import { legalUrl } from '$lib/legal';
 
 	// Frontend-only icon map per dietary preference slug. The backend doesn't
 	// know about icons (DietaryPreference has only name + slug), so this small
@@ -32,8 +33,6 @@
 	let error = $state('');
 	let submitting = $state(false);
 	let checkYourInbox = $state(false);
-	let showPassword = $state(false);
-	let showConfirmPassword = $state(false);
 	// Active consent — unchecked by default, required to enable submit. One
 	// unified privacy checkbox covers both GDPR and PDPO.
 	let acceptPrivacy = $state(false);
@@ -186,58 +185,26 @@
 
 				<div>
 					<label for="password" class="mb-1 block text-sm font-medium text-ink-light">{t('auth.password')}</label>
-					<div class="relative">
-						<input
-							id="password"
-							type={showPassword ? 'text' : 'password'}
-							bind:value={password}
-							required
-							minlength="8"
-							autocomplete="new-password"
-							class="w-full rounded-input border border-cream-dark bg-white px-4 py-3 pr-12 text-base text-ink outline-none transition-colors focus:border-jade"
-							placeholder={t('auth.passwordPlaceholder')}
-						/>
-						<button
-							type="button"
-							onclick={() => (showPassword = !showPassword)}
-							class="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-ink-muted active:text-ink"
-							aria-label={showPassword ? t('login.hidePassword') : t('login.showPassword')}
-						>
-							{#if showPassword}
-								<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-							{:else}
-								<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-							{/if}
-						</button>
-					</div>
+					<PasswordInput
+						id="password"
+						bind:value={password}
+						required
+						minlength={8}
+						autocomplete="new-password"
+						placeholder={t('auth.passwordPlaceholder')}
+					/>
 					<PasswordStrength {password} />
 				</div>
 
 				<div>
 					<label for="confirmPassword" class="mb-1 block text-sm font-medium text-ink-light">{t('auth.confirmPassword')}</label>
-					<div class="relative">
-						<input
-							id="confirmPassword"
-							type={showConfirmPassword ? 'text' : 'password'}
-							bind:value={confirmPassword}
-							required
-							autocomplete="new-password"
-							class="w-full rounded-input border border-cream-dark bg-white px-4 py-3 pr-12 text-base text-ink outline-none transition-colors focus:border-jade"
-							placeholder={t('auth.repeatPassword')}
-						/>
-						<button
-							type="button"
-							onclick={() => (showConfirmPassword = !showConfirmPassword)}
-							class="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-ink-muted active:text-ink"
-							aria-label={showConfirmPassword ? t('login.hidePassword') : t('login.showPassword')}
-						>
-							{#if showConfirmPassword}
-								<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-							{:else}
-								<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-							{/if}
-						</button>
-					</div>
+					<PasswordInput
+						id="confirmPassword"
+						bind:value={confirmPassword}
+						required
+						autocomplete="new-password"
+						placeholder={t('auth.repeatPassword')}
+					/>
 				</div>
 
 				<div class="space-y-3">
@@ -249,7 +216,7 @@
 						/>
 						<span>
 							{t('register.consentRead')}
-							<a href={LEGAL_URLS.privacy} target="_blank" rel="noopener" class="font-medium text-jade underline">{t('legal.privacy')}</a>
+							<a href={legalUrl('privacy')} target="_blank" rel="noopener" class="font-medium text-jade underline">{t('legal.privacy')}</a>
 						</span>
 					</label>
 				</div>
@@ -264,9 +231,9 @@
 
 				<p class="text-center text-xs leading-relaxed text-ink-muted">
 					{t('legal.acceptancePrefix')}
-					<a href={LEGAL_URLS.terms} target="_blank" rel="noopener" class="font-medium text-jade underline">{t('legal.terms')}</a>
+					<a href={legalUrl('terms')} target="_blank" rel="noopener" class="font-medium text-jade underline">{t('legal.terms')}</a>
 					{t('legal.acceptanceAnd')}
-					<a href={LEGAL_URLS.privacy} target="_blank" rel="noopener" class="font-medium text-jade underline">{t('legal.policies')}</a>{t('legal.acceptanceSuffix')}
+					<a href={legalUrl('privacy')} target="_blank" rel="noopener" class="font-medium text-jade underline">{t('legal.policies')}</a>{t('legal.acceptanceSuffix')}
 				</p>
 			</form>
 
@@ -276,15 +243,15 @@
 			</p>
 
 			<div class="mt-6 flex flex-wrap justify-center gap-x-3 gap-y-1 text-xs text-ink-muted">
-				<a href={LEGAL_URLS.privacy} target="_blank" rel="noopener" class="active:opacity-70">{t('legal.privacy')}</a>
+				<a href={legalUrl('privacy')} target="_blank" rel="noopener" class="active:opacity-70">{t('legal.privacy')}</a>
 				<span aria-hidden="true">·</span>
-				<a href={LEGAL_URLS.terms} target="_blank" rel="noopener" class="active:opacity-70">{t('legal.terms')}</a>
+				<a href={legalUrl('terms')} target="_blank" rel="noopener" class="active:opacity-70">{t('legal.terms')}</a>
 				<span aria-hidden="true">·</span>
-				<a href={LEGAL_URLS.community} target="_blank" rel="noopener" class="active:opacity-70">{t('legal.community')}</a>
+				<a href={legalUrl('community')} target="_blank" rel="noopener" class="active:opacity-70">{t('legal.community')}</a>
 				<span aria-hidden="true">·</span>
-				<a href={LEGAL_URLS.cookies} target="_blank" rel="noopener" class="active:opacity-70">{t('legal.cookies')}</a>
+				<a href={legalUrl('cookies')} target="_blank" rel="noopener" class="active:opacity-70">{t('legal.cookies')}</a>
 				<span aria-hidden="true">·</span>
-				<a href={LEGAL_URLS.contact} target="_blank" rel="noopener" class="active:opacity-70">{t('legal.contact')}</a>
+				<a href={legalUrl('contact')} target="_blank" rel="noopener" class="active:opacity-70">{t('legal.contact')}</a>
 			</div>
 		</div>
 	</div>
