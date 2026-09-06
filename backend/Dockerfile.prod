@@ -3,7 +3,6 @@ FROM python:3.13-slim
 RUN apt-get update && apt-get install -y \
     gdal-bin \
     libgdal-dev \
-    gettext \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -15,11 +14,12 @@ COPY . .
 
 RUN python manage.py collectstatic --noinput 2>/dev/null || true
 
-# Los .mo se compilan acá y NO van al repo (sólo los .po). Sin `|| true`
-# a propósito: si esto falla, el build falla y el deploy se aborta con
-# producción todavía en pie, que es mejor que servir los mensajes de error
-# en inglés a una app configurada en otro idioma.
-RUN python manage.py compilemessages
+# Los .mo NO se compilan acá: vienen versionados en locale/, y un test
+# verifica que estén al día con sus .po. Intentar `compilemessages` en el
+# build no funciona —`manage.py` carga settings.py, que exige
+# DJANGO_SECRET_KEY, y en build time no hay env—; el 2026-09-06 eso dejó el
+# deploy en rojo. Es la misma razón por la que el collectstatic de arriba
+# lleva `|| true` y nunca hizo nada.
 
 EXPOSE 8000
 CMD ["sh", "-c", "python manage.py migrate --fake-initial && gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3"]
