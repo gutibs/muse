@@ -60,6 +60,25 @@
 	};
 
 	function detectInitial() {
+		// `?lang=` wins over everything else: it is how the app tells us which
+		// language the person picked in it. Nothing else can carry that — the
+		// APK runs on capacitor://localhost and this page on lovemuse.app, so
+		// the two never share localStorage. Without this, someone using Muse in
+		// Spanish opened the privacy policy in whatever language their browser
+		// was set to.
+		try {
+			var fromUrl = (new URLSearchParams(location.search).get('lang') || '')
+				.toLowerCase().split('-')[0];
+			if (SUPPORTED.indexOf(fromUrl) !== -1) {
+				// Persisted so it survives navigation between legal pages, which
+				// link to each other without carrying the parameter.
+				try {
+					localStorage.setItem(LOCALE_KEY, fromUrl);
+				} catch (_) { /* localStorage may be blocked */ }
+				return fromUrl;
+			}
+		} catch (_) { /* malformed query string */ }
+
 		try {
 			var saved = localStorage.getItem(LOCALE_KEY);
 			if (saved && SUPPORTED.indexOf(saved) !== -1) return saved;
