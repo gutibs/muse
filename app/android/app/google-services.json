@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "298007502065",
+    "project_id": "muse-d8986",
+    "storage_bucket": "muse-d8986.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:298007502065:android:65a03916ed2ca8dc2c1d50",
+        "android_client_info": {
+          "package_name": "app.muse.mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBTr-RV8W3zVGdWrncmmvT72kDtzg4yO24"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

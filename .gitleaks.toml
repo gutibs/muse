@@ -1,0 +1,24 @@
+# Configuración de gitleaks para Muse.
+#
+# Extiende el ruleset por defecto en lugar de reemplazarlo: sin `useDefault`,
+# un archivo de config propio deja al hook sin ninguna regla y el check pasa a
+# ser decorativo.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "google-services.json de Firebase: identificadores públicos, no secretos"
+# La clave `AIza…` que trae este archivo no es una credencial: identifica al
+# proyecto Firebase y está restringida por package name y firma del APK.
+# Cualquiera que tenga el APK ya la tiene —va adentro del binario— y Google
+# documenta que el archivo se versiona junto al código.
+#
+# Se ignora el archivo por path y no por fingerprint de línea a propósito: el
+# archivo lo regenera Firebase cada vez que se agrega una app (iOS, por
+# ejemplo) y el número de línea cambia, lo que dejaría el hook en rojo por algo
+# que no es un hallazgo.
+#
+# Lo que NO hay que hacer acá: agregar la service account key del backend para
+# mandar push. Ésa sí es una credencial, va por variable de entorno y nunca al
+# repo.
+paths = ['''app/android/app/google-services\.json''']
