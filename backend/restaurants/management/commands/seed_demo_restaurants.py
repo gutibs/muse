@@ -1,7 +1,12 @@
 """Seed demo restaurants for a user across Buenos Aires, Rome, and London.
 
-Every restaurant created gets the `demo` Tag, so cleanup is a single query:
-    Restaurant.objects.filter(tags__slug="demo").delete()
+Cada restaurante se crea con `is_demo=True`, y ese flag es lo único que los
+marca. Para borrarlos, `purge_demo_data`, que además se lleva el rastro de
+analytics —que no cascadea y guarda el nombre copiado.
+
+Antes se marcaban con un Tag `demo`. Como tag ocupaba una fila junto a los ejes
+de la taxonomía, salía en el endpoint público de tags y viajaba en el JSON de
+cada restaurante sembrado.
 
 Run on prod (via SSH to EC2):
     docker compose exec backend python manage.py seed_demo_restaurants \\
@@ -16,7 +21,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils.text import slugify
 
-from restaurants.models import Cuisine, Restaurant, Tag
+from restaurants.models import Cuisine, Restaurant
 
 User = get_user_model()
 
@@ -220,14 +225,6 @@ def ensure_cuisines():
 	return created
 
 
-def ensure_demo_tag():
-	tag, _ = Tag.objects.get_or_create(
-		slug="demo",
-		defaults={"name": "Demo", "kind": Tag.Kind.GENERAL},
-	)
-	return tag
-
-
 def make_name(city, taken):
 	"""Combine prefix + middle (+ optional suffix) until we get something unique."""
 	for _ in range(20):
@@ -251,7 +248,7 @@ def make_name(city, taken):
 class Command(BaseCommand):
 	help = (
 		"Seed N demo restaurants for a user across BA / Rome / London. "
-		"All restaurants get the `demo` Tag for easy cleanup."
+		"Todos quedan con is_demo=True; se borran con purge_demo_data."
 	)
 
 	def add_arguments(self, parser):
@@ -303,7 +300,6 @@ class Command(BaseCommand):
 		if created_cuisines:
 			self.stdout.write(f"Seeded {created_cuisines} cuisines.")
 
-		demo_tag = ensure_demo_tag()
 		cuisines = list(Cuisine.objects.all())
 		taken_names = set(Restaurant.objects.values_list("name", flat=True))
 
@@ -326,17 +322,17 @@ class Command(BaseCommand):
 						price_level=random.randint(1, 4),
 						quality_level=random.randint(2, 5),
 						created_by=user,
+						is_demo=True,
 					)
 					# 1–3 cuisines, weighted toward 1–2.
 					n_cuisines = random.choices([1, 2, 3], weights=[5, 4, 1])[0]
 					r.cuisines.set(random.sample(cuisines, k=min(n_cuisines, len(cuisines))))
-					r.tags.add(demo_tag)
 					total += 1
 				self.stdout.write(self.style.SUCCESS(f"  {city['name']}: +{n}"))
 
 		self.stdout.write(
 			self.style.SUCCESS(
 				f"Done. Created {total} restaurants. "
-				f"Cleanup later with: Restaurant.objects.filter(tags__slug='demo').delete()"
+				f"Cleanup later with: manage.py purge_demo_data --yes"
 			)
 		)

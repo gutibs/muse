@@ -13,6 +13,7 @@ class RestaurantAdmin(gis_admin.GISModelAdmin):
 		"cuisines_display",
 		"approval_status",
 		"is_closed",
+		"is_demo",
 		"reservation_status",
 		"created_by",
 		"created_at",
@@ -21,6 +22,10 @@ class RestaurantAdmin(gis_admin.GISModelAdmin):
 	list_filter = (
 		"approval_status",
 		"is_closed",
+		# Para poder ver de un vistazo cuánto del catálogo es sembrado. No los
+		# borres desde acá: `purge_demo_data` limpia además el rastro de
+		# analytics, que no cascadea.
+		"is_demo",
 		# La cola de links de reserva a revisar: filtrar por `pending` con una
 		# URL cargada da exactamente lo que falta mirar.
 		"reservation_status",

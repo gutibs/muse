@@ -87,6 +87,18 @@ class Restaurant(models.Model):
 	# Se oculta donde alguien podría descubrirlo (listas, cerca mío) y se
 	# conserva donde alguien ya lo tiene (su ficha, su pin).
 	is_closed = models.BooleanField(default=False, db_index=True)
+	# Fila sembrada por `seed_demo_restaurants`, no un lugar real.
+	#
+	# **A diferencia de `is_closed`, esto no oculta nada.** Un demo aparece en
+	# el catálogo como cualquier otro: el flag existe para poder identificarlos
+	# y borrarlos en una consulta, no para esconderlos. Si algún día se quiere
+	# lo otro, es un filtro en `get_queryset` y una decisión aparte.
+	#
+	# Reemplaza al tag `demo` con el que se marcaban antes. Como tag ocupaba una
+	# fila en la misma tabla que los ejes de la taxonomía, salía en el endpoint
+	# público de tags y viajaba en el `tags_detail` de cada restaurante
+	# sembrado. Borrarlos ahora es `filter(is_demo=True)`, sin join.
+	is_demo = models.BooleanField(default=False, db_index=True)
 	address = models.CharField(max_length=300, blank=True)
 	city = models.CharField(max_length=100, blank=True, db_index=True)
 	# El barrio, de `sublocality` en el payload de Google. Es como la gente

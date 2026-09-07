@@ -1,13 +1,13 @@
 """Seed demo Pins (visited + to_visit) for a user against the demo restaurants.
 
-Picks N restaurants tagged `demo` and creates pins for the given user:
+Picks N restaurants with `is_demo=True` and creates pins for the given user:
 visited pins get a random rating 1-5 (weighted toward 4-5), a short random
 comment, and a random visited_at date in the last 180 days. to_visit pins
 have no rating, comment, or visited_at.
 
 Cleanup is implicit: when the demo restaurants are deleted, the pins
 cascade with them. To clean up only the pins (keep restaurants):
-    Pin.objects.filter(user__email='...', restaurant__tags__slug='demo').delete()
+    Pin.objects.filter(user__email='...', restaurant__is_demo=True).delete()
 
 Usage:
     docker compose exec backend python manage.py seed_demo_pins \\
@@ -81,7 +81,7 @@ class Command(BaseCommand):
 		# the (user, restaurant) unique constraint.
 		already_pinned = Pin.objects.filter(user=user).values_list("restaurant_id", flat=True)
 		demo_restaurants = list(
-			Restaurant.objects.filter(tags__slug="demo")
+			Restaurant.objects.filter(is_demo=True)
 			.exclude(id__in=already_pinned)
 			.values_list("id", flat=True)
 		)
