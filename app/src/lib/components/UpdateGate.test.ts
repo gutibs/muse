@@ -49,16 +49,15 @@ describe('UpdateGate', () => {
 		expect(queryByTestId('update-available')).toBeNull();
 	});
 
-	it('la sugerencia no tapa la app ni la navegación', () => {
-		// Pegado abajo tapaba la BottomNav entera y no se podía navegar
-		// mientras estuviera visible. Vive en el layout raíz y la nav en el de
-		// `(app)`, así que nada en el código delata que se pisan: se vio en el
-		// teléfono.
+	it('la sugerencia empuja el contenido en vez de taparlo', () => {
+		// Las dos versiones flotantes fallaron en el teléfono: abajo tapaba la
+		// BottomNav entera y no se podía navegar, arriba tapaba el encabezado.
+		// Nada de eso se veía en el código, así que el test fija el invariante
+		// que quedó: el banner no flota.
 		const { container } = render(UpdateGate, { props: { check: check({ state: 'outdated' }) } });
 		const banner = container.querySelector('[data-testid="update-available"]');
-		expect(banner?.className).not.toContain('inset-0');
-		expect(banner?.className).not.toContain('bottom-0');
-		expect(banner?.className).toContain('top-0');
+		expect(banner?.className).not.toContain('fixed');
+		expect(banner?.className).toContain('shrink-0');
 	});
 
 	it('la bloqueante sí tapa todo', () => {

@@ -79,7 +79,8 @@
 </script>
 
 <AppShell>
+	{#snippet banner()}
+		<UpdateGate check={version} />
+	{/snippet}
 	{@render children()}
-
-<UpdateGate check={version} />
 </AppShell>
