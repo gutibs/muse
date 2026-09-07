@@ -101,6 +101,27 @@ Cuatro detalles que ya mordieron:
 - **Secrets en GitHub**: `EC2_HOST`, `EC2_SSH_KEY`
 - **Vars de entorno**: en `/home/ubuntu/muse/.env` en el server, no en el repo. Una var nueva se agrega también a `.env.example` en el mismo commit.
 
+### La identidad del EC2 frente a Google (push)
+
+El backend le habla a FCM sin ninguna credencial de larga vida: se identifica
+con el **rol de IAM de la instancia** vía Workload Identity Federation. El
+detalle de por qué y cómo está en `docs/SPEC_F2E_PUSH.md` § 8.1; acá va lo que
+hay que saber para operar.
+
+- **El EC2 necesita su instance profile.** Es de dónde sale la identidad: si se
+  reemplaza la instancia sin volver a asignarle el rol, el push deja de andar y
+  el síntoma es `FCMError` al refrescar, no un error de configuración.
+- Ese rol **no lleva permisos de AWS**. Existe para que `GetCallerIdentity`
+  devuelva un ARN estable. No le agregues políticas "por las dudas".
+- **El ARN del rol está en la `attribute-condition` del proveedor en GCP.**
+  Cambiar el nombre del rol rompe el push hasta que se actualice la condición
+  de este lado también.
+- `FCM_CREDENTIALS_JSON` en el `.env` del server es el config de WIF: **URLs y
+  un audience, sin claves**. No es un secreto y no hay nada que rotar.
+
 ## Pendiente
 
-La imagen del backend instala `requirements/dev.txt`: pytest, ipython y debug-toolbar viajan a producción y pesan **~1.75 GB**.
+~~La imagen del backend instala `requirements/dev.txt`~~ — ya no: `Dockerfile.prod`
+copia e instala `requirements/base.txt` (líneas 10-11), así que pytest, ipython y
+debug-toolbar no viajan a producción. Verificado el 2026-09-07 contra el
+`Dockerfile.prod` y el `docker-compose.aws.yml` que lo construye.

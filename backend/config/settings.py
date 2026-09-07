@@ -180,13 +180,16 @@ EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
 EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "1") == "1"
 
-# Firebase Cloud Messaging (F2.E). El JSON entero de la service account en una
-# variable de entorno: es una credencial y no va al repo, a diferencia del
-# `google-services.json` del cliente, que sólo tiene identificadores públicos.
+# Firebase Cloud Messaging (F2.E). El JSON de credenciales que `google.auth`
+# sabe leer. En producción es un config de **Workload Identity Federation**: el
+# EC2 se identifica con su rol de IAM de AWS y Google le devuelve el token, así
+# que este valor no lleva ninguna clave privada y no es un secreto. La
+# organización tiene `iam.disableServiceAccountKeyCreation` activa, o sea que
+# una service account key ni siquiera se puede generar — el camino es éste.
 # Vacío = el push queda apagado y el service lanza FCMNotConfiguredError, que es
 # que corresponde en desarrollo.
 FCM_PROJECT_ID = os.environ.get("FCM_PROJECT_ID", "")
-FCM_SERVICE_ACCOUNT_JSON = os.environ.get("FCM_SERVICE_ACCOUNT_JSON", "")
+FCM_CREDENTIALS_JSON = os.environ.get("FCM_CREDENTIALS_JSON", "")
 
 # Resend (transactional email API). Used by accounts.services.email.send_invitation_email.
 # Empty string = service raises EmailSendError(503) on send. In dev (DJANGO_DEBUG=1)

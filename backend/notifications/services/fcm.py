@@ -46,7 +46,17 @@ class FCMNotConfiguredError(FCMError):
 
 
 def _credentials():
-	"""Credencial de la service account, cacheada por proceso.
+	"""Credencial para hablar con FCM, cacheada por proceso.
+
+	En producción el JSON es un config de **Workload Identity Federation**: el
+	EC2 firma un `GetCallerIdentity` con su rol de IAM de AWS, Google lo valida
+	contra el proveedor del pool y devuelve un token que impersona la service
+	account. No hay clave privada en ninguna parte, que es lo que la política
+	`iam.disableServiceAccountKeyCreation` de la organización obliga.
+
+	El tipo sale del campo `type` del JSON. El camino de service account sigue
+	acá por si algún día se puede volver a usar, pero hoy es teórico: esa key ni
+	se puede generar.
 
 	`google.auth` refresca el token solo cuando vence, así que alcanza con
 	guardar el objeto. El import es local para que el proyecto siga
@@ -56,20 +66,50 @@ def _credentials():
 	if _CREDENTIALS is not None:
 		return _CREDENTIALS
 
-	raw = getattr(settings, "FCM_SERVICE_ACCOUNT_JSON", "")
+	raw = getattr(settings, "FCM_CREDENTIALS_JSON", "")
 	if not raw:
-		raise FCMNotConfiguredError("FCM_SERVICE_ACCOUNT_JSON no está configurada")
+		raise FCMNotConfiguredError("FCM_CREDENTIALS_JSON no está configurada")
 
 	import json
 
-	from google.oauth2 import service_account
+	from google.auth.exceptions import GoogleAuthError
 
 	try:
 		info = json.loads(raw)
 	except ValueError as exc:
-		raise FCMNotConfiguredError(f"FCM_SERVICE_ACCOUNT_JSON no es JSON válido: {exc}") from exc
+		raise FCMNotConfiguredError(f"FCM_CREDENTIALS_JSON no es JSON válido: {exc}") from exc
 
-	_CREDENTIALS = service_account.Credentials.from_service_account_info(info, scopes=[_SCOPE])
+	tipo = info.get("type") if isinstance(info, dict) else None
+	if tipo not in ("external_account", "service_account"):
+		raise FCMNotConfiguredError(
+			f"FCM_CREDENTIALS_JSON: tipo de credencial desconocido ({tipo!r})"
+		)
+
+	# **Las constructoras directas, no `load_credentials_from_dict`.** El
+	# helper genérico hace exactamente esto y después resuelve el project id
+	# con un viaje a IMDS + STS + Resource Manager, para un project id que acá
+	# no se usa: el nuestro es `FCM_PROJECT_ID`. Eso convertía el primer envío
+	# de cada worker en tres round-trips que se cuelgan dos minutos enteros
+	# cuando el metadata service no contesta —medido: 3m45s en la suite—, y con
+	# el despachador corriendo por cron cada minuto, las corridas se solapan.
+	# Armadas así, la credencial es local y el único viaje pasa en `refresh()`,
+	# que `_access_token` ya envuelve.
+	try:
+		if tipo == "external_account":
+			from google.auth import aws
+
+			_CREDENTIALS = aws.Credentials.from_info(info, scopes=[_SCOPE])
+		else:
+			from google.oauth2 import service_account
+
+			_CREDENTIALS = service_account.Credentials.from_service_account_info(
+				info, scopes=[_SCOPE]
+			)
+	except (GoogleAuthError, ValueError, KeyError, TypeError) as exc:
+		raise FCMNotConfiguredError(
+			f"FCM_CREDENTIALS_JSON no es una credencial válida: {exc}"
+		) from exc
+
 	return _CREDENTIALS
 
 

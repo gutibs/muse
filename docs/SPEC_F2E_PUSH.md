@@ -239,9 +239,11 @@ ajustes del sistema.
   los tres idiomas **en el mismo release**, no después. El cuerpo de la
   notificación no lleva contenido sensible: dice quién y qué lugar, nunca el
   texto de una reseña.
-- **Seguridad**: la service account key de FCM va por variable de entorno y no
-  al repo. El allowlist de `gitleaks` cubre sólo `google-services.json` y no se
-  amplía para esto.
+- **Seguridad**: no hay ninguna credencial de larga vida. El backend se
+  autentica por Workload Identity Federation (§ 8.1), así que
+  `FCM_CREDENTIALS_JSON` no lleva claves y no hay nada que rotar ni que se
+  pueda filtrar. El allowlist de `gitleaks` cubre sólo `google-services.json` y
+  no se amplía para esto.
 - **Observabilidad**: cada envío deja una línea con tipo, destinatario y
   resultado. `LOGGING` ya existe desde el 2026-09-02.
 - **i18n**: tres idiomas, sin excepción — ver RF24 y RF25.
@@ -316,8 +318,9 @@ toca esa hora local. Ahí la latencia no importa.
 
 ## 8 · Stack propuesto
 
-- **FCM HTTP v1** con una service account. No hay alternativa en Android: es el
-  único transporte que el sistema operativo acepta. Una llamada HTTP por token.
+- **FCM HTTP v1**, autenticado por Workload Identity Federation (§ 8.1). No hay
+  alternativa en Android: es el único transporte que el sistema operativo
+  acepta. Una llamada HTTP por token.
 - **Inmediatas**: tabla `NotificationJob` en Postgres + management command
   `dispatch_notifications` desde el cron existente.
 - **Resumen**: management command `send_daily_digests`, horario, que arma y
@@ -327,9 +330,51 @@ toca esa hora local. Ahí la latencia no importa.
   services canónicos del proyecto.
 - **`@capacitor/push-notifications`** en el frontend. El andamiaje de Gradle ya
   está.
-- **Dependencia nueva**: `google-auth` para firmar el token de la service
-  account, con lo que arrastra. La v1 decía "sin dependencias nuevas" y en la
-  misma línea agregaba una; queda dicho de frente.
+- **Dependencia nueva**: `google-auth` para obtener el token de acceso, con lo
+  que arrastra. La v1 decía "sin dependencias nuevas" y en la misma línea
+  agregaba una; queda dicho de frente.
+
+### 8.1 · Cómo se autentica el push
+
+Sin service account key, **y no por elección**: la organización `dothecode.com`
+tiene activa `iam.disableServiceAccountKeyCreation`, así que la clave no se
+puede ni generar. Levantar esa política pedía asignarle a una persona
+`roles/orgpolicy.policyAdmin` **a nivel organización** — permiso para desactivar
+cualquier control de seguridad de la empresa, no sólo éste — para terminar
+poniendo un archivo con una clave privada dentro del EC2. Se hizo lo que la
+política empuja a hacer, que además es lo correcto.
+
+**El camino que toma un push.** El EC2 lee sus credenciales temporales del
+metadata service, firma con ellas un `GetCallerIdentity` de AWS STS y se lo
+presenta a Google STS como prueba de identidad. Google valida el ARN contra el
+proveedor del pool, devuelve un token federado, y ese token impersona la service
+account de Firebase para sacar el access token con scope `firebase.messaging`.
+La identidad la pone el rol de IAM de la instancia; no hay secreto en tránsito
+ni en reposo.
+
+**Lo que vive en GCP** (proyecto `muse-prod-498215`, todo a nivel proyecto —
+ningún rol de organización, que es justamente lo que lo destraba): las APIs
+`sts.googleapis.com` e `iamcredentials.googleapis.com`; el pool `muse-aws` y su
+proveedor `ec2`, con una `attribute-condition` atada al ARN exacto del rol de la
+instancia; y `roles/iam.workloadIdentityUser` sobre la service account para el
+principal de ese pool. La condición por ARN no es decorativa: sin ella, el
+proveedor confía en la cuenta de AWS entera.
+
+**Lo que vive en AWS**: un rol de IAM con instance profile en el EC2. Ese rol
+**no necesita un solo permiso de AWS** — existe nada más para que
+`GetCallerIdentity` devuelva un ARN estable que Google reconozca.
+
+**Lo que vive en el código**: `FCM_CREDENTIALS_JSON` (antes
+`FCM_SERVICE_ACCOUNT_JSON`; el nombre viejo mentía) con el config que escupe
+`gcloud iam workload-identity-pools create-cred-config`. `_credentials()` elige
+la constructora por el campo `type` y **no usa
+`google.auth.load_credentials_from_dict`**: ese helper resuelve además el
+project id con un viaje a IMDS + STS + Resource Manager, para un dato que acá no
+se usa porque el nuestro es `FCM_PROJECT_ID`. Fuera de AWS eso no falla rápido,
+se cuelga contra `169.254.169.254` hasta el timeout —dos minutos por llamada,
+medidos— y con el despachador corriendo por cron cada minuto las corridas se
+solapan. `test_armar_la_credencial_no_abre_ninguna_conexion` es el guardián de
+eso.
 
 ### Alternativas descartadas
 
