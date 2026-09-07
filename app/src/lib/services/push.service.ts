@@ -39,12 +39,18 @@ let channelsReady = false;
 /**
  * Crea los canales antes de que llegue la primera notificación.
  *
+ * **Se llama al arrancar la app, no al pedir el permiso.** Crear un canal no
+ * necesita permiso, y atarlo a `enable()` dejaba afuera el caso más común: quien
+ * ya dijo que sí una vez no vuelve a pasar por ahí —`settings` sólo llama a
+ * `enable()` si el permiso todavía no está dado—, así que sus notificaciones
+ * seguirían saliendo por el fallback para siempre.
+ *
  * Sólo Android: en iOS no existen los canales. Es idempotente —volver a
  * crearlos no pisa lo que la persona haya configurado— y si falla no corta el
  * registro: sin canal propio las notificaciones llegan igual, sólo que por el
  * fallback, y eso es mejor que no registrar el dispositivo.
  */
-async function ensureChannels(): Promise<void> {
+export async function ensureChannels(): Promise<void> {
 	if (channelsReady || Capacitor.getPlatform() !== 'android') return;
 	try {
 		const { PushNotifications } = await import('@capacitor/push-notifications');

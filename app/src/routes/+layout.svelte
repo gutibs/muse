@@ -19,6 +19,14 @@
 		void push.listenForTaps((path) => goto(path));
 	});
 
+	// Los canales de Android se crean acá y no al pedir el permiso: quien ya lo
+	// dio no vuelve a pasar por `enable()`, y sin canal propio sus
+	// notificaciones salen por el fallback de FCM —"Miscellaneous", sin
+	// vibración— para siempre. Crear un canal no necesita permiso.
+	$effect(() => {
+		void push.ensureChannels();
+	});
+
 	// Hardware back button (Android via Capacitor).
 	// Default Capacitor behavior is exitApp() when WebView has no history,
 	// which closes the app from /register if the user landed there directly.

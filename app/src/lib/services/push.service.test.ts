@@ -64,3 +64,20 @@ describe('los canales de notificación', () => {
 		expect(CHANNEL_SOCIAL).not.toBe(CHANNEL_DIGEST);
 	});
 });
+
+describe('cuándo se crean los canales', () => {
+	it('los crea el arranque de la app, no el pedido de permiso', async () => {
+		// El bug que este test previene: `ensureChannels` vivía dentro de
+		// `enable()`, y `settings` sólo llama a `enable()` cuando el permiso
+		// todavía no está dado. Quien ya había dicho que sí nunca volvía a pasar
+		// por ahí, así que sus canales no se creaban nunca y todas sus
+		// notificaciones salían por el fallback de FCM.
+		const fs = await import('node:fs');
+		const path = await import('node:path');
+		const layout = fs.readFileSync(
+			path.resolve(__dirname, '../../routes/+layout.svelte'),
+			'utf-8'
+		);
+		expect(layout).toContain('ensureChannels');
+	});
+});
