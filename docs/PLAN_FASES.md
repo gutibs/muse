@@ -412,15 +412,24 @@ actual asume que escribir requiere JWT.
   canal de acoso sin remedio.
 - Throttle propio, que recién es real con el Redis del bloque 0.
 
-### F2.E — Push notifications ✅ HECHO (2026-09-06)
+### F2.E — Push notifications ✅ HECHO Y PROBADO (2026-09-07)
 
 Spec en `docs/SPEC_F2E_PUSH.md` (v3). Salió con **esquema mixto**: lo dirigido a
 una persona llega al instante por una cola en Postgres; la actividad de los
 amigos llega como resumen diario a la hora local que elige cada uno. Eso
 eliminó el fan-out, la agrupación como deuda futura y el problema del huso
-horario. Falta medir una corrida del despachador en el EC2 antes de fijar la
-frecuencia del cron, y la parte de iOS sigue bloqueada por el trámite de
-titularidad.
+horario.
+
+**Probado de punta a punta el 2026-09-07** con la V1.4.1 en un Galaxy S23+: el
+permiso, el token registrado, la notificación entregada 267 ms después del envío
+y el deep link abriendo donde debía. Se autentica por **Workload Identity
+Federation** (§ 8.1 de la spec): el EC2 se identifica con su rol de IAM de AWS y
+no hay ninguna clave privada en ningún lado.
+
+Queda medir el throughput con volumen —hoy 1,9 s por corrida, pero con un solo
+token no se extrapola— y el canal `muse_digest`, que no se pudo ver en el
+teléfono por no haber amigos con actividad. iOS sigue bloqueado por el trámite
+de titularidad.
 
 Lo que decía el plan original:
 
@@ -532,6 +541,39 @@ Places si la caché no está bien hecha, y las queries agregadas del dashboard c
 en vivo sobre la tabla de eventos. Las dos están cubiertas arriba.
 
 ---
+
+## Pendientes de publicación — verificados contra el código el 2026-09-07
+
+Lo que hay que terminar en la app antes de que la use gente de verdad. Cada
+punto se verificó en el repo, no en notas: dos que se daban por abiertos **ya
+estaban resueltos** y salieron de esta lista — la pantalla `/shared/` ya sirve la
+ruta Svelte real en vez de la copia de 318 líneas, y `settings.appVersion` ya
+sale de `__APP_VERSION__` en vez de estar hardcodeada.
+
+- **Los tres documentos legales no nombran la entidad.** `gdpr.html`, `pdpo.html`
+  y `terms.html` dicen "Muse operates as an online service" y "we act as the
+  data controller", pero ninguno lleva razón social ni domicilio. El art. 13(1)(a)
+  del GDPR exige identidad y datos de contacto del responsable, y "Muse" a secas
+  no alcanza. Las menciones de Hong Kong en los términos son jurisdicción, no la
+  entidad. Falta el dato; el cambio son tres archivos.
+- **Las notificaciones arrancan encendidas.** 17 perfiles hoy. La spec de F2.E ya
+  dice que eso no alcanza como consentimiento GDPR para lo que no es
+  transaccional: o el default pasa a apagado, o se pide consentimiento explícito
+  en el alta.
+- **La política declara "aggregate analytics"** y los eventos llevan `user_id` +
+  venue + timestamp, que no es agregado. Cambia el texto o cambia lo que se
+  guarda.
+- **No hay crédito "Developed by DoTheCode"** en ningún lado: ni en la app ni en
+  el footer de la landing.
+- **`settings.appVersion` dice "(MVP)"** en los tres idiomas. Cosmético, pero lo
+  ve cada persona que abra Ajustes.
+- **El `collectstatic` de `Dockerfile.prod:15`** sigue con `2>/dev/null || true`:
+  falla en silencio desde siempre. Misma forma que ya rompió un deploy con
+  `compilemessages`.
+- **El único TODO real del código**, en `pins/signals.py:63`: un comando
+  `dedupe_pin_updates` que limpie las `Activity(UPDATED)` históricas de guardados
+  que no cambiaban nada. Marcado para cuando el ruido sea una queja real — con el
+  feed y el resumen diario andando, eso se va a saber pronto.
 
 ## Pendientes que no bloquean el arranque
 
