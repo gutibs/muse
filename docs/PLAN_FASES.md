@@ -412,7 +412,17 @@ actual asume que escribir requiere JWT.
   canal de acoso sin remedio.
 - Throttle propio, que recién es real con el Redis del bloque 0.
 
-### F2.E — Push notifications
+### F2.E — Push notifications ✅ HECHO (2026-09-06)
+
+Spec en `docs/SPEC_F2E_PUSH.md` (v3). Salió con **esquema mixto**: lo dirigido a
+una persona llega al instante por una cola en Postgres; la actividad de los
+amigos llega como resumen diario a la hora local que elige cada uno. Eso
+eliminó el fan-out, la agrupación como deuda futura y el problema del huso
+horario. Falta medir una corrida del despachador en el EC2 antes de fijar la
+frecuencia del cron, y la parte de iOS sigue bloqueada por el trámite de
+titularidad.
+
+Lo que decía el plan original:
 
 La más grande de las dos fases, y la única con dependencias fuera del repo: proyecto
 Firebase y, para iOS, cuenta Apple Developer capaz de generar el APNs key.
