@@ -12,14 +12,20 @@ RUN pip install --no-cache-dir -r requirements/base.txt
 
 COPY . .
 
-RUN python manage.py collectstatic --noinput 2>/dev/null || true
-
-# Los .mo NO se compilan acá: vienen versionados en locale/, y un test
-# verifica que estén al día con sus .po. Intentar `compilemessages` en el
-# build no funciona —`manage.py` carga settings.py, que exige
-# DJANGO_SECRET_KEY, y en build time no hay env—; el 2026-09-06 eso dejó el
-# deploy en rojo. Es la misma razón por la que el collectstatic de arriba
-# lleva `|| true` y nunca hizo nada.
+# **Acá no se recolectan estáticos ni se compilan traducciones**, y las dos
+# omisiones son deliberadas:
+#
+# - Los estáticos los arma `nginx/Dockerfile.aws:27`, que corre `collectstatic`
+#   con `DJANGO_SECRET_KEY=build` inline y **sin** `|| true`, y copia el
+#   resultado a la imagen que los sirve. Acá vivía la misma línea con
+#   `2>/dev/null || true`: nunca hizo nada —`manage.py` carga settings.py, que
+#   exige la SECRET_KEY, y en build time no hay env— y su salida tampoco se
+#   usaba, porque este contenedor no sirve archivos. Era código muerto que se
+#   leía como un bug.
+# - Los `.mo` vienen versionados en `locale/`, con un test que verifica que
+#   estén al día con sus `.po`. Intentar `compilemessages` acá falla por la
+#   misma razón que fallaba el collectstatic, y el 2026-09-06 dejó el deploy en
+#   rojo.
 
 EXPOSE 8000
 CMD ["sh", "-c", "python manage.py migrate --fake-initial && gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3"]

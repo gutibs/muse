@@ -435,7 +435,8 @@ const translations: Record<Locale, Record<string, string>> = {
 		'settings.deletingAccount': 'Deleting...',
 		'settings.cantDeleteAccount': 'Could not delete the account.',
 		'settings.appName': 'Muse',
-		'settings.appVersion': 'Version {version} (MVP)',
+		'settings.appVersion': 'Version {version}',
+		'settings.developedBy': 'Developed by',
 
 		// Users page
 		'users.notFriends': 'You need to be friends with this user to see their pins.',
@@ -939,7 +940,8 @@ const translations: Record<Locale, Record<string, string>> = {
 		'settings.deletingAccount': 'Eliminando...',
 		'settings.cantDeleteAccount': 'No se pudo eliminar la cuenta.',
 		'settings.appName': 'Muse',
-		'settings.appVersion': 'Versión {version} (MVP)',
+		'settings.appVersion': 'Versión {version}',
+		'settings.developedBy': 'Desarrollada por',
 
 		'users.notFriends': 'Tienes que ser amigo de este usuario para ver sus pins.',
 		'users.notFound': 'Usuario no encontrado.',
@@ -1438,7 +1440,8 @@ const translations: Record<Locale, Record<string, string>> = {
 		'settings.deletingAccount': 'Eliminazione...',
 		'settings.cantDeleteAccount': 'Impossibile eliminare l’account.',
 		'settings.appName': 'Muse',
-		'settings.appVersion': 'Versione {version} (MVP)',
+		'settings.appVersion': 'Versione {version}',
+		'settings.developedBy': 'Sviluppata da',
 
 		'users.notFriends': "Devi essere amico di questo utente per vedere i suoi pin.",
 		'users.notFound': 'Utente non trovato.',

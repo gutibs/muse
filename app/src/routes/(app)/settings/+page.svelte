@@ -447,6 +447,12 @@
 				<div class="rounded-card bg-white p-4 shadow-card">
 					<div class="text-sm font-medium text-ink">{t('settings.appName')}</div>
 					<div class="text-xs text-ink-muted">{t('settings.appVersion', { version: __APP_VERSION__ })}</div>
+					<div class="mt-2 text-xs text-ink-muted">
+						{t('settings.developedBy')}
+						<a href="https://dothecode.com" target="_blank" rel="noopener noreferrer" class="underline active:opacity-70">
+							DoTheCode
+						</a>
+					</div>
 				</div>
 			</div>
 		</section>
