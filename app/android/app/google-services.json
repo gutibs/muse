@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "298007502065",
-    "project_id": "muse-d8986",
-    "storage_bucket": "muse-d8986.firebasestorage.app"
+    "project_number": "742614029099",
+    "project_id": "muse-prod-498215",
+    "storage_bucket": "muse-prod-498215.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:298007502065:android:65a03916ed2ca8dc2c1d50",
+        "mobilesdk_app_id": "1:742614029099:android:4e25c02cd9fd839c78ab6e",
         "android_client_info": {
           "package_name": "app.muse.mobile"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBTr-RV8W3zVGdWrncmmvT72kDtzg4yO24"
+          "current_key": "AIzaSyB-HTJ_67LH62Z0k14Hc9jrjYwqqkuzHsE"
         }
       ],
       "services": {
