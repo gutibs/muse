@@ -18,7 +18,36 @@ import { logSilent } from '$lib/utils/logger';
  */
 
 let registered = false;
-let currentToken: string | null = null;
+
+/**
+ * El token vive en localStorage y no sólo en memoria.
+ *
+ * En memoria se perdía en el caso más común: abrir la app con la sesión ya
+ * guardada no pasa por `login()`, así que nada llamaba a `enable()` y
+ * `currentToken` quedaba null. Al cerrar sesión no se mandaba el DELETE y la
+ * fila seguía atada a la cuenta anterior — ese teléfono seguía recibiendo sus
+ * notificaciones hasta 90 días. Es justo lo que la política publicada dice que
+ * no pasa ("se borra cuando cerrás sesión").
+ */
+const TOKEN_KEY = 'muse_push_token';
+
+function readToken(): string | null {
+	try {
+		return localStorage.getItem(TOKEN_KEY);
+	} catch {
+		return null;
+	}
+}
+
+function writeToken(value: string | null) {
+	try {
+		if (value) localStorage.setItem(TOKEN_KEY, value);
+		else localStorage.removeItem(TOKEN_KEY);
+	} catch {
+		// Storage bloqueado: se sigue sin recordar el token. El backend lo
+		// limpia igual cuando FCM lo rechace o pasen los 90 días.
+	}
+}
 
 function available(): boolean {
 	return Capacitor.isNativePlatform();
@@ -61,7 +90,7 @@ export async function enable(): Promise<boolean> {
 			// Los listeners van antes del register: el token llega por evento y
 			// si el listener no está puesto todavía, se pierde.
 			await PushNotifications.addListener('registration', (token) => {
-				currentToken = token.value;
+				writeToken(token.value);
 				void sendToken(token.value);
 			});
 			await PushNotifications.addListener('registrationError', (err) => {
@@ -95,13 +124,14 @@ async function sendToken(token: string): Promise<void> {
  * anterior — que es peor que no recibir ninguna.
  */
 export async function disable(): Promise<void> {
-	if (!available() || !currentToken) return;
+	const token = readToken();
+	if (!available() || !token) return;
 	try {
-		await api.delete('/notifications/devices/', { token: currentToken });
+		await api.delete('/notifications/devices/', { token });
 	} catch (err) {
 		logSilent('push.disable', err);
 	} finally {
-		currentToken = null;
+		writeToken(null);
 	}
 }
 

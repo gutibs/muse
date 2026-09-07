@@ -66,6 +66,14 @@ class AuthStore {
 
 		try {
 			this.user = await authService.getProfile();
+			// También al arrancar, no sólo al iniciar sesión. Quien no cierra
+			// sesión nunca —lo normal, con el refresh de JWT— jamás pasaba por
+			// acá: su zona horaria quedaba congelada en la del día que se
+			// registró, así que el resumen le llegaba a la hora equivocada si
+			// se mudaba; y su token de dispositivo no se volvía a registrar, de
+			// modo que `last_seen_at` envejecía y la limpieza de los 90 días se
+			// lo borraba estando en uso.
+			await this.syncDeviceContext();
 		} catch (err) {
 			// This is the path behind every "it logged me out on its own"
 			// report: the stored token was rejected or the profile call

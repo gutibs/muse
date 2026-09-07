@@ -18,8 +18,7 @@ from django.db import IntegrityError, transaction
 from django.utils import timezone as dj_timezone
 from django.utils import translation
 
-from accounts.services.friendships import friend_ids
-from accounts.services.visibility import visible_pin_filter
+from accounts.services.visibility import visible_friend_ids, visible_pin_filter
 from feed.models import Activity
 from notifications.models import DigestLog
 from notifications.services import fcm
@@ -59,12 +58,18 @@ def local_date(profile, *, now=None):
 def collect(user, *, now=None) -> list[Activity]:
 	"""La actividad visible de los amigos de `user` en las últimas 24 horas.
 
-	Pasa por `visible_pins`, así que respeta el nivel de cada pin y el bloqueo
-	—`friend_ids` ya excluye a quien te bloqueó—. Un pin que dejó de ser
-	visible desde que ocurrió no aparece: se evalúa ahora, no cuando pasó.
+	Un pin que dejó de ser visible desde que ocurrió no aparece: se evalúa
+	ahora, no cuando pasó.
+
+	Usa `visible_friend_ids` y NO `friend_ids`. La diferencia es el bloqueo:
+	`friend_ids` no lo mira, y `visibility.py` dice explícitamente que no se
+	use en superficies de "datos de mis amigos". Hoy `visible_pin_filter`
+	tapaba el agujero por el join con el pin, pero el filtro de `Activity` por
+	`actor_id` era ciego al bloqueo y quedaba a salvo de casualidad: un cambio
+	en esa política y el nombre de alguien bloqueado aparecía en el resumen.
 	"""
 	now = now or dj_timezone.now()
-	friends = friend_ids(user)
+	friends = visible_friend_ids(user)
 	if not friends:
 		return []
 

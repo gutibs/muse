@@ -120,6 +120,29 @@ class ProfileSerializer(serializers.ModelSerializer):
 		}
 
 
+# Lo que NO se entrega en el perfil de otra persona.
+#
+# Vive acá afuera porque el peligro de `ForeignProfileSerializer` es que crece
+# por omisión: hereda los campos de `ProfileSerializer`, así que **cada campo
+# nuevo del perfil propio aparece solo en el perfil ajeno** salvo que alguien
+# se acuerde de excluirlo. Ya pasó con `email` y `phone`.
+#
+# Los de F2.E: `timezone` es una señal de ubicación (`Asia/Hong_Kong`) y junto
+# con `digest_hour` le dice a cualquier amigo a qué hora exacta le suena el
+# teléfono a otro. Las preferencias de notificación y el idioma son
+# configuración privada: no hacen falta para dibujar el perfil de nadie.
+_PRIVATE_PROFILE_FIELDS = (
+	"email",
+	"phone",
+	"notify_friend_request",
+	"notify_friend_accepted",
+	"notify_daily_digest",
+	"language",
+	"timezone",
+	"digest_hour",
+)
+
+
 class ForeignProfileSerializer(ProfileSerializer):
 	"""El perfil de otra persona: lo mismo, menos los datos de contacto.
 
@@ -137,7 +160,7 @@ class ForeignProfileSerializer(ProfileSerializer):
 	"""
 
 	class Meta(ProfileSerializer.Meta):
-		fields = tuple(f for f in ProfileSerializer.Meta.fields if f not in ("email", "phone"))
+		fields = tuple(f for f in ProfileSerializer.Meta.fields if f not in _PRIVATE_PROFILE_FIELDS)
 		read_only_fields = tuple(f for f in ProfileSerializer.Meta.read_only_fields if f != "email")
 
 

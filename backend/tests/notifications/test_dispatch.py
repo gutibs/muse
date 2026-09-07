@@ -374,3 +374,142 @@ def test_los_nombres_largos_se_truncan():
 	assert dispatch.truncate(largo, dispatch.TITLE_MAX).endswith("…")
 	# Lo que entra no se toca.
 	assert dispatch.truncate("corto", dispatch.TITLE_MAX) == "corto"
+
+
+# --- Lo que encontró la revisión adversarial ------------------------------
+
+
+@pytest.mark.critical
+@pytest.mark.django_db
+def test_el_perfil_ajeno_no_entrega_las_preferencias_ni_la_zona_horaria():
+	"""`timezone` es una señal de ubicación y `digest_hour` dice cuándo suena.
+
+	`ForeignProfileSerializer` hereda los campos del perfil propio, así que
+	cada campo nuevo aparece solo ahí salvo que se lo excluya. Ya pasó con el
+	email y el teléfono; esto fija que no vuelva a pasar.
+	"""
+	me, other = UserFactory(), UserFactory()
+	FriendshipFactory(from_user=me, to_user=other, status=Friendship.Status.ACCEPTED)
+
+	res = _auth(me).get(reverse("public_profile", args=[other.pk]))
+
+	assert res.status_code == 200
+	for campo in (
+		"timezone",
+		"digestHour",
+		"notifyFriendRequest",
+		"notifyFriendAccepted",
+		"notifyDailyDigest",
+		"language",
+		"email",
+		"phone",
+	):
+		assert campo not in res.json(), f"el perfil ajeno filtra {campo}"
+
+
+@pytest.mark.critical
+@pytest.mark.django_db
+def test_un_error_de_payload_no_borra_los_tokens_de_nadie():
+	"""FCM devuelve INVALID_ARGUMENT ante cualquier request malformada.
+
+	Si se tratara como token muerto, un error de payload haría que el cron
+	borrara todos los tokens de todos los usuarios, uno por minuto.
+	"""
+	receiver = UserFactory()
+	DeviceToken.objects.create(user=receiver, token="tok-1")
+	DeviceToken.objects.create(user=receiver, token="tok-2")
+	_job(receiver, UserFactory())
+
+	with patch(
+		"notifications.services.fcm.send",
+		side_effect=FCMError("FCM 400 INVALID_ARGUMENT: bad payload"),
+	):
+		dispatch.run_pending()
+
+	assert DeviceToken.objects.filter(user=receiver).count() == 2, "borró tokens vivos"
+
+
+@pytest.mark.django_db
+def test_un_fallo_inesperado_no_mata_el_lote_ni_traba_la_cola():
+	"""Una credencial revocada lanza RefreshError, que no es FCMError.
+
+	Sin captura ancha se escapaba de `run_pending`, mataba la corrida y dejaba
+	los jobs en `processing` para siempre: se liberaban a los 10 minutos y
+	volvían a explotar, sin llegar nunca a FAILED.
+	"""
+	receiver = UserFactory()
+	DeviceToken.objects.create(user=receiver, token="tok-1")
+	_job(receiver, UserFactory())
+
+	with patch("notifications.services.fcm.send", side_effect=RuntimeError("credencial revocada")):
+		stats = dispatch.run_pending()
+
+	job = NotificationJob.objects.get()
+	assert stats["failed"] == 1
+	assert job.attempts == 1, "el intento tiene que quedar contado"
+	assert job.state == NotificationJob.State.PENDING
+	assert "revocada" in job.last_error
+
+
+@pytest.mark.django_db
+def test_un_tipo_sin_texto_no_bloquea_la_cola_entera():
+	"""`render` lanza para un tipo desconocido y estaba fuera del try.
+
+	Como el despachador ordena por fecha, ese job quedaba a la cabeza de cada
+	corrida y todo lo que venía detrás no se despachaba nunca. Pasa en un
+	deploy donde un contenedor nuevo encola algo que el viejo no sabe mandar.
+	"""
+	receiver = UserFactory()
+	DeviceToken.objects.create(user=receiver, token="tok-1")
+	roto = _job(receiver, UserFactory())
+	NotificationJob.objects.filter(pk=roto.pk).update(kind="tipo_que_no_existe")
+	bueno = _job(receiver, UserFactory())
+
+	with patch("notifications.services.fcm.send") as send:
+		dispatch.run_pending()
+
+	assert send.call_count == 1, "el job sano tiene que salir igual"
+	assert NotificationJob.objects.get(pk=bueno.pk).state == NotificationJob.State.SENT
+
+
+@pytest.mark.critical
+@pytest.mark.django_db
+def test_bloquear_antes_del_despacho_cancela_la_notificacion():
+	"""Entre encolar y mandar pasa hasta un minuto: alcanza para bloquear."""
+	from accounts.models import Block
+
+	receiver, actor = UserFactory(), UserFactory()
+	DeviceToken.objects.create(user=receiver, token="tok-1")
+	_job(receiver, actor)
+
+	Block.objects.create(blocker=receiver, blocked=actor)
+
+	with patch("notifications.services.fcm.send") as send:
+		stats = dispatch.run_pending()
+
+	send.assert_not_called()
+	assert stats["discarded"] == 1
+
+
+@pytest.mark.django_db
+def test_una_amistad_que_nace_aceptada_avisa_a_quien_invito(django_capture_on_commit_callbacks):
+	"""Es el caso de la invitación por email: la fila se crea ya en ACCEPTED."""
+	inviter, invited = UserFactory(), UserFactory()
+
+	with django_capture_on_commit_callbacks(execute=True):
+		FriendshipFactory(from_user=inviter, to_user=invited, status=Friendship.Status.ACCEPTED)
+
+	job = NotificationJob.objects.get()
+	assert job.recipient == inviter, "se entera quien invitó, no quien se registró"
+	assert job.kind == NotificationJob.Kind.FRIENDSHIP_ACCEPTED
+
+
+@pytest.mark.django_db
+def test_una_hora_de_resumen_fuera_de_rango_se_rechaza():
+	"""Un 25 guardado en silencio dejaba a esa persona sin resumen para siempre."""
+	user = UserFactory()
+	res = _auth(user).patch(reverse("profile"), {"digestHour": 25}, format="json")
+	assert res.status_code == 400
+
+	user.profile.refresh_from_db()
+	assert user.profile.digest_hour == 19

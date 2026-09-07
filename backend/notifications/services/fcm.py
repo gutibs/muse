@@ -21,7 +21,15 @@ _TIMEOUT = 10
 # Lo que FCM devuelve cuando el token ya no sirve. No se reintenta: se borra.
 # Sin esto la tabla se llena de teléfonos que no existen y cada envío se hace
 # más lento.
-DEAD_TOKEN_ERRORS = frozenset({"UNREGISTERED", "INVALID_ARGUMENT", "NOT_FOUND"})
+#
+# **`INVALID_ARGUMENT` NO está acá a propósito.** FCM lo devuelve para
+# cualquier request malformada, no sólo por un token inválido: una clave
+# reservada en `data`, un bloque `android` mal armado o un `FCM_PROJECT_ID` con
+# forma equivocada devuelven lo mismo. Si estuviera en esta lista, un error de
+# payload haría que el despachador borrara **todos los tokens de todos los
+# usuarios**, uno por minuto, dejando como único rastro un `logger.info`. La
+# recuperación sería que cada persona vuelva a iniciar sesión.
+DEAD_TOKEN_ERRORS = frozenset({"UNREGISTERED", "NOT_FOUND"})
 
 
 class FCMError(Exception):
@@ -69,11 +77,25 @@ _CREDENTIALS = None
 
 
 def _access_token() -> str:
+	"""Token de acceso, refrescándolo si venció.
+
+	El `except Exception` es deliberado y no es un catch mudo: `creds.refresh`
+	puede fallar por una clave revocada, un reloj desfasado o un corte de red,
+	y esas excepciones son de `google.auth`, no de este módulo. Sin traducirlas
+	a `FCMError` se escapan de `run_pending`, matan el lote entero y dejan los
+	jobs en `processing` para siempre — se liberan a los 10 minutos y vuelven a
+	explotar, sin llegar nunca a `FAILED`.
+	"""
 	from google.auth.transport.requests import Request
 
 	creds = _credentials()
 	if not creds.valid:
-		creds.refresh(Request())
+		try:
+			creds.refresh(Request())
+		except FCMError:
+			raise
+		except Exception as exc:
+			raise FCMError(f"no se pudo refrescar la credencial de FCM: {exc}") from exc
 	return creds.token
 
 

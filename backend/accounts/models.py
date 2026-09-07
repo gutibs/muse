@@ -2,6 +2,7 @@ import uuid
 
 from django.conf import settings
 from django.contrib.gis.db import models as gis_models
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils import timezone
 
@@ -85,7 +86,14 @@ class Profile(models.Model):
 	# horario del servidor —Buenos Aires— y a los usuarios de Hong Kong les
 	# llega a las cuatro de la mañana: once horas de diferencia.
 	timezone = models.CharField(max_length=64, default="UTC")
-	digest_hour = models.PositiveSmallIntegerField(default=19)
+	# Con validadores y no a secas: `PositiveSmallIntegerField` acepta hasta
+	# 32767, y `digest.is_due` compara `local.hour == digest_hour`. Un PATCH
+	# con 25 se guardaba sin protestar y esa persona no recibía nunca más un
+	# resumen, sin error en ningún lado.
+	digest_hour = models.PositiveSmallIntegerField(
+		default=19,
+		validators=[MinValueValidator(0), MaxValueValidator(23)],
+	)
 
 	# F1.7 — la marca que Muse otorga a mano desde el admin. Es de sólo
 	# lectura por la API: si entrara por `ProfileSerializer`, cualquiera se

@@ -15,6 +15,7 @@ from django.db import IntegrityError, transaction
 from django.utils import timezone as dj_timezone
 from django.utils import translation
 
+from accounts.services.blocking import is_blocked
 from notifications.models import DeviceToken, NotificationJob
 from notifications.services import fcm
 
@@ -204,9 +205,26 @@ def run_pending(batch_size: int = 50) -> dict:
 			stats["discarded"] += 1
 			continue
 
-		title, body = render(job)
+		# El bloqueo se revalida acá y no sólo al encolar: entre una cosa y la
+		# otra pasa hasta un minuto, y ese minuto alcanza para que alguien
+		# bloquee a quien le mandó una solicitud. Sin esto, la notificación
+		# "X quiere conectarse" llega igual después del bloqueo.
+		if job.actor_id and is_blocked(job.recipient, job.actor):
+			job.state = NotificationJob.State.DISCARDED
+			job.last_error = "blocked"
+			job.save(update_fields=["state", "last_error", "updated_at"])
+			stats["discarded"] += 1
+			continue
+
 		job.attempts += 1
 		try:
+			# `render` va DENTRO del try. Afuera, un tipo sin texto —una
+			# `Kind` nueva encolada por un contenedor y despachada por uno
+			# viejo durante un deploy— lanzaba y mataba el lote entero. Como
+			# `_claim` ordena por `created_at`, ese job queda a la cabeza de
+			# cada corrida: se libera a los 10 minutos, vuelve a explotar, y
+			# todo lo que está detrás no se despacha nunca.
+			title, body = render(job)
 			push_to_user(
 				job.recipient,
 				title=title,
@@ -216,12 +234,17 @@ def run_pending(batch_size: int = 50) -> dict:
 					**{k: v for k, v in job.context.items() if k != "actor_name"},
 				},
 			)
-		except fcm.FCMError as exc:
-			job.last_error = exc.message[:500]
+		except Exception as exc:
+			# Ancho a propósito: cualquier cosa que falle en un job tiene que
+			# dejarlo contabilizado y seguir con el siguiente. Lo que no puede
+			# pasar es que una excepción inesperada corte la corrida y deje la
+			# cola tomada.
+			job.last_error = str(exc)[:500]
 			over = job.attempts >= NotificationJob.MAX_ATTEMPTS
 			job.state = NotificationJob.State.FAILED if over else NotificationJob.State.PENDING
 			job.locked_at = None
 			job.save(update_fields=["state", "attempts", "last_error", "locked_at", "updated_at"])
+			logger.warning("job %s falló (intento %s): %s", job.pk, job.attempts, exc)
 			stats["failed"] += 1
 			continue
 

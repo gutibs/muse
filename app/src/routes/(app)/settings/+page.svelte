@@ -49,8 +49,13 @@
 		{ key: 'notifyDailyDigest', label: 'settings.notifyDailyDigest' }
 	] as const;
 
-	async function toggleNotification(key: string, value: boolean) {
+	let notificationError = $state('');
+
+	type NotificationKey = (typeof NOTIFICATION_PREFS)[number]['key'];
+
+	async function toggleNotification(key: NotificationKey, value: boolean, input: HTMLInputElement) {
 		savingNotification = key;
+		notificationError = '';
 		try {
 			await authStore.updateProfile({ [key]: value });
 			// Encender una preferencia sin permiso del sistema no sirve de nada,
@@ -60,8 +65,20 @@
 				await push.enable();
 				pushPermission = await push.permissionState();
 			}
+			// Con las tres apagadas no queda nada que mandar, así que el token
+			// se da de baja. La política publicada dice que se borra "cuando
+			// apagás las notificaciones"; dejar la fila ahí la desmentiría.
+			const quedaAlguna = NOTIFICATION_PREFS.some((p) =>
+				p.key === key ? value : Boolean(authStore.user?.[p.key])
+			);
+			if (!quedaAlguna) await push.disable();
 		} catch (err) {
 			logSilent('settings:notificationPref', err);
+			// El navegador ya movió el checkbox y el perfil no cambió, así que
+			// Svelte no tiene de dónde volver a dibujarlo: sin esto la pantalla
+			// dice "apagado" mientras el servidor sigue mandando.
+			input.checked = Boolean(authStore.user?.[key]);
+			notificationError = t('settings.notificationSaveFailed');
 		} finally {
 			savingNotification = '';
 		}
@@ -362,6 +379,12 @@
 			<div class="mt-3 rounded-card bg-white p-4 shadow-card">
 				<h3 class="text-sm font-medium text-ink">{t('settings.notifications')}</h3>
 
+				{#if notificationError}
+					<p class="mt-2 rounded-button bg-blush-light/20 px-3 py-2 text-xs text-blush">
+						{notificationError}
+					</p>
+				{/if}
+
 				{#if pushPermission === 'denied'}
 					<p class="mt-2 rounded-button bg-blush-light/20 px-3 py-2 text-xs text-blush">
 						{t('settings.notificationsBlocked')}
@@ -376,7 +399,7 @@
 							class="h-6 w-6 shrink-0 accent-jade"
 							checked={Boolean(authStore.user?.[pref.key])}
 							disabled={savingNotification === pref.key}
-							onchange={(e) => toggleNotification(pref.key, e.currentTarget.checked)}
+							onchange={(e) => toggleNotification(pref.key, e.currentTarget.checked, e.currentTarget)}
 						/>
 					</label>
 				{/each}

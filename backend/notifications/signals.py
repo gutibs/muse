@@ -34,6 +34,27 @@ def notify_friendship(sender, instance, created, **kwargs):
 	generar los dos avisos —uno al pedir y otro al aceptar— pero ninguno dos
 	veces, ni siquiera si alguien restaura un backup.
 	"""
+	if created and instance.status == Friendship.Status.ACCEPTED:
+		# Una amistad que nace aceptada es la de una invitación por email:
+		# `RegisterSerializer._consume_invitations` la crea así cuando la
+		# persona invitada se registra. Sin esta rama no se notificaba a nadie
+		# —ni "te llegó una solicitud" ni "te la aceptaron"—, justo en el
+		# momento para el que la feature existe en ese flujo: quien invitó se
+		# entera de que su invitado entró.
+		transaction.on_commit(
+			lambda: notify(
+				recipient=instance.from_user,
+				actor=instance.to_user,
+				kind=NotificationJob.Kind.FRIENDSHIP_ACCEPTED,
+				context={
+					"actor_name": _display_name(instance.to_user),
+					"actor_id": instance.to_user_id,
+				},
+				idempotency_key=f"friendship:{instance.pk}:accepted",
+			)
+		)
+		return
+
 	if created and instance.status == Friendship.Status.PENDING:
 		transaction.on_commit(
 			lambda: notify(
