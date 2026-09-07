@@ -118,6 +118,17 @@ hay que saber para operar.
   de este lado también.
 - `FCM_CREDENTIALS_JSON` en el `.env` del server es el config de WIF: **URLs y
   un audience, sin claves**. No es un secreto y no hay nada que rotar.
+- **El hop limit de IMDS tiene que quedar en 2 o más.** El backend corre dentro
+  de Docker, y cada salto de red gasta uno: con el límite en 1 el contenedor no
+  llega al metadata service y el push muere sin que nada más se entere. Hoy está
+  en 2 y la instancia exige IMDSv2 (`HttpTokens: required`), que es lo que el
+  config contempla con `imdsv2_session_token_url`.
+
+Lo que existe hoy, para no adivinarlo: pool `muse-aws` y proveedor `muse-ec2` en
+`muse-prod-498215`; service account `muse-push@muse-prod-498215.iam.gserviceaccount.com`
+con el rol custom `musePushSender` (un permiso: `cloudmessaging.messages.create`);
+rol de AWS `muse-push-ec2` en la cuenta `279078306330`, atado en la
+`attribute-condition` del proveedor.
 
 ## Pendiente
 

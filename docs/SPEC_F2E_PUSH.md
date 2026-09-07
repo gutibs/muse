@@ -355,7 +355,7 @@ ni en reposo.
 **Lo que vive en GCP** (proyecto `muse-prod-498215`, todo a nivel proyecto —
 ningún rol de organización, que es justamente lo que lo destraba): las APIs
 `sts.googleapis.com` e `iamcredentials.googleapis.com`; el pool `muse-aws` y su
-proveedor `ec2`, con una `attribute-condition` atada al ARN exacto del rol de la
+proveedor `muse-ec2`, con una `attribute-condition` atada al ARN exacto del rol de la
 instancia; y `roles/iam.workloadIdentityUser` sobre la service account para el
 principal de ese pool. La condición por ARN no es decorativa: sin ella, el
 proveedor confía en la cuenta de AWS entera.

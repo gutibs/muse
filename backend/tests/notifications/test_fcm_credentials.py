@@ -24,26 +24,19 @@ from notifications.services.fcm import FCMNotConfiguredError
 # pool y el proveedor de Muse. Está entero acá a propósito: si algún día alguien
 # cambia la forma del config, este test dice exactamente qué campo se movió.
 WIF_CONFIG = {
+	"universe_domain": "googleapis.com",
 	"type": "external_account",
-	"audience": (
-		"//iam.googleapis.com/projects/742614029099/locations/global"
-		"/workloadIdentityPools/muse-aws/providers/ec2"
-	),
+	"audience": "//iam.googleapis.com/projects/742614029099/locations/global/workloadIdentityPools/muse-aws/providers/muse-ec2",
 	"subject_token_type": "urn:ietf:params:aws:token-type:aws4_request",
-	"service_account_impersonation_url": (
-		"https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts"
-		"/muse-push@muse-prod-498215.iam.gserviceaccount.com:generateAccessToken"
-	),
 	"token_url": "https://sts.googleapis.com/v1/token",
 	"credential_source": {
 		"environment_id": "aws1",
 		"region_url": "http://169.254.169.254/latest/meta-data/placement/availability-zone",
 		"url": "http://169.254.169.254/latest/meta-data/iam/security-credentials",
-		"regional_cred_verification_url": (
-			"https://sts.{region}.amazonaws.com?Action=GetCallerIdentity&Version=2011-06-15"
-		),
+		"regional_cred_verification_url": "https://sts.{region}.amazonaws.com?Action=GetCallerIdentity&Version=2011-06-15",
 		"imdsv2_session_token_url": "http://169.254.169.254/latest/api/token",
 	},
+	"service_account_impersonation_url": "https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/muse-push@muse-prod-498215.iam.gserviceaccount.com:generateAccessToken",
 }
 
 
