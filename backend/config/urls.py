@@ -13,6 +13,7 @@ urlpatterns = [
 	path("api/v1/", include("analytics.urls")),
 	path("api/v1/notifications/", include("notifications.urls")),
 	path("api/v1/", include("releases.urls")),
+	path("api/v1/", include("imports.urls")),
 ]
 
 if settings.DEBUG:

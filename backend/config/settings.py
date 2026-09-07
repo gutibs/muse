@@ -50,6 +50,7 @@ INSTALLED_APPS = [
 	"analytics",
 	"notifications",
 	"releases",
+	"imports",
 ]
 
 MIDDLEWARE = [

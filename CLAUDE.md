@@ -111,7 +111,13 @@ podés romper sin romper el producto:
     `{"detail": ...}`. Cuando agregues uno: envolvelo en `_()`, corré
     `makemessages -l es -l it` y traducí las entradas nuevas en
     `backend/locale/<lang>/LC_MESSAGES/django.po`, y **corré `compilemessages`
-    en el mismo commit**: los `.mo` SÍ van al repo. Se probó lo contrario el
+    en el mismo commit**: los `.mo` SÍ van al repo.
+    **Mirá las entradas `#, fuzzy`.** `makemessages` recicla la traducción de un
+    mensaje viejo parecido y marca la entrada como dudosa — "The file has no
+    rows." salió con "La URL de reserva no tiene dominio." encima. El runtime
+    **ignora** las fuzzy, así que el mensaje aparece en inglés y el test de
+    catálogos falla señalando un `.mo` viejo que en realidad está al día.
+    Corregí la traducción y borrá la línea `#, fuzzy`. Se probó lo contrario el
     2026-09-06 y CI quedó en rojo — la imagen de test no corre
     `compilemessages`, sólo la de producción, así que los tests de i18n veían
     los mensajes sin traducir. `test_los_catalogos_compilados_estan_al_dia`

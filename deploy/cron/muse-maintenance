@@ -51,6 +51,11 @@ PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 # §4) y ajustar esto o pasar a un worker residente.
 * * * * * root cd /home/ubuntu/muse && /usr/bin/docker-compose -f docker-compose.aws.yml exec -T backend python manage.py dispatch_notifications 2>&1 | logger -t muse-push-dispatch
 
+# Los imports pendientes (F2.G). Cada dos minutos y no cada uno: matchear una
+# fila contra Google puede tardar segundos, y un archivo de 200 no tiene por qué
+# competir con la cola de push por el mismo minuto.
+*/2 * * * * root cd /home/ubuntu/muse && /usr/bin/docker-compose -f docker-compose.aws.yml exec -T backend python manage.py run_pending_imports 2>&1 | logger -t muse-imports
+
 # El resumen diario, en el minuto 5 de cada hora. Cada persona lo recibe a su
 # hora local, así que el comando corre siempre y filtra por zona horaria: a las
 # 19:00 de Hong Kong no son las 19:00 del servidor, que está en horario de

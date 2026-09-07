@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Muse\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-07 16:58-0300\n"
+"POT-Creation-Date: 2026-09-07 20:33-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: Italiano\n"
@@ -62,6 +62,44 @@ msgstr "Se esiste un account con quell'email, abbiamo inviato un codice."
 #: accounts/views.py:383
 msgid "Password updated."
 msgstr "Password aggiornata."
+
+#: imports/models.py:32
+msgid "Original file name"
+msgstr "Nome originale del file"
+
+#: imports/services/parse.py:42
+msgid "Only .csv and .xlsx files can be imported."
+msgstr "Si possono importare solo file .csv e .xlsx."
+
+#: imports/services/parse.py:46
+msgid "The file has no rows."
+msgstr "Il file non ha righe."
+
+#: imports/services/parse.py:52
+msgid ""
+"The file needs a column with the restaurant name (name, nombre, restaurant…)."
+msgstr "Il file ha bisogno di una colonna con il nome del ristorante (name, nombre, restaurant…)."
+
+#: imports/services/parse.py:104
+msgid "That .xlsx file could not be read."
+msgstr "Non è stato possibile leggere quel file .xlsx."
+
+#: imports/views.py:38
+msgid "A file is required."
+msgstr "Serve un file."
+
+#: imports/views.py:41
+msgid "That file is too large (max 2 MB)."
+msgstr "Quel file è troppo grande (massimo 2 MB)."
+
+#: imports/views.py:49
+msgid "No usable rows in that file."
+msgstr "Quel file non ha righe utilizzabili."
+
+#: imports/views.py:70 imports/views.py:80 restaurants/views.py:97
+#: restaurants/views.py:104
+msgid "Not found."
+msgstr "Non trovato."
 
 #: notifications/services/digest.py:113
 #, python-format
@@ -158,7 +196,9 @@ msgstr "Sotto questa versione l'app si blocca senza vie d'uscita. Semantica, es.
 #: releases/models.py:53
 msgid ""
 "Newest published version. Between this and the minimum, the app suggests."
-msgstr "Ultima versione pubblicata. Tra questa e il minimo, l'app suggerisce di aggiornare."
+msgstr ""
+"Ultima versione pubblicata. Tra questa e il minimo, l'app suggerisce di "
+"aggiornare."
 
 #: releases/models.py:58
 msgid "Where the blocking screen sends people. Store link, or direct download."
@@ -176,7 +216,9 @@ msgstr "criteri di versione dell'app"
 msgid ""
 "The minimum cannot be higher than the latest version: nobody could ever "
 "satisfy it and everyone would be locked out."
-msgstr "Il minimo non può essere superiore all'ultima versione: nessuno potrebbe soddisfarlo e resterebbero tutti bloccati."
+msgstr ""
+"Il minimo non può essere superiore all'ultima versione: nessuno potrebbe "
+"soddisfarlo e resterebbero tutti bloccati."
 
 #: restaurants/serializers.py:154
 msgid "latitude and longitude must be provided together."
@@ -189,10 +231,6 @@ msgstr "latitude e longitude sono obbligatorie."
 #: restaurants/services/reservations.py:78
 msgid "The reservation URL has no host."
 msgstr "L'URL di prenotazione non ha un dominio."
-
-#: restaurants/views.py:97 restaurants/views.py:104
-msgid "Not found."
-msgstr "Non trovato."
 
 #: restaurants/views.py:147
 msgid "placeId is required."
