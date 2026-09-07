@@ -98,6 +98,11 @@ podés romper sin romper el producto:
   - `prune_events` consolida antes de borrar y sólo borra meses cerrados
   - Una URL de reserva de dominio desconocido queda `pending` y no se
     serializa
+  - **El resumen de notificaciones no cuenta lo que el destinatario no puede
+    ver**: un pin que pasó a privado entre la actividad y la hora del resumen
+    queda afuera. Es el oráculo que F2.A cerró, entrando por otra puerta
+  - Borrar la cuenta se lleva los tokens de dispositivo: son identidad, igual
+    que el badge de Insider
   - **Todo mensaje de error que ve el usuario pasa por `gettext_lazy`.** La API
     responde en el idioma del `Accept-Language` que manda la app, y el fallback
     sin header es inglés (los APK ya publicados no lo mandan).
@@ -297,6 +302,9 @@ una segunda implementación al lado.
 | Parseo de coordenadas de query params | `places/geo.py` | `parse_lat_lng` y `parse_radius_km`. Lanzan `ValidationError` de DRF → 400. |
 | Escribir un evento de analytics | `analytics/services/ingest.py::record_event` | Único punto de escritura. Filtra `props` contra una whitelist por evento y respeta `Profile.analytics_opt_out` (art. 21 GDPR). El endpoint público rechaza `save_to_map`: ese lo emite el servidor. |
 | Agregados y retención de analytics | `analytics/services/reports.py` y `retention.py` | `rollup_month` (idempotente, nunca baja un agregado) y `prune_events` (borra meses enteros después de consolidarlos). Los corre el cron de `deploy/cron/muse-maintenance`. |
+| Mandar una notificación (push) | `notifications/services/dispatch.py::notify` | Único punto de salida y único que escribe en `NotificationJob`. Encola: nadie llama a FCM dentro de un request. La firma no menciona FCM — cuando entre iOS, el canal se elige adentro. |
+| Hablar con FCM (HTTP) | `notifications/services/fcm.py` | Único lugar con la service account. La API v1 **no tiene multicast**: un request por token. Distingue token muerto (se borra) de fallo transitorio (se reintenta). |
+| Armar el resumen diario | `notifications/services/digest.py` | Se arma **al mandarlo**, nunca antes: guardarlo sería una foto que puede quedar vieja, y un pin que pasó a privado en el medio se filtraría. Sale de `visible_pin_filter`, así que hereda F2.A y F2.B. |
 | Clasificar una URL de reserva | `restaurants/services/reservations.py` | Compara **host**, nunca la URL entera. Aprueba proveedor conocido, sitio oficial o dominio con el nombre del restaurante; el resto queda `pending` y no se serializa. |
 
 Cuando agregues un service nuevo:
