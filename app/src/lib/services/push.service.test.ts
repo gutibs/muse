@@ -1,0 +1,35 @@
+import { describe, expect, it } from 'vitest';
+import { routeFor } from './push.service';
+
+// Tocar una notificación y quedarse donde estabas se siente como que la app
+// está rota. Por eso `routeFor` nunca devuelve vacío: ante algo que no conoce,
+// manda al feed en vez de no hacer nada.
+
+describe('a dónde lleva tocar una notificación', () => {
+	it('una solicitud lleva al perfil de quien la mandó', () => {
+		expect(routeFor({ kind: 'friendship_request', actorId: 7 })).toBe('/user/7');
+	});
+
+	it('una aceptación también, porque es a esa persona a quien querés ver', () => {
+		expect(routeFor({ kind: 'friendship_accepted', actorId: 9 })).toBe('/user/9');
+	});
+
+	it('acepta el id en snake_case, que es como viaja en el payload de FCM', () => {
+		// FCM manda `data` como strings planos y el backend arma esas claves sin
+		// pasar por el parser camelCase de DRF.
+		expect(routeFor({ kind: 'friendship_request', actor_id: 3 })).toBe('/user/3');
+	});
+
+	it('sin id, cae en la lista de amigos en vez de en una ruta rota', () => {
+		expect(routeFor({ kind: 'friendship_request' })).toBe('/friends');
+	});
+
+	it('el resumen diario lleva al feed', () => {
+		expect(routeFor({ kind: 'friend_activity_digest' })).toBe('/feed');
+	});
+
+	it('un tipo desconocido no deja a la persona donde estaba', () => {
+		expect(routeFor({ kind: 'algo_que_no_existe_todavia' })).toBe('/feed');
+		expect(routeFor({})).toBe('/feed');
+	});
+});

@@ -22,6 +22,12 @@ export type ProfileUpdatePayload = Partial<
 		| 'analyticsOptOut'
 		| 'defaultPinVisibility'
 		| 'dietaryPreferences'
+		| 'notifyFriendRequest'
+		| 'notifyFriendAccepted'
+		| 'notifyDailyDigest'
+		| 'language'
+		| 'timezone'
+		| 'digestHour'
 	>
 >;
 

@@ -32,6 +32,15 @@ export interface Profile {
 	/** Derecho de oposición (art. 21 GDPR): con esto en true no se registra
 	 * ningún evento de uso de esta cuenta, ni desde la app ni desde el servidor. */
 	analyticsOptOut: boolean;
+	// F2.E. `language` y `timezone` los manda la app sola en cada inicio de
+	// sesión: el push lo emite el servidor, así que no hay request del
+	// destinatario de donde leerlos cuando llega el momento de notificar.
+	notifyFriendRequest: boolean;
+	notifyFriendAccepted: boolean;
+	notifyDailyDigest: boolean;
+	language: string;
+	timezone: string;
+	digestHour: number;
 	/** Nivel que heredan los pins que no eligieron el suyo. */
 	defaultPinVisibility: PinVisibility;
 	/** Sólo lectura: lo otorga Muse desde el admin, no se manda nunca. */

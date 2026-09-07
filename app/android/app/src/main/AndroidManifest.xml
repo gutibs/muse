@@ -43,4 +43,10 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+
+    <!-- Android 13+ exige pedirlo explícitamente, y un rechazo NO se vuelve a
+         preguntar. Por eso la app no lo pide al arrancar sino en contexto:
+         cuando la persona enciende una notificación en Ajustes o manda su
+         primera solicitud de amistad. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 </manifest>

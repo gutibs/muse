@@ -2,6 +2,7 @@
 	import InsiderBadge from '$lib/components/InsiderBadge.svelte';
 	import LanguagePicker from '$lib/components/LanguagePicker.svelte';
 	import PasswordInput from '$lib/components/PasswordInput.svelte';
+	import * as push from '$lib/services/push.service';
 	import SegmentedControl from '$lib/components/SegmentedControl.svelte';
 	import { t } from '$lib/i18n/index.svelte';
 	import { authStore } from '$lib/stores/auth.store.svelte';
@@ -25,6 +26,55 @@
 			logSilent('settings:analyticsOptOut', err);
 		} finally {
 			optingOut = false;
+		}
+	}
+
+	// --- Notificaciones (F2.E) ---------------------------------------
+	// El estado del permiso del sistema se consulta aparte de las
+	// preferencias: las tres pueden estar encendidas y no llegar nada porque
+	// Android tiene el permiso denegado, y sin decirlo la pantalla estaría
+	// mintiendo.
+	let pushPermission = $state<'granted' | 'denied' | 'prompt' | 'unsupported'>('unsupported');
+	let savingNotification = $state('');
+
+	$effect(() => {
+		void push.permissionState().then((state) => {
+			pushPermission = state;
+		});
+	});
+
+	const NOTIFICATION_PREFS = [
+		{ key: 'notifyFriendRequest', label: 'settings.notifyFriendRequest' },
+		{ key: 'notifyFriendAccepted', label: 'settings.notifyFriendAccepted' },
+		{ key: 'notifyDailyDigest', label: 'settings.notifyDailyDigest' }
+	] as const;
+
+	async function toggleNotification(key: string, value: boolean) {
+		savingNotification = key;
+		try {
+			await authStore.updateProfile({ [key]: value });
+			// Encender una preferencia sin permiso del sistema no sirve de nada,
+			// así que es el momento de pedirlo: la persona acaba de decir que
+			// quiere recibir esto.
+			if (value && pushPermission !== 'granted') {
+				await push.enable();
+				pushPermission = await push.permissionState();
+			}
+		} catch (err) {
+			logSilent('settings:notificationPref', err);
+		} finally {
+			savingNotification = '';
+		}
+	}
+
+	async function setDigestHour(hour: number) {
+		savingNotification = 'digestHour';
+		try {
+			await authStore.updateProfile({ digestHour: hour });
+		} catch (err) {
+			logSilent('settings:digestHour', err);
+		} finally {
+			savingNotification = '';
 		}
 	}
 
@@ -307,6 +357,49 @@
 					/>
 				</div>
 				<p class="mt-1 text-xs text-ink-muted">{t('settings.defaultPinVisibilityHelp')}</p>
+			</div>
+
+			<div class="mt-3 rounded-card bg-white p-4 shadow-card">
+				<h3 class="text-sm font-medium text-ink">{t('settings.notifications')}</h3>
+
+				{#if pushPermission === 'denied'}
+					<p class="mt-2 rounded-button bg-blush-light/20 px-3 py-2 text-xs text-blush">
+						{t('settings.notificationsBlocked')}
+					</p>
+				{/if}
+
+				{#each NOTIFICATION_PREFS as pref (pref.key)}
+					<label class="mt-2 flex min-h-11 items-center justify-between gap-3">
+						<span class="text-sm text-ink-light">{t(pref.label)}</span>
+						<input
+							type="checkbox"
+							class="h-6 w-6 shrink-0 accent-jade"
+							checked={Boolean(authStore.user?.[pref.key])}
+							disabled={savingNotification === pref.key}
+							onchange={(e) => toggleNotification(pref.key, e.currentTarget.checked)}
+						/>
+					</label>
+				{/each}
+
+				{#if authStore.user?.notifyDailyDigest}
+					<div class="mt-3 border-t border-cream-dark pt-3">
+						<label for="digestHour" class="block text-xs font-medium text-ink-light">
+							{t('settings.digestHour')}
+						</label>
+						<select
+							id="digestHour"
+							class="mt-1 w-full rounded-input border border-cream-dark bg-white px-3 py-2 text-base text-ink"
+							disabled={savingNotification === 'digestHour'}
+							value={authStore.user?.digestHour ?? 19}
+							onchange={(e) => setDigestHour(Number(e.currentTarget.value))}
+						>
+							{#each Array.from({ length: 24 }, (_, h) => h) as hour (hour)}
+								<option value={hour}>{String(hour).padStart(2, '0')}:00</option>
+							{/each}
+						</select>
+						<p class="mt-1 text-xs text-ink-muted">{t('settings.digestHourHelp')}</p>
+					</div>
+				{/if}
 			</div>
 
 			<div class="mt-3 rounded-card bg-white p-4 shadow-card">

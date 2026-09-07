@@ -1,4 +1,6 @@
 import { goto } from '$app/navigation';
+import { i18n } from '$lib/i18n/index.svelte';
+import * as push from '$lib/services/push.service';
 import { initApiAuth } from '$lib/services/api.service';
 import { authService } from '$lib/services/auth.service';
 import type { Profile } from '$lib/types';
@@ -82,6 +84,38 @@ class AuthStore {
 		localStorage.setItem(TOKEN_KEY, tokens.access);
 		localStorage.setItem(REFRESH_KEY, tokens.refresh);
 		this.user = await authService.getProfile();
+		await this.syncDeviceContext();
+	}
+
+	/** Idioma y zona horaria del dispositivo, más el token si ya hay permiso.
+	 *
+	 * El push lo inicia el servidor, así que estos dos datos tienen que estar
+	 * guardados de antemano: no hay request del destinatario de donde leerlos
+	 * cuando llega el momento de mandarle algo. La zona además cambia sola si
+	 * la persona viaja, y esto la mantiene al día sin que nadie la configure.
+	 *
+	 * No pide el permiso de notificaciones: eso se hace en contexto, no al
+	 * iniciar sesión. Sí registra el token si el permiso ya estaba dado.
+	 */
+	async syncDeviceContext() {
+		try {
+			const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+			const changed =
+				this.user?.timezone !== timezone || this.user?.language !== i18n.locale;
+			if (changed) {
+				this.user = await authService.updateProfile({ timezone, language: i18n.locale });
+			}
+		} catch (err) {
+			logSilent('auth:syncDeviceContext', err);
+		}
+
+		try {
+			if ((await push.permissionState()) === 'granted') {
+				await push.enable();
+			}
+		} catch (err) {
+			logSilent('auth:pushRegister', err);
+		}
 	}
 
 	async register(
@@ -135,6 +169,12 @@ class AuthStore {
 	}
 
 	logout() {
+		// Se baja el token antes de limpiar la sesión: sin esto el teléfono
+		// sigue recibiendo las notificaciones de la cuenta anterior, que es
+		// peor que no recibir ninguna. No se espera —cerrar sesión no puede
+		// quedar colgado de una llamada de red— y el backend lo limpia igual
+		// cuando el token caduque.
+		void push.disable();
 		this.clearTokens();
 		goto('/login');
 	}

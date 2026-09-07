@@ -3,6 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import AppShell from '$lib/components/AppShell.svelte';
+	import * as push from '$lib/services/push.service';
 	import { authStore } from '$lib/stores/auth.store.svelte';
 	import type { Snippet } from 'svelte';
 
@@ -10,6 +11,12 @@
 
 	$effect(() => {
 		authStore.init();
+	});
+
+	// Tocar una notificación tiene que llevar a algún lado. Sin esto la app se
+	// abre en la pantalla donde estaba, que se siente como que no funcionó.
+	$effect(() => {
+		void push.listenForTaps((path) => goto(path));
 	});
 
 	// Hardware back button (Android via Capacitor).
