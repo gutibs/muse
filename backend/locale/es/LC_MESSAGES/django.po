@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Muse\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-06 21:23-0300\n"
+"POT-Creation-Date: 2026-09-07 16:58-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: Español\n"
@@ -16,31 +16,31 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? "
 "1 : 2;\n"
 
-#: accounts/serializers.py:137
+#: accounts/serializers.py:170
 msgid "Check your inbox to finish setting up your account."
 msgstr "Revisá tu correo para terminar de crear tu cuenta."
 
-#: accounts/serializers.py:156
+#: accounts/serializers.py:189
 msgid "You must accept the privacy policy to register."
 msgstr "Tenés que aceptar la política de privacidad para registrarte."
 
-#: accounts/serializers.py:302 accounts/serializers.py:403
+#: accounts/serializers.py:335 accounts/serializers.py:436
 msgid "Current password is incorrect."
 msgstr "La contraseña actual no es correcta."
 
-#: accounts/serializers.py:349
+#: accounts/serializers.py:382
 msgid "You cannot send a friend request to yourself."
 msgstr "No podés enviarte una solicitud de amistad a vos mismo."
 
-#: accounts/serializers.py:351
+#: accounts/serializers.py:384
 msgid "Friend request already sent."
 msgstr "Ya enviaste la solicitud de amistad."
 
-#: accounts/serializers.py:353
+#: accounts/serializers.py:386
 msgid "This user already sent you a friend request."
 msgstr "Esta persona ya te envió una solicitud de amistad."
 
-#: accounts/serializers.py:376
+#: accounts/serializers.py:409
 msgid "This person already accepted your invitation."
 msgstr "Esta persona ya aceptó tu invitación."
 
@@ -64,7 +64,7 @@ msgstr "Si existe una cuenta con ese email, le enviamos un código."
 msgid "Password updated."
 msgstr "Contraseña actualizada."
 
-#: notifications/services/digest.py:108
+#: notifications/services/digest.py:113
 #, python-format
 msgid "%(count)d new place from your friends"
 msgid_plural "%(count)d new places from your friends"
@@ -72,43 +72,43 @@ msgstr[0] "%(count)d lugar nuevo de tus amigos"
 msgstr[1] "%(count)d lugares nuevos de tus amigos"
 msgstr[2] "%(count)d lugares nuevos de tus amigos"
 
-#: notifications/services/digest.py:114
+#: notifications/services/digest.py:119
 #, python-format
 msgid "%(name)s saved somewhere new."
 msgstr "%(name)s guardó un lugar nuevo."
 
-#: notifications/services/digest.py:116
+#: notifications/services/digest.py:121
 #, python-format
 msgid "%(first)s and %(second)s saved new places."
 msgstr "%(first)s y %(second)s guardaron lugares nuevos."
 
-#: notifications/services/digest.py:121
+#: notifications/services/digest.py:126
 #, python-format
 msgid "%(first)s, %(second)s and others saved new places."
 msgstr "%(first)s, %(second)s y otros guardaron lugares nuevos."
 
-#: notifications/services/digest.py:126
+#: notifications/services/digest.py:131
 msgid "Your friends saved new places today."
 msgstr "Tus amigos guardaron lugares nuevos hoy."
 
-#: notifications/services/dispatch.py:134
+#: notifications/services/dispatch.py:164
 msgid "Someone"
 msgstr "Alguien"
 
-#: notifications/services/dispatch.py:138
+#: notifications/services/dispatch.py:168
 msgid "New friend request"
 msgstr "Nueva solicitud de amistad"
 
-#: notifications/services/dispatch.py:138
+#: notifications/services/dispatch.py:168
 #, python-format
 msgid "%(name)s wants to connect on Muse."
 msgstr "%(name)s quiere conectarse con vos en Muse."
 
-#: notifications/services/dispatch.py:142
+#: notifications/services/dispatch.py:172
 msgid "You are now friends"
 msgstr "Ahora son amigos"
 
-#: notifications/services/dispatch.py:142
+#: notifications/services/dispatch.py:172
 #, python-format
 msgid "%(name)s accepted your request."
 msgstr "%(name)s aceptó tu solicitud."
@@ -152,6 +152,33 @@ msgstr "La API de Google Places no está configurada."
 #: places/views.py:344
 msgid "reverse geocode failed"
 msgstr "falló la geocodificación inversa"
+
+#: releases/models.py:49
+msgid "Below this version the app blocks with no way out. Semantic, e.g. 1.3.0"
+msgstr "Por debajo de esta versión la app bloquea sin salida. Semántica, ej. 1.3.0"
+
+#: releases/models.py:53
+msgid ""
+"Newest published version. Between this and the minimum, the app suggests."
+msgstr "Última versión publicada. Entre ésta y el mínimo, la app sugiere actualizar."
+
+#: releases/models.py:58
+msgid "Where the blocking screen sends people. Store link, or direct download."
+msgstr "A dónde manda la pantalla bloqueante. Link de la tienda, o descarga directa."
+
+#: releases/models.py:63
+msgid "app version policy"
+msgstr "política de versión de la app"
+
+#: releases/models.py:64
+msgid "app version policies"
+msgstr "políticas de versión de la app"
+
+#: releases/models.py:89
+msgid ""
+"The minimum cannot be higher than the latest version: nobody could ever "
+"satisfy it and everyone would be locked out."
+msgstr "El mínimo no puede ser mayor que la última versión: nadie podría cumplirlo y quedarían todos bloqueados."
 
 #: restaurants/serializers.py:154
 msgid "latitude and longitude must be provided together."

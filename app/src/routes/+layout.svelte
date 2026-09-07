@@ -4,6 +4,8 @@
 	import { page } from '$app/state';
 	import AppShell from '$lib/components/AppShell.svelte';
 	import * as push from '$lib/services/push.service';
+	import { checkVersion, type VersionCheck } from '$lib/services/version.service';
+	import UpdateGate from '$lib/components/UpdateGate.svelte';
 	import { authStore } from '$lib/stores/auth.store.svelte';
 	import type { Snippet } from 'svelte';
 
@@ -25,6 +27,16 @@
 	// vibración— para siempre. Crear un canal no necesita permiso.
 	$effect(() => {
 		void push.ensureChannels();
+	});
+
+	// Si la versión instalada todavía sirve (F2.H). Corre una vez al arrancar y
+	// **falla abierto**: cualquier problema deja entrar, así que el estado
+	// arranca en 'ok' y sólo se mueve si el backend dice algo concreto.
+	let version = $state<VersionCheck>({ state: 'ok', storeUrl: '', latest: '' });
+	$effect(() => {
+		void checkVersion(__APP_VERSION__).then((res) => {
+			version = res;
+		});
 	});
 
 	// Hardware back button (Android via Capacitor).
@@ -68,4 +80,6 @@
 
 <AppShell>
 	{@render children()}
+
+<UpdateGate check={version} />
 </AppShell>

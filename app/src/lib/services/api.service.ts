@@ -229,6 +229,18 @@ export const api = {
 			body: body ? JSON.stringify(body) : undefined,
 		});
 	},
+	/**
+	 * GET sin tocar la sesión. Mismo motivo que `postAnon`.
+	 *
+	 * Lo usa el chequeo de versión, que corre al arrancar: por `get` normal, un
+	 * token vencido en el header haría que DRF conteste 401 —la autenticación
+	 * corre antes que el permiso, incluso en una view AllowAny—, y el refresh
+	 * fallido haría `clearAuth` en medio del arranque. Cerrar la sesión de
+	 * alguien por consultar un número de versión sería absurdo.
+	 */
+	getAnon<T>(path: string): Promise<T> {
+		return requestAnon<T>(path);
+	},
 	patch<T>(path: string, body: unknown): Promise<T> {
 		return request<T>(path, {
 			method: 'PATCH',

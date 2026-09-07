@@ -110,8 +110,12 @@ podés romper sin romper el producto:
     aparece un literal suelto dentro de `ValidationError(...)` o de un
     `{"detail": ...}`. Cuando agregues uno: envolvelo en `_()`, corré
     `makemessages -l es -l it` y traducí las entradas nuevas en
-    `backend/locale/<lang>/LC_MESSAGES/django.po`. Los `.mo` no van al repo:
-    los compila el build (`Dockerfile.prod`)
+    `backend/locale/<lang>/LC_MESSAGES/django.po`, y **corré `compilemessages`
+    en el mismo commit**: los `.mo` SÍ van al repo. Se probó lo contrario el
+    2026-09-06 y CI quedó en rojo — la imagen de test no corre
+    `compilemessages`, sólo la de producción, así que los tests de i18n veían
+    los mensajes sin traducir. `test_los_catalogos_compilados_estan_al_dia`
+    falla si tocás un `.po` y te olvidás de recompilar
 - **Cualquier cambio en `accounts/`, `pins/`, `restaurants/from_google` debe correr la suite.**
   Si rompiste alguno, el bug está en tu cambio.
 - **Corré con `--create-db`.** `pytest.ini` trae `--reuse-db`: al agregar una

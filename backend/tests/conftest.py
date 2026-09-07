@@ -17,30 +17,23 @@ def _reset_throttle_cache():
 
 @pytest.fixture(autouse=True)
 def _disable_throttles(settings):
-	"""Strip the global throttle classes so rapid-fire tests don't trip
-	rate limits. Per-view throttle classes (e.g. RegisterAnonThrottle,
-	ScopedRateThrottle on places) still try to resolve their `scope`
-	against `DEFAULT_THROTTLE_RATES` at instantiation time, so we keep
-	every known scope mapped to a very-high rate instead of clearing
-	the dict — clearing would raise ImproperlyConfigured when those
-	per-view throttles instantiate.
+	"""Saca los throttles globales para que los tests puedan disparar rápido.
+
+	Los throttles por vista (`ScopedRateThrottle` en places, app-version, etc.)
+	resuelven su `scope` contra `DEFAULT_THROTTLE_RATES` **al instanciarse**, así
+	que vaciar el dict les da `ImproperlyConfigured`. Por eso se mapean todos a
+	un rate altísimo en vez de borrarlos.
+
+	**Los scopes salen de los settings reales, no de una lista a mano.** Antes
+	estaban enumerados acá: cada scope nuevo rompía la suite con un `KeyError`
+	que no tenía nada que ver con el cambio que lo destapaba, y la lista crecía
+	por omisión — el mismo tipo de bug que la revisión de F2.E encontró en los
+	campos del perfil ajeno.
 	"""
 	settings.REST_FRAMEWORK = {
 		**settings.REST_FRAMEWORK,
 		"DEFAULT_THROTTLE_CLASSES": (),
 		"DEFAULT_THROTTLE_RATES": {
-			"anon": "10000/hour",
-			"user": "10000/hour",
-			"login": "10000/min",
-			"register": "10000/hour",
-			"user_search": "10000/hour",
-			"places": "10000/hour",
-			"invite": "10000/hour",
-			"reverse_geocode": "10000/hour",
-			"shared_list_public": "10000/hour",
-			"analytics": "10000/hour",
-			"password_reset": "10000/hour",
-			"password_reset_confirm": "10000/hour",
-			"report": "10000/hour",
+			scope: "10000/hour" for scope in settings.REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"]
 		},
 	}

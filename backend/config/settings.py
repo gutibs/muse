@@ -49,6 +49,7 @@ INSTALLED_APPS = [
 	"places",
 	"analytics",
 	"notifications",
+	"releases",
 ]
 
 MIDDLEWARE = [
@@ -236,6 +237,11 @@ REST_FRAMEWORK = {
 		"user_search": "60/hour",
 		"places": "120/hour",
 		"invite": "20/hour",
+		# La app lo llama una vez por arranque, y es anónimo: varias personas
+		# detrás del mismo NAT —una oficina, el wifi de un evento— comparten
+		# cuota. Generoso a propósito; un 429 acá no bloquea a nadie porque la
+		# app falla abierto, pero tampoco tiene sentido provocarlo.
+		"app_version": "300/hour",
 		# Nominatim policy is 1 req/sec absolute. We stay well under: a
 		# user can pick a location ~once per minute realistically.
 		"reverse_geocode": "60/hour",
