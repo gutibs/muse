@@ -66,6 +66,16 @@ class ProfileSerializer(serializers.ModelSerializer):
 			"dietary_preferences_detail",
 			"analytics_opt_out",
 			"default_pin_visibility",
+			# F2.E. `language` y `timezone` los manda la app, no la persona: sin
+			# ellos el push no sabe en qué idioma escribir ni a qué hora mandar
+			# el resumen, porque lo inicia el servidor y no hay request del
+			# destinatario de donde leerlos.
+			"notify_friend_request",
+			"notify_friend_accepted",
+			"notify_daily_digest",
+			"language",
+			"timezone",
+			"digest_hour",
 			"is_verified_insider",
 			"stats",
 			"created_at",

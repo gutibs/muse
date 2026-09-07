@@ -39,3 +39,24 @@ PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 # de un solo uso. Borra lo usado o vencido con más de 30 días; lo vigente no
 # entra al filtro por viejo que sea el registro.
 30 5 * * 0 root cd /home/ubuntu/muse && /usr/bin/docker-compose -f docker-compose.aws.yml exec -T backend python manage.py prune_password_reset_codes 2>&1 | logger -t muse-prune-reset-codes
+
+# --- Notificaciones (F2.E) --------------------------------------------------
+# A diferencia de todo lo de arriba, esto NO es mantenimiento: es operación.
+# Corre seguido y su latencia la siente el usuario.
+#
+# El despachador de las inmediatas, cada minuto. Procesa un lote y sale; si dos
+# corridas se solapan, `select_for_update(skip_locked=True)` evita que manden lo
+# mismo dos veces. OJO: la frecuencia está sin medir todavía — la primera tarea
+# post-deploy es cronometrar una corrida en el EC2 (ver docs/SPEC_F2E_PUSH.md
+# §4) y ajustar esto o pasar a un worker residente.
+* * * * * root cd /home/ubuntu/muse && /usr/bin/docker-compose -f docker-compose.aws.yml exec -T backend python manage.py dispatch_notifications 2>&1 | logger -t muse-push-dispatch
+
+# El resumen diario, en el minuto 5 de cada hora. Cada persona lo recibe a su
+# hora local, así que el comando corre siempre y filtra por zona horaria: a las
+# 19:00 de Hong Kong no son las 19:00 del servidor, que está en horario de
+# Buenos Aires.
+5 * * * * root cd /home/ubuntu/muse && /usr/bin/docker-compose -f docker-compose.aws.yml exec -T backend python manage.py send_daily_digests 2>&1 | logger -t muse-push-digest
+
+# Limpieza de la cola: jobs terminados, marcas de resumen viejas y tokens de
+# dispositivos que no se usan hace 90 días. Semanal, con el resto.
+45 5 * * 0 root cd /home/ubuntu/muse && /usr/bin/docker-compose -f docker-compose.aws.yml exec -T backend python manage.py prune_notification_jobs 2>&1 | logger -t muse-prune-notifications

@@ -68,6 +68,25 @@ class Profile(models.Model):
 		choices=Visibility.choices,
 		default=Visibility.PUBLIC,
 	)
+	# --- Notificaciones (F2.E) ---------------------------------------
+	# Las tres arrancan encendidas. El freno real lo pone Android, que exige
+	# aceptar el permiso del sistema: sin ese sí no llega nada aunque estén
+	# todas en True.
+	notify_friend_request = models.BooleanField(default=True)
+	notify_friend_accepted = models.BooleanField(default=True)
+	notify_daily_digest = models.BooleanField(default=True)
+	# El idioma tiene que estar acá y no sólo en el request. Los emails lo
+	# reciben en cada llamada (`request.data.get("language")`), pero el push lo
+	# inicia el servidor: cuando hay que avisarle a alguien que un amigo guardó
+	# un lugar, esa persona no está haciendo ninguna llamada.
+	language = models.CharField(max_length=5, default="en")
+	# Zona horaria IANA del dispositivo, que la app manda al iniciar sesión, y
+	# hora local a la que se manda el resumen. Sin esto el resumen sale en
+	# horario del servidor —Buenos Aires— y a los usuarios de Hong Kong les
+	# llega a las cuatro de la mañana: once horas de diferencia.
+	timezone = models.CharField(max_length=64, default="UTC")
+	digest_hour = models.PositiveSmallIntegerField(default=19)
+
 	# F1.7 — la marca que Muse otorga a mano desde el admin. Es de sólo
 	# lectura por la API: si entrara por `ProfileSerializer`, cualquiera se
 	# verificaría con un PATCH y el badge dejaría de significar nada.

@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Muse\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-06 18:20-0300\n"
+"POT-Creation-Date: 2026-09-06 21:23-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: Italiano\n"
@@ -14,6 +14,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
 #: accounts/serializers.py:137
 msgid "Check your inbox to finish setting up your account."
 msgstr "Controlla la tua email per completare la creazione dell'account."
@@ -54,13 +55,61 @@ msgstr "status deve essere 'accepted' o 'declined'."
 msgid "This friend request is no longer available."
 msgstr "Questa richiesta di amicizia non è più disponibile."
 
-#: accounts/views.py:336
+#: accounts/views.py:337
 msgid "If an account exists for that email, a code has been sent."
 msgstr "Se esiste un account con quell'email, abbiamo inviato un codice."
 
-#: accounts/views.py:381
+#: accounts/views.py:383
 msgid "Password updated."
 msgstr "Password aggiornata."
+
+#: notifications/services/digest.py:108
+#, python-format
+msgid "%(count)d new place from your friends"
+msgid_plural "%(count)d new places from your friends"
+msgstr[0] "%(count)d posto nuovo dai tuoi amici"
+msgstr[1] "%(count)d posti nuovi dai tuoi amici"
+
+#: notifications/services/digest.py:114
+#, python-format
+msgid "%(name)s saved somewhere new."
+msgstr "%(name)s ha salvato un posto nuovo."
+
+#: notifications/services/digest.py:116
+#, python-format
+msgid "%(first)s and %(second)s saved new places."
+msgstr "%(first)s e %(second)s hanno salvato posti nuovi."
+
+#: notifications/services/digest.py:121
+#, python-format
+msgid "%(first)s, %(second)s and others saved new places."
+msgstr "%(first)s, %(second)s e altri hanno salvato posti nuovi."
+
+#: notifications/services/digest.py:126
+msgid "Your friends saved new places today."
+msgstr "I tuoi amici hanno salvato posti nuovi oggi."
+
+#: notifications/services/dispatch.py:134
+msgid "Someone"
+msgstr "Qualcuno"
+
+#: notifications/services/dispatch.py:138
+msgid "New friend request"
+msgstr "Nuova richiesta di amicizia"
+
+#: notifications/services/dispatch.py:138
+#, python-format
+msgid "%(name)s wants to connect on Muse."
+msgstr "%(name)s vuole connettersi con te su Muse."
+
+#: notifications/services/dispatch.py:142
+msgid "You are now friends"
+msgstr "Ora siete amici"
+
+#: notifications/services/dispatch.py:142
+#, python-format
+msgid "%(name)s accepted your request."
+msgstr "%(name)s ha accettato la tua richiesta."
 
 #: pins/serializers.py:131
 msgid "The same place is in the list twice."
@@ -102,11 +151,11 @@ msgstr "L'API di Google Places non è configurata."
 msgid "reverse geocode failed"
 msgstr "geocodifica inversa fallita"
 
-#: restaurants/serializers.py:153
+#: restaurants/serializers.py:154
 msgid "latitude and longitude must be provided together."
 msgstr "latitude e longitude devono essere fornite insieme."
 
-#: restaurants/serializers.py:155
+#: restaurants/serializers.py:157
 msgid "latitude and longitude are required."
 msgstr "latitude e longitude sono obbligatorie."
 
@@ -118,10 +167,10 @@ msgstr "L'URL di prenotazione non ha un dominio."
 msgid "Not found."
 msgstr "Non trovato."
 
-#: restaurants/views.py:146
+#: restaurants/views.py:147
 msgid "placeId is required."
 msgstr "placeId è obbligatorio."
 
-#: restaurants/views.py:159
+#: restaurants/views.py:161
 msgid "This place is permanently closed."
 msgstr "Questo locale è chiuso definitivamente."

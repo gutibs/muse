@@ -11,6 +11,7 @@ urlpatterns = [
 	path("api/v1/", include("feed.urls")),
 	path("api/v1/", include("places.urls")),
 	path("api/v1/", include("analytics.urls")),
+	path("api/v1/notifications/", include("notifications.urls")),
 ]
 
 if settings.DEBUG:

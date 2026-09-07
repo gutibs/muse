@@ -48,6 +48,7 @@ INSTALLED_APPS = [
 	"feed",
 	"places",
 	"analytics",
+	"notifications",
 ]
 
 MIDDLEWARE = [
@@ -178,6 +179,14 @@ EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
 EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
 EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "1") == "1"
+
+# Firebase Cloud Messaging (F2.E). El JSON entero de la service account en una
+# variable de entorno: es una credencial y no va al repo, a diferencia del
+# `google-services.json` del cliente, que sólo tiene identificadores públicos.
+# Vacío = el push queda apagado y el service lanza FCMNotConfiguredError, que es
+# que corresponde en desarrollo.
+FCM_PROJECT_ID = os.environ.get("FCM_PROJECT_ID", "")
+FCM_SERVICE_ACCOUNT_JSON = os.environ.get("FCM_SERVICE_ACCOUNT_JSON", "")
 
 # Resend (transactional email API). Used by accounts.services.email.send_invitation_email.
 # Empty string = service raises EmailSendError(503) on send. In dev (DJANGO_DEBUG=1)

@@ -220,3 +220,38 @@ def test_deletion_destroys_pending_password_reset_codes():
 	anonymise_user(user)
 
 	assert not PasswordResetCode.objects.filter(user=user).exists()
+
+
+@pytest.mark.critical
+@pytest.mark.django_db
+def test_borrar_la_cuenta_se_lleva_los_tokens_de_dispositivo():
+	"""Un token apunta a un teléfono real: es identidad, no preferencia.
+
+	Si sobreviviera, una cuenta anonimizada seguiría recibiendo notificaciones
+	en el teléfono de una persona que pidió que la borren. Mismo criterio que
+	el badge de Insider, que también se limpia en `anonymise_user`.
+	"""
+	from django.utils import timezone
+
+	from accounts.services.account_deletion import anonymise_user
+	from notifications.models import DeviceToken, DigestLog, NotificationJob
+
+	user = UserFactory()
+	other = UserFactory()
+	DeviceToken.objects.create(user=user, token="tok-de-la-cuenta")
+	DeviceToken.objects.create(user=other, token="tok-de-otro")
+	NotificationJob.objects.create(
+		recipient=user,
+		actor=other,
+		kind=NotificationJob.Kind.FRIENDSHIP_REQUEST,
+		idempotency_key="borrado:1",
+	)
+	DigestLog.objects.create(user=user, local_date=timezone.now().date(), item_count=3)
+
+	anonymise_user(user)
+
+	assert not DeviceToken.objects.filter(user=user).exists()
+	assert not NotificationJob.objects.filter(recipient=user).exists()
+	assert not DigestLog.objects.filter(user=user).exists()
+	# Y no se lleva puesto lo de los demás.
+	assert DeviceToken.objects.filter(user=other).count() == 1

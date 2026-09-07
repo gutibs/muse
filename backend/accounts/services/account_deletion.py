@@ -33,6 +33,7 @@ from accounts.models import (
 )
 from analytics.models import Event
 from feed.models import Activity
+from notifications.models import DeviceToken, DigestLog, NotificationJob
 from pins.models import SharedList
 
 logger = logging.getLogger(__name__)
@@ -84,6 +85,15 @@ def anonymise_user(user) -> None:
 	# igual que los eventos de analytics: el FK es SET_NULL pero acá el User
 	# nunca se borra —se anonimiza— así que ese SET_NULL no dispararía solo.
 	Report.objects.filter(reported_user=user).update(reported_user=None)
+	# Los tokens de dispositivo son identidad, no preferencia: apuntan al
+	# teléfono de una persona concreta. Mismo criterio que el badge de Insider,
+	# que también se limpia acá. Si sobrevivieran, una cuenta anonimizada
+	# seguiría recibiendo notificaciones en un teléfono real.
+	DeviceToken.objects.filter(user=user).delete()
+	# La cola pendiente de esta persona no tiene a quién llegarle, y el
+	# `DigestLog` guarda su historial de actividad diaria.
+	NotificationJob.objects.filter(Q(recipient=user) | Q(actor=user)).delete()
+	DigestLog.objects.filter(user=user).delete()
 
 	profile = user.profile
 	if profile.avatar:

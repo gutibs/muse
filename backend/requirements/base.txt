@@ -12,3 +12,7 @@ resend>=2,<3
 # Cache backend. A container on the same EC2 today; the day it moves to
 # ElastiCache only REDIS_URL changes.
 redis>=5,<6
+# Firma el token de la service account con la que el backend le habla a FCM
+# (F2.E). Sólo se usa en `notifications/services/fcm.py`, con import local:
+# el proyecto tiene que seguir importándose con el push apagado.
+google-auth>=2.35,<3
