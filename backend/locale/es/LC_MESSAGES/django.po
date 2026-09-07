@@ -30,7 +30,7 @@ msgstr "La contraseña actual no es correcta."
 
 #: accounts/serializers.py:382
 msgid "You cannot send a friend request to yourself."
-msgstr "No podés enviarte una solicitud de amistad a vos mismo."
+msgstr "No puedes enviarte una solicitud de amistad a ti mismo."
 
 #: accounts/serializers.py:384
 msgid "Friend request already sent."
@@ -123,7 +123,7 @@ msgstr "isFavourite tiene que ser un booleano."
 
 #: pins/views.py:75
 msgid "You already pinned this restaurant."
-msgstr "Ya tenés un pin en este restaurante."
+msgstr "Ya tienes un pin en este restaurante."
 
 #: places/geo.py:32
 msgid "lat and lng are required."

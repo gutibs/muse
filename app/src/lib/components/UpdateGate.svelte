@@ -52,9 +52,16 @@
 		{/if}
 	</div>
 {:else if check.state === 'outdated' && !dismissed}
+	<!--
+		Va arriba y no abajo: pegado al borde inferior tapaba la barra de
+		navegación entera —Inicio, Feed, Muse, Buscar, Yo— y mientras el banner
+		estuviera visible no se podía navegar. Se vio en el teléfono, no en el
+		código: el banner vive en el layout raíz y la nav en el de `(app)`, así
+		que nada en el código dice que se pisan.
+	-->
 	<div
-		class="fixed inset-x-0 bottom-0 z-40 border-t border-sand bg-white px-4 py-3 shadow-elevated"
-		style="padding-bottom: calc(var(--sab) + 0.75rem);"
+		class="fixed inset-x-0 top-0 z-40 border-b border-sand bg-white px-4 py-3 shadow-elevated"
+		style="padding-top: calc(var(--sat) + 0.75rem);"
 		data-testid="update-available"
 	>
 		<div class="flex items-center gap-3">

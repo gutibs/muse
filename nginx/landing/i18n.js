@@ -4,12 +4,12 @@
 
 	var T = {
 		es: {
-			title: "Muse — Descubrí restaurantes con amigos",
-			description: "Muse — descubrí y compartí restaurantes con amigos.",
-			tagline: "Descubrí y compartí restaurantes con amigos.",
-			androidText: "Escaneá el QR o tocá el botón para descargar la app.",
+			title: "Muse — Descubre restaurantes con amigos",
+			description: "Muse — descubre y comparte restaurantes con amigos.",
+			tagline: "Descubre y comparte restaurantes con amigos.",
+			androidText: "Escanea el QR o toca el botón para descargar la app.",
 			qrAlt: "QR para descargar Muse en Android",
-			androidBtn: "Descargá para Android",
+			androidBtn: "Descarga para Android",
 			soon: "Próximamente",
 			iosText: "Estamos trabajando en la versión para iPhone.",
 			back: "← Volver a Muse",
