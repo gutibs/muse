@@ -37,6 +37,7 @@
 				<li><strong>Profile data (optional):</strong> bio, city, dietary preferences, favourite cuisine, Instagram handle, website, phone, avatar.</li>
 				<li><strong>Content you create:</strong> restaurants you pin as "visited" or "to visit", ratings, comments, shared lists.</li>
 				<li><strong>Social graph:</strong> friend connections and invitations you send or accept.</li>
+				<li><strong>Push notification token:</strong> if you turn notifications on, we store the token your phone gives us so we can send them. It identifies the device, not you by name, and it is deleted when you sign out, turn notifications off, delete your account, or the token stops working.</li>
 				<li><strong>Device & technical data:</strong> IP address, device type, operating system, app version, crash logs, approximate or precise location <em>only</em> when you explicitly grant the permission.</li>
 				<li><strong>Product usage data:</strong> which venue pages you open, which venue cards you actually see on screen, when you save a venue, and when you tap a button that takes you out of the app (directions, booking, website). Each of these is stored with your user id, the venue and a timestamp — it is behaviour linked to your account, not an anonymous statistic.</li>
 				<li><strong>Communications:</strong> emails you send to us at <a href="mailto:info@lovemuse.app">info@lovemuse.app</a>.</li>
@@ -60,7 +61,7 @@
 			<p>We do <strong>not</strong> sell your personal data. We share it only in the following circumstances:</p>
 			<ul>
 				<li><strong>With other users:</strong> your display name, avatar, city, pins, ratings and shared lists are visible to friends; shared lists you generate are accessible to anyone with the public link.</li>
-				<li><strong>With service providers (Data Processors):</strong> hosting (AWS, EC2/RDS in the United States), transactional email (Resend), mapping & places data (Google Maps Platform, OpenStreetMap/Nominatim via our backend proxy). They process data on our instructions under contractual safeguards.</li>
+				<li><strong>With service providers (Data Processors):</strong> hosting (AWS, EC2/RDS in the United States), transactional email (Resend), mapping & places data (Google Maps Platform, OpenStreetMap/Nominatim via our backend proxy), push notification delivery (Firebase Cloud Messaging, Google). They process data on our instructions under contractual safeguards.</li>
 				<li><strong>For legal reasons:</strong> when required by a court order, subpoena or other lawful request, including from Hong Kong authorities under the PDPO or other ordinances.</li>
 			</ul>
 
@@ -117,6 +118,7 @@
 				<li><strong>Datos de perfil (opcionales):</strong> biografía, ciudad, preferencias dietarias, cocina favorita, usuario de Instagram, sitio web, teléfono, avatar.</li>
 				<li><strong>Contenido que generás:</strong> restaurantes que marcás como "visitado" o "para visitar", calificaciones, comentarios, listas compartidas.</li>
 				<li><strong>Grafo social:</strong> conexiones de amistad e invitaciones que enviás o aceptás.</li>
+				<li><strong>Token de notificaciones:</strong> si activás las notificaciones, guardamos el token que nos da tu teléfono para poder enviártelas. Identifica al dispositivo, no a vos por tu nombre, y se borra cuando cerrás sesión, apagás las notificaciones, eliminás tu cuenta o el token deja de funcionar.</li>
 				<li><strong>Datos técnicos del dispositivo:</strong> dirección IP, tipo de dispositivo, sistema operativo, versión de la app, registros de fallos, ubicación aproximada o precisa <em>solo</em> cuando otorgás el permiso explícito.</li>
 				<li><strong>Datos de uso del producto:</strong> qué fichas de restaurante abrís, qué tarjetas ves efectivamente en pantalla, cuándo guardás un restaurante y cuándo tocás un botón que te lleva fuera de la app (cómo llegar, reservar, sitio web). Cada uno se guarda con tu identificador de usuario, el restaurante y la fecha y hora — es comportamiento vinculado a tu cuenta, no una estadística anónima.</li>
 				<li><strong>Comunicaciones:</strong> emails que nos enviás a <a href="mailto:info@lovemuse.app">info@lovemuse.app</a>.</li>
@@ -140,7 +142,7 @@
 			<p><strong>No</strong> vendemos tus datos personales. Solo los compartimos en los siguientes casos:</p>
 			<ul>
 				<li><strong>Con otros usuarios:</strong> tu nombre visible, avatar, ciudad, pins, calificaciones y listas compartidas son visibles para tus amigos; las listas que compartas por link público quedan accesibles a quien tenga ese link.</li>
-				<li><strong>Con proveedores de servicio (Data Processors):</strong> hosting (AWS, EC2/RDS en Estados Unidos), email transaccional (Resend), mapas y datos de lugares (Google Maps Platform, OpenStreetMap/Nominatim vía nuestro proxy backend). Procesan los datos por instrucción nuestra y bajo salvaguardas contractuales.</li>
+				<li><strong>Con proveedores de servicio (Data Processors):</strong> hosting (AWS, EC2/RDS en Estados Unidos), email transaccional (Resend), mapas y datos de lugares (Google Maps Platform, OpenStreetMap/Nominatim vía nuestro proxy backend), envío de notificaciones push (Firebase Cloud Messaging, Google). Procesan los datos por instrucción nuestra y bajo salvaguardas contractuales.</li>
 				<li><strong>Por motivos legales:</strong> cuando lo exija una orden judicial, citación u otro requerimiento legítimo, incluidos los de autoridades de Hong Kong bajo la PDPO u otras Ordenanzas.</li>
 			</ul>
 
@@ -197,6 +199,7 @@
 				<li><strong>Dati del profilo (facoltativi):</strong> biografia, città, preferenze alimentari, cucina preferita, handle Instagram, sito web, telefono, avatar.</li>
 				<li><strong>Contenuti creati:</strong> ristoranti contrassegnati come "visitato" o "da visitare", valutazioni, commenti, liste condivise.</li>
 				<li><strong>Grafo sociale:</strong> connessioni di amicizia e inviti inviati o accettati.</li>
+				<li><strong>Token per le notifiche:</strong> se attivi le notifiche, conserviamo il token che ci fornisce il tuo telefono per potertele inviare. Identifica il dispositivo, non te per nome, e viene eliminato quando esci, disattivi le notifiche, elimini il tuo account o il token smette di funzionare.</li>
 				<li><strong>Dati tecnici del dispositivo:</strong> indirizzo IP, tipo di dispositivo, sistema operativo, versione dell'app, log di crash, posizione approssimativa o precisa <em>solo</em> se ne concedi esplicitamente il permesso.</li>
 				<li><strong>Dati di utilizzo del prodotto:</strong> quali schede di ristorante apri, quali card vedi effettivamente sullo schermo, quando salvi un ristorante e quando tocchi un pulsante che ti porta fuori dall'app (indicazioni, prenotazione, sito web). Ognuno viene conservato con il tuo identificativo utente, il ristorante e la data e ora — è un comportamento collegato al tuo account, non una statistica anonima.</li>
 				<li><strong>Comunicazioni:</strong> email che ci invii a <a href="mailto:info@lovemuse.app">info@lovemuse.app</a>.</li>
@@ -220,7 +223,7 @@
 			<p><strong>Non</strong> vendiamo i tuoi dati personali. Li condividiamo solo nelle seguenti circostanze:</p>
 			<ul>
 				<li><strong>Con altri utenti:</strong> il tuo nome visualizzato, avatar, città, pin, valutazioni e liste condivise sono visibili agli amici; le liste pubbliche che generi sono accessibili a chiunque abbia il link.</li>
-				<li><strong>Con fornitori di servizio (Data Processors):</strong> hosting (AWS, EC2/RDS negli Stati Uniti), email transazionale (Resend), mappe e dati di luoghi (Google Maps Platform, OpenStreetMap/Nominatim tramite il nostro proxy backend). Trattano i dati su nostre istruzioni e con garanzie contrattuali.</li>
+				<li><strong>Con fornitori di servizio (Data Processors):</strong> hosting (AWS, EC2/RDS negli Stati Uniti), email transazionale (Resend), mappe e dati di luoghi (Google Maps Platform, OpenStreetMap/Nominatim tramite il nostro proxy backend), invio di notifiche push (Firebase Cloud Messaging, Google). Trattano i dati su nostre istruzioni e con garanzie contrattuali.</li>
 				<li><strong>Per motivi legali:</strong> quando richiesto da un'ordinanza del tribunale, citazione o altra richiesta legittima, comprese le autorità di Hong Kong ai sensi della PDPO o di altre Ordinanze.</li>
 			</ul>
 
