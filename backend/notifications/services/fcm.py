@@ -146,18 +146,32 @@ def _endpoint() -> str:
 	return f"https://fcm.googleapis.com/v1/projects/{project}/messages:send"
 
 
-def send(*, token: str, title: str, body: str, data: dict | None = None) -> None:
+def send(
+	*, token: str, title: str, body: str, data: dict | None = None, channel_id: str | None = None
+) -> None:
 	"""Manda una notificación a un token. Lanza `FCMError` si no se pudo.
 
 	`data` viaja como strings porque FCM sólo acepta strings ahí; convertir en
 	el borde evita que cada llamador se acuerde.
+
+	`channel_id` decide por qué canal de Android sale. Sin él, el sistema usa
+	`fcm_fallback_notification_channel` —el que FCM inventa solo—, que se le
+	muestra al usuario como "Miscellaneous", no vibra, y mete todo en la misma
+	bolsa. El id tiene que existir en el teléfono: lo crea la app al arrancar.
 	"""
+	android: dict = {"priority": "high"}
+	if channel_id:
+		# Sólo si hay canal: un bloque `notification` vacío le da a FCM un
+		# INVALID_ARGUMENT, que es el error que no se puede confundir con un
+		# token muerto.
+		android["notification"] = {"channel_id": channel_id}
+
 	payload = {
 		"message": {
 			"token": token,
 			"notification": {"title": title, "body": body},
 			"data": {k: str(v) for k, v in (data or {}).items()},
-			"android": {"priority": "high"},
+			"android": android,
 		}
 	}
 

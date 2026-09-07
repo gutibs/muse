@@ -90,7 +90,33 @@ def tokens_for(user) -> list[DeviceToken]:
 	return list(DeviceToken.objects.filter(user=user).order_by("-last_seen_at"))
 
 
-def push_to_user(user, *, title: str, body: str, data: dict | None = None) -> int:
+# Los canales de notificación de Android. **Estos ids tienen que existir tal
+# cual en el teléfono**: los crea la app en `push.service.ts`, y si no coinciden
+# Android no falla — usa el canal fallback de FCM y nadie se entera hasta que
+# alguien mira Ajustes y ve "Miscellaneous". `push.service.test.ts` compara los
+# dos lados por eso.
+#
+# Son dos y no uno porque el usuario tiene que poder callar el resumen diario
+# sin perderse una solicitud de amistad. Cambiar un id deja el canal viejo
+# huérfano en Ajustes y crea uno nuevo con los ajustes por defecto: no se tocan.
+CHANNEL_SOCIAL = "muse_social"
+CHANNEL_DIGEST = "muse_digest"
+
+
+def channel_for(kind: str) -> str:
+	"""Canal por el que sale un tipo de notificación.
+
+	Un tipo que no esté en el mapa cae en el social a propósito: es preferible
+	el canal equivocado —que suena y vibra— al fallback, que llega mudo.
+	"""
+	if kind == "friend_activity_digest":
+		return CHANNEL_DIGEST
+	return CHANNEL_SOCIAL
+
+
+def push_to_user(
+	user, *, title: str, body: str, data: dict | None = None, channel_id: str | None = None
+) -> int:
 	"""Manda a todos los dispositivos de una persona. Devuelve cuántos aceptaron.
 
 	Un token muerto se borra y no cuenta como fallo del envío: el resto sí se
@@ -106,6 +132,7 @@ def push_to_user(user, *, title: str, body: str, data: dict | None = None) -> in
 				title=truncate(title, TITLE_MAX),
 				body=truncate(body, BODY_MAX),
 				data=data,
+				channel_id=channel_id,
 			)
 			delivered += 1
 		except fcm.FCMError as exc:
@@ -233,6 +260,7 @@ def run_pending(batch_size: int = 50) -> dict:
 					"kind": job.kind,
 					**{k: v for k, v in job.context.items() if k != "actor_name"},
 				},
+				channel_id=channel_for(job.kind),
 			)
 		except Exception as exc:
 			# Ancho a propósito: cualquier cosa que falle en un job tiene que

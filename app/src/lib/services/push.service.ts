@@ -1,5 +1,6 @@
 import { Capacitor } from '@capacitor/core';
 import { api } from '$lib/services/api.service';
+import { t } from '$lib/i18n/index.svelte';
 import { logSilent } from '$lib/utils/logger';
 
 /**
@@ -17,7 +18,59 @@ import { logSilent } from '$lib/utils/logger';
  * de amistad, que es cuando la notificación tiene sentido.
  */
 
+/**
+ * Los canales de Android, que **tienen que coincidir con los del backend**
+ * (`notifications/services/dispatch.py`). Si no coinciden, Android no falla:
+ * usa `fcm_fallback_notification_channel`, el que FCM inventa solo. Eso se ve
+ * —"Miscellaneous" en Ajustes— y se siente: ese canal no vibra y mete las
+ * solicitudes de amistad en la misma bolsa que el resumen diario, así que
+ * silenciar uno silencia el otro. `push.service.test.ts` compara los dos lados.
+ *
+ * Los ids no se tocan. Android los usa como clave: cambiar uno deja el canal
+ * viejo huérfano en Ajustes, con los ajustes que la persona le haya puesto, y
+ * crea uno nuevo por defecto.
+ */
+export const CHANNEL_SOCIAL = 'muse_social';
+export const CHANNEL_DIGEST = 'muse_digest';
+
 let registered = false;
+let channelsReady = false;
+
+/**
+ * Crea los canales antes de que llegue la primera notificación.
+ *
+ * Sólo Android: en iOS no existen los canales. Es idempotente —volver a
+ * crearlos no pisa lo que la persona haya configurado— y si falla no corta el
+ * registro: sin canal propio las notificaciones llegan igual, sólo que por el
+ * fallback, y eso es mejor que no registrar el dispositivo.
+ */
+async function ensureChannels(): Promise<void> {
+	if (channelsReady || Capacitor.getPlatform() !== 'android') return;
+	try {
+		const { PushNotifications } = await import('@capacitor/push-notifications');
+		await PushNotifications.createChannel({
+			id: CHANNEL_SOCIAL,
+			name: t('push.channel.social.name'),
+			description: t('push.channel.social.description'),
+			importance: 5,
+			visibility: 1,
+			vibration: true
+		});
+		await PushNotifications.createChannel({
+			id: CHANNEL_DIGEST,
+			name: t('push.channel.digest.name'),
+			description: t('push.channel.digest.description'),
+			// Menos que el social a propósito: el resumen no es urgente y no
+			// tiene por qué interrumpir con un heads-up.
+			importance: 3,
+			visibility: 1,
+			vibration: true
+		});
+		channelsReady = true;
+	} catch (err) {
+		logSilent('push.ensureChannels', err);
+	}
+}
 
 /**
  * El token vive en localStorage y no sólo en memoria.
@@ -98,6 +151,10 @@ export async function enable(): Promise<boolean> {
 			});
 			registered = true;
 		}
+
+		// Antes del register: si el primer mensaje llega y el canal no existe,
+		// ese va por el fallback aunque los siguientes salgan bien.
+		await ensureChannels();
 
 		await PushNotifications.register();
 		return true;

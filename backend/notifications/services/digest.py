@@ -22,7 +22,7 @@ from accounts.services.visibility import visible_friend_ids, visible_pin_filter
 from feed.models import Activity
 from notifications.models import DigestLog
 from notifications.services import fcm
-from notifications.services.dispatch import push_to_user, user_language
+from notifications.services.dispatch import CHANNEL_DIGEST, push_to_user, user_language
 from pins.models import Pin
 
 logger = logging.getLogger(__name__)
@@ -168,7 +168,13 @@ def send_for(user, *, now=None) -> bool:
 
 	title, body = render(user, activities)
 	try:
-		push_to_user(user, title=title, body=body, data={"kind": "friend_activity_digest"})
+		push_to_user(
+			user,
+			title=title,
+			body=body,
+			data={"kind": "friend_activity_digest"},
+			channel_id=CHANNEL_DIGEST,
+		)
 	except fcm.FCMError as exc:
 		logger.warning("digest no entregado a %s: %s", user.pk, exc.message)
 		return False
