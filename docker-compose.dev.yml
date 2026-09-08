@@ -37,8 +37,12 @@ services:
       DB_PORT: 5432
       REDIS_URL: redis://redis:6379/0
       DJANGO_ALLOWED_HOSTS: "localhost,127.0.0.1,10.0.2.2"
-      CORS_ALLOWED_ORIGINS: "http://localhost:5174,https://localhost,http://localhost,capacitor://localhost"
-      CSRF_TRUSTED_ORIGINS: "http://localhost:5174,https://localhost,http://localhost,capacitor://localhost"
+      # El rango de puertos y no sólo 5174: Vite toma el primero libre, y
+      # con otro proyecto ocupando el 5174 se va al 5175 o más arriba. El
+      # backend entonces rechaza por CORS con un "Failed to fetch" que
+      # parece falta de red y no menciona el puerto por ningún lado.
+      CORS_ALLOWED_ORIGINS: "http://localhost:5174,http://localhost:5175,http://localhost:5176,http://localhost:5177,http://localhost:5178,https://localhost,http://localhost,capacitor://localhost"
+      CSRF_TRUSTED_ORIGINS: "http://localhost:5174,http://localhost:5175,http://localhost:5176,http://localhost:5177,http://localhost:5178,https://localhost,http://localhost,capacitor://localhost"
     depends_on:
       db:
         condition: service_healthy
