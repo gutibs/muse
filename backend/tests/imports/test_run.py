@@ -185,3 +185,53 @@ def test_un_job_ya_confirmado_no_se_confirma_de_nuevo(alguien):
 
 	assert confirm_job(job, [lugar.pk]) == 0
 	assert Pin.objects.count() == 0
+
+
+@pytest.mark.critical
+def test_una_fila_sin_nombre_no_se_manda_a_buscar(alguien):
+	"""El parseo ya la marcó ilegible: volver a mirarla es gastar de más.
+
+	Apareció mirando la pantalla: la fila vacía salía como "falló la búsqueda"
+	en vez de "esa fila no tenía nombre", porque el despachador la mandaba a
+	Google con el nombre en blanco. Dos daños: una llamada facturada por una
+	fila que ya sabíamos rota, y el motivo real reemplazado por uno que
+	confunde a quien lee el reporte.
+	"""
+	job = ImportJob.objects.create(
+		user=alguien,
+		source="lista.csv",
+		total=1,
+		report=[
+			{"row": 2, "name": "Yardbird", "city": "Hong Kong", "outcome": "pending"},
+			{"row": 3, "name": "", "city": "Roma", "outcome": "unreadable"},
+		],
+	)
+	_restaurante("Yardbird", "Hong Kong")
+
+	with patch("imports.services.match.google_places") as google:
+		run_pending()
+
+	job.refresh_from_db()
+	ilegible = [f for f in job.report if f["row"] == 3][0]
+	assert ilegible["outcome"] == "unreadable"
+	google.autocomplete.assert_not_called()
+
+
+def test_las_filas_ilegibles_cuentan_en_el_total(alguien):
+	"""Si no, la pantalla dice "2 de 4" con tres problemas listados abajo."""
+	job = ImportJob.objects.create(
+		user=alguien,
+		source="lista.csv",
+		total=2,
+		report=[
+			{"row": 2, "name": "Yardbird", "city": "Hong Kong", "outcome": "pending"},
+			{"row": 3, "name": "", "city": "Roma", "outcome": "unreadable"},
+		],
+	)
+	_restaurante("Yardbird", "Hong Kong")
+
+	with patch("imports.services.match.google_places"):
+		run_pending()
+
+	job.refresh_from_db()
+	assert job.matched + job.failed == len(job.report)

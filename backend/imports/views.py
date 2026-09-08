@@ -51,7 +51,10 @@ class ImportJobListView(APIView):
 		job = ImportJob.objects.create(
 			user=request.user,
 			source=archivo.name[:255],
-			total=len(filas),
+			# Las filas ilegibles cuentan en el total: si no, la pantalla dice
+			# "2 de 4" con tres problemas listados abajo y los números no
+			# cierran a la vista de quien subió el archivo.
+			total=len(filas) + len(errores),
 			# Las filas entran como pendientes; el cron las resuelve. Los
 			# errores de parseo viajan desde ya, para que la persona los vea
 			# sin esperar el matcheo.

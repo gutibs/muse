@@ -86,8 +86,13 @@ const REQUEST_TIMEOUT_MS = 15000;
 
 async function request<T>(path: string, options?: RequestInit, alreadyRetried = false): Promise<T> {
 	const token = getAccessToken();
+	// Con un FormData adentro **no se declara Content-Type**: lo tiene que
+	// escribir el navegador, porque es el único que conoce el `boundary` que
+	// separa las partes. Declararlo a mano deja al servidor con un cuerpo que
+	// no puede partir, y el error que devuelve no menciona la cabecera.
+	const esFormulario = typeof FormData !== 'undefined' && options?.body instanceof FormData;
 	const headers: Record<string, string> = {
-		'Content-Type': 'application/json',
+		...(esFormulario ? {} : { 'Content-Type': 'application/json' }),
 		...acceptLanguage(),
 		...(token ? { Authorization: `Bearer ${token}` } : {}),
 	};
@@ -240,6 +245,13 @@ export const api = {
 	 */
 	getAnon<T>(path: string): Promise<T> {
 		return requestAnon<T>(path);
+	},
+	/**
+	 * POST de un archivo. El `FormData` viaja tal cual y `request` se encarga
+	 * de no pisar la cabecera que el navegador necesita escribir.
+	 */
+	postForm<T>(path: string, form: FormData): Promise<T> {
+		return request<T>(path, { method: 'POST', body: form });
 	},
 	patch<T>(path: string, body: unknown): Promise<T> {
 		return request<T>(path, {

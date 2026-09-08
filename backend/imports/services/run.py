@@ -74,6 +74,16 @@ def _resolver(job: ImportJob) -> None:
 	matched = failed = 0
 
 	for fila in job.report:
+		# Las filas que el parseo ya descartó no se vuelven a mirar. Mandarlas a
+		# buscar con el nombre en blanco gasta una llamada facturada por algo
+		# que ya sabíamos roto, y pisa el motivo real —"esa fila no tenía
+		# nombre"— con un "falló la búsqueda" que confunde a quien lee el
+		# reporte. Se vio en la pantalla, no en el código.
+		if fila.get("outcome") not in (None, "", "pending"):
+			reporte.append(fila)
+			failed += 1
+			continue
+
 		resultado = match_row(fila, job.user)
 		entrada = {
 			"row": fila.get("row"),

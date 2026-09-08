@@ -618,6 +618,15 @@
 
 			<!-- Navigation -->
 			<div class="mt-6 space-y-2">
+				<!-- Importar va acá y no en Ajustes: es algo que se hace con la
+				     lista propia, y esta pantalla es la lista propia. -->
+				<a href="/import" class="flex items-center gap-3 rounded-card bg-white p-4 shadow-card active:scale-[0.98]">
+					<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-jade/10 text-jade">
+						<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+					</div>
+					<span class="flex-1 text-sm font-medium text-ink">{t('import.title')}</span>
+					<svg class="h-4 w-4 text-ink-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+				</a>
 				<a href="/settings" class="flex items-center gap-3 rounded-card bg-white p-4 shadow-card active:scale-[0.98]">
 					<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-jade/10 text-jade">
 						<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>

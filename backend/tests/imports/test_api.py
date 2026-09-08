@@ -66,7 +66,9 @@ def test_las_filas_rotas_viajan_desde_el_principio(client):
 		{"file": _archivo("name,city\nYardbird,Hong Kong\n,Roma\n")},
 		format="multipart",
 	)
-	assert res.data["total"] == 1
+	# El total incluye la fila rota: la pantalla muestra "encontramos X de N" y
+	# abajo lista los problemas, así que N tiene que contarlos.
+	assert res.data["total"] == 2
 	assert any(f["outcome"] == "unreadable" for f in res.data["report"])
 
 
