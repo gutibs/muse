@@ -84,6 +84,22 @@ async function refreshAccessToken(): Promise<boolean> {
 
 const REQUEST_TIMEOUT_MS = 15000;
 
+/**
+ * El cuerpo de una respuesta, o `undefined` si no trae ninguno.
+ *
+ * No alcanza con mirar el 204: un `Response(status=201)` de DRF sin `data`
+ * también llega sin cuerpo, y `json()` sobre eso tira `Unexpected end of
+ * JSON input`. El cliente lo veía como fallo de red y revertía una escritura
+ * que el servidor había aceptado — pasó con el primer voto de una shortlist.
+ */
+async function parseBody<T>(response: Response): Promise<T> {
+	if (response.status === 204) return undefined as T;
+	// Se mira el cuerpo y no `content-length`: ese header no viaja con
+	// `Transfer-Encoding: chunked` y tampoco lo trae todo mock de test.
+	const texto = await response.text();
+	return (texto ? JSON.parse(texto) : undefined) as T;
+}
+
 async function request<T>(path: string, options?: RequestInit, alreadyRetried = false): Promise<T> {
 	const token = getAccessToken();
 	// Con un FormData adentro **no se declara Content-Type**: lo tiene que
@@ -135,8 +151,7 @@ async function request<T>(path: string, options?: RequestInit, alreadyRetried = 
 		throw new ApiError(response.status, data);
 	}
 
-	if (response.status === 204) return undefined as T;
-	return response.json();
+	return parseBody<T>(response);
 }
 
 /** Igual que `request` pero sin Authorization y sin la maquinaria de refresh:
@@ -168,8 +183,7 @@ async function requestAnon<T>(path: string, options?: RequestInit): Promise<T> {
 		throw new ApiError(response.status, data);
 	}
 
-	if (response.status === 204) return undefined as T;
-	return response.json();
+	return parseBody<T>(response);
 }
 
 /** Max pages `getAll` will walk before giving up. At PAGE_SIZE=20 that is
@@ -228,11 +242,20 @@ export const api = {
 	 * en medio de un flujo anónimo. Lo usa la recuperación de contraseña, que
 	 * es donde la persona por definición no tiene sesión válida.
 	 */
-	postAnon<T>(path: string, body?: unknown): Promise<T> {
+	postAnon<T>(path: string, body?: unknown, headers?: Record<string, string>): Promise<T> {
 		return requestAnon<T>(path, {
 			method: 'POST',
 			body: body ? JSON.stringify(body) : undefined,
+			headers,
 		});
+	},
+	/**
+	 * DELETE sin sesión. Lo usa la votación de shortlists: sacar el propio
+	 * voto es una operación de alguien que no tiene cuenta, identificado por
+	 * una clave que viaja en un header.
+	 */
+	deleteAnon<T>(path: string, headers?: Record<string, string>): Promise<T> {
+		return requestAnon<T>(path, { method: 'DELETE', headers });
 	},
 	/**
 	 * GET sin tocar la sesión. Mismo motivo que `postAnon`.
