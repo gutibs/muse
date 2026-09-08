@@ -3,6 +3,7 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
+from corsheaders.defaults import default_headers
 from django.core.exceptions import ImproperlyConfigured
 
 logger = logging.getLogger(__name__)
@@ -250,6 +251,12 @@ REST_FRAMEWORK = {
 		# chat gets opened by everyone at once. Higher than `anon` on
 		# purpose, and per-IP because there is no user to key on.
 		"shared_list_public": "300/hour",
+		# Votar en una shortlist. Es la ÚNICA defensa contra el inflado del
+		# conteo: la clave del votante la inventa el cliente, así que lo que
+		# se limita es el volumen por IP. Generoso porque una oficina entera
+		# comparte IP —cinco personas por diez items con arrepentimientos
+		# entran de sobra— y estrecho comparado con un script.
+		"shortlist_vote": "60/hour",
 		# Ingesta de eventos: el cliente deduplica y manda en tandas de hasta
 		# 50, así que un usuario muy activo hace unas pocas requests por
 		# sesión. Holgado a propósito — perder eventos por throttle sesga el
@@ -300,6 +307,11 @@ SIMPLE_JWT = {
 
 # CORS
 CORS_ALLOWED_ORIGINS = os.environ.get("CORS_ALLOWED_ORIGINS", "http://localhost:5174").split(",")
+# Un header propio obliga al navegador a pedir permiso con un preflight antes
+# del POST. Sin esta línea el preflight se rechaza y la request nunca sale:
+# el cliente ve un `Failed to fetch` idéntico al de estar sin red. Aplica a
+# la web y también al APK, que es cross-origin (`capacitor://localhost`).
+CORS_ALLOW_HEADERS = (*default_headers, "x-muse-voter")
 
 # CSRF
 CSRF_TRUSTED_ORIGINS = os.environ.get("CSRF_TRUSTED_ORIGINS", "http://localhost:5174").split(",")

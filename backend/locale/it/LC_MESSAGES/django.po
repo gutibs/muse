@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Muse\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-07 20:33-0300\n"
+"POT-Creation-Date: 2026-09-08 08:59-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: Italiano\n"
@@ -67,20 +67,22 @@ msgstr "Password aggiornata."
 msgid "Original file name"
 msgstr "Nome originale del file"
 
-#: imports/services/parse.py:42
+#: imports/services/parse.py:52
 msgid "Only .csv and .xlsx files can be imported."
 msgstr "Si possono importare solo file .csv e .xlsx."
 
-#: imports/services/parse.py:46
+#: imports/services/parse.py:56
 msgid "The file has no rows."
 msgstr "Il file non ha righe."
 
-#: imports/services/parse.py:52
+#: imports/services/parse.py:62
 msgid ""
 "The file needs a column with the restaurant name (name, nombre, restaurant…)."
-msgstr "Il file ha bisogno di una colonna con il nome del ristorante (name, nombre, restaurant…)."
+msgstr ""
+"Il file ha bisogno di una colonna con il nome del ristorante (name, nombre, "
+"restaurant…)."
 
-#: imports/services/parse.py:104
+#: imports/services/parse.py:114
 msgid "That .xlsx file could not be read."
 msgstr "Non è stato possibile leggere quel file .xlsx."
 
@@ -96,7 +98,7 @@ msgstr "Quel file è troppo grande (massimo 2 MB)."
 msgid "No usable rows in that file."
 msgstr "Quel file non ha righe utilizzabili."
 
-#: imports/views.py:70 imports/views.py:80 restaurants/views.py:97
+#: imports/views.py:73 imports/views.py:83 restaurants/views.py:97
 #: restaurants/views.py:104
 msgid "Not found."
 msgstr "Non trovato."
@@ -149,7 +151,7 @@ msgstr "Ora siete amici"
 msgid "%(name)s accepted your request."
 msgstr "%(name)s ha accettato la tua richiesta."
 
-#: pins/serializers.py:131
+#: pins/serializers.py:132
 msgid "The same place is in the list twice."
 msgstr "Lo stesso locale è due volte nella lista."
 
@@ -160,6 +162,10 @@ msgstr "isFavourite deve essere un booleano."
 #: pins/views.py:75
 msgid "You already pinned this restaurant."
 msgstr "Hai già salvato questo ristorante."
+
+#: pins/views_public.py:30
+msgid "A valid voter key is required."
+msgstr "Serve una chiave di voto valida."
 
 #: places/geo.py:32
 msgid "lat and lng are required."
@@ -191,7 +197,9 @@ msgstr "geocodifica inversa fallita"
 
 #: releases/models.py:49
 msgid "Below this version the app blocks with no way out. Semantic, e.g. 1.3.0"
-msgstr "Sotto questa versione l'app si blocca senza vie d'uscita. Semantica, es. 1.3.0"
+msgstr ""
+"Sotto questa versione l'app si blocca senza vie d'uscita. Semantica, es. "
+"1.3.0"
 
 #: releases/models.py:53
 msgid ""
@@ -202,7 +210,9 @@ msgstr ""
 
 #: releases/models.py:58
 msgid "Where the blocking screen sends people. Store link, or direct download."
-msgstr "Dove la schermata di blocco manda le persone. Link allo store o download diretto."
+msgstr ""
+"Dove la schermata di blocco manda le persone. Link allo store o download "
+"diretto."
 
 #: releases/models.py:63
 msgid "app version policy"

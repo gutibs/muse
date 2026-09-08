@@ -52,3 +52,37 @@ def visible_pins(viewer, *, owner=None, status=None, tag=None, city=None, favour
 	if city:
 		qs = qs.filter(restaurant__city__icontains=city)
 	return qs
+
+
+def reachable_shared_lists():
+	"""Las listas que un link puede abrir: activas y no vencidas.
+
+	Vive acá porque son dos vistas las que necesitan exactamente este
+	criterio —la página pública y la votación— y una copia por vista es el
+	camino conocido a que una acepte lo que la otra rechaza. Una lista
+	vencida es un 404 igual que una desactivada: quien tiene el link no
+	tiene por qué saber si existió.
+	"""
+	from django.db.models import Q
+	from django.utils import timezone
+
+	from pins.models import SharedList
+
+	return SharedList.objects.filter(is_active=True).filter(
+		Q(expires_at__isnull=True) | Q(expires_at__gt=timezone.now())
+	)
+
+
+def votable_shared_lists():
+	"""Las listas sobre las que se puede votar.
+
+	Además de ser alcanzable, la lista tiene que ser curada y tener el
+	interruptor prendido por su dueño. Sin el `kind`, un link `auto` con
+	items colgados a mano aceptaría votos que su dueño nunca ofreció.
+	"""
+	from pins.models import SharedList
+
+	return reachable_shared_lists().filter(
+		kind=SharedList.Kind.CURATED,
+		voting_enabled=True,
+	)

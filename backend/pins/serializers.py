@@ -107,6 +107,7 @@ class SharedListSerializer(serializers.ModelSerializer):
 			"status_filter",
 			"is_active",
 			"expires_at",
+			"voting_enabled",
 			"pin_ids",
 			"items",
 			"url",

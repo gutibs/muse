@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 
 from pins.models import Pin, SharedList
-from pins.selectors import visible_pins
+from pins.selectors import reachable_shared_lists, visible_pins
 from pins.serializers import (
 	PinSerializer,
 	SharedListSerializer,
@@ -99,14 +99,8 @@ class SharedListPublicView(generics.RetrieveAPIView):
 	lookup_field = "token"
 
 	def get_queryset(self):
-		# Una lista vencida es un 404, igual que una desactivada: quien tiene
-		# el link no tiene por qué saber si existió.
-		from django.db.models import Q
-		from django.utils import timezone
-
 		return (
-			SharedList.objects.filter(is_active=True)
-			.filter(Q(expires_at__isnull=True) | Q(expires_at__gt=timezone.now()))
+			reachable_shared_lists()
 			.select_related("user__profile")
 			.prefetch_related("items__pin__restaurant")
 		)

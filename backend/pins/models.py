@@ -119,6 +119,10 @@ class SharedList(models.Model):
 	# Una lista que se llamó "almuerzo del viernes" tiene vida útil de días.
 	# Hasta ahora el único apagador era acordarse de desactivarla a mano.
 	expires_at = models.DateTimeField(null=True, blank=True)
+	# Apagada por defecto, y eso no es negociable: los links curados que ya
+	# circulan se compartieron para mostrar, no para encuestar. Prenderla es
+	# un acto del dueño sobre una lista concreta.
+	voting_enabled = models.BooleanField(default=False)
 	created_at = models.DateTimeField(auto_now_add=True)
 
 	class Meta:
@@ -157,3 +161,38 @@ class SharedListItem(models.Model):
 
 	def __str__(self):
 		return f"{self.shared_list} · {self.position}"
+
+
+class ShortlistVote(models.Model):
+	"""Un tick de alguien que abrió el link de una shortlist.
+
+	Cuelga del item y no del restaurante: si el dueño saca un lugar de la
+	lista, sus votos se van con él. Con FK al restaurante quedarían votos
+	huérfanos que reaparecen si lo vuelve a agregar.
+
+	No hay `user` ni nombre. La identidad es un UUID que genera el navegador
+	y guarda en `localStorage`: **evita el doble voto accidental y nada más**.
+	Quien quiera inflar el conteo abre una pestaña de incógnito. Lo único que
+	hay del otro lado es el throttle por IP, y la UI no promete otra cosa.
+	"""
+
+	item = models.ForeignKey(
+		SharedListItem,
+		on_delete=models.CASCADE,
+		related_name="votes",
+	)
+	voter_key = models.UUIDField()
+	created_at = models.DateTimeField(auto_now_add=True)
+
+	class Meta:
+		db_table = "pins_shortlist_vote"
+		constraints = [
+			models.UniqueConstraint(
+				fields=["item", "voter_key"],
+				name="unique_vote_per_item_and_voter",
+			)
+		]
+		indexes = [models.Index(fields=["item"])]
+
+	def __str__(self):
+		return f"{self.item} · {self.voter_key}"
