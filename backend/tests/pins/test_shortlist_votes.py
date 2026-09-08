@@ -13,11 +13,9 @@ import datetime as dt
 import uuid
 
 import pytest
-from django.core.cache import cache
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework.test import APIClient
-from rest_framework.throttling import SimpleRateThrottle
 
 from pins.models import SharedList, SharedListItem, ShortlistVote
 from tests.factories import PinFactory, RestaurantFactory, UserFactory
@@ -280,37 +278,20 @@ def test_una_clave_basura_al_mirar_no_rompe_la_pagina():
 	assert resp.json()["pins"][0]["hasVoted"] is False
 
 
-@pytest.fixture
-def con_throttle_de_votos(monkeypatch):
-	"""La rate de votos bajada a 3, para no mandar 60 requests en un test.
-
-	Se parchea `SimpleRateThrottle.THROTTLE_RATES` y **no** el setting:
-	DRF evalúa `THROTTLE_RATES = api_settings.DEFAULT_THROTTLE_RATES` en el
-	cuerpo de la clase, o sea una referencia al dict que había al importar el
-	módulo. Reemplazar `settings.REST_FRAMEWORK` crea un dict nuevo que esa
-	referencia nunca ve, así que el override tomaba efecto sólo si el import
-	caía dentro del test — el mismo test pasaba solo y fallaba en la suite.
-
-	Parte de las rates vigentes en vez de copiar la lista de scopes a mano:
-	una copia se desactualiza en silencio y el test mide un límite que ya no
-	existe.
-	"""
-	rates = {**SimpleRateThrottle.THROTTLE_RATES, "shortlist_vote": "3/hour"}
-	monkeypatch.setattr(SimpleRateThrottle, "THROTTLE_RATES", rates)
-	cache.clear()
-	yield
-	cache.clear()
-
-
 @pytest.mark.critical
 @pytest.mark.django_db
-def test_el_conteo_no_se_infla_a_fuerza_de_claves_nuevas(con_throttle_de_votos):
+def test_el_conteo_no_se_infla_a_fuerza_de_claves_nuevas(rates_de_produccion):
 	"""La única defensa contra el inflado es el throttle por IP.
 
 	Una clave nueva por request es trivial de generar —el cliente la
 	inventa— así que lo que tiene que frenar no es la clave repetida sino el
 	volumen desde un mismo origen.
+
+	El límite se baja a 3 para no mandar 60 requests. Sale del fixture del
+	conftest, que es el único lugar que sabe parchear lo que DRF realmente
+	lee: tocar `settings.REST_FRAMEWORK` no alcanza.
 	"""
+	rates_de_produccion(shortlist_vote="3/hour")
 	lista, (item,) = _lista_con_items()
 
 	codigos = [_votar(lista, item, uuid.uuid4()).status_code for _ in range(5)]

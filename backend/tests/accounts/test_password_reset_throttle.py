@@ -16,32 +16,19 @@ from django.urls import reverse
 from rest_framework.settings import api_settings
 from rest_framework.test import APIClient
 
-# El fixture reemplaza el dict entero, así que tiene que reponer NUM_PROXIES:
-# sin él, DRF vuelve a la identidad por XFF completo y el test mide otra cosa.
-REAL_RATES = {
-	"login": "10/min",
-	"register": "5/hour",
-	"user_search": "60/hour",
-	"places": "120/hour",
-	"invite": "20/hour",
-	"reverse_geocode": "60/hour",
-	"shared_list_public": "300/hour",
-	"analytics": "600/hour",
-	"anon": "60/hour",
-	"user": "1000/hour",
-	"password_reset": "5/hour",
-	"password_reset_confirm": "10/hour",
-}
 
+@pytest.fixture(autouse=True)
+def _rates_reales(rates_de_produccion):
+	"""Estos tests miden el rate limit, así que necesitan el límite real.
 
-@pytest.fixture
-def real_throttles(settings):
-	settings.REST_FRAMEWORK = {
-		**settings.REST_FRAMEWORK,
-		"DEFAULT_THROTTLE_RATES": REAL_RATES,
-		"NUM_PROXIES": 1,
-	}
-	return settings
+	Antes esto era un fixture local que reemplazaba `settings.REST_FRAMEWORK`
+	con una copia a mano de los scopes. **No hacía nada**: DRF lee
+	`SimpleRateThrottle.THROTTLE_RATES`, una referencia al dict del import, y
+	los tests pasaban de casualidad porque ese dict tenía justo las rates que
+	la copia declaraba. Al arreglar el conftest —que ahora sí desactiva los
+	throttles— los cuatro se cayeron de golpe, que es como se supo.
+	"""
+	rates_de_produccion()
 
 
 def _through_nginx(client_sent, real_ip):
@@ -51,7 +38,7 @@ def _through_nginx(client_sent, real_ip):
 
 @pytest.mark.critical
 @pytest.mark.django_db
-def test_a_forged_forwarded_for_does_not_buy_a_fresh_bucket(real_throttles):
+def test_a_forged_forwarded_for_does_not_buy_a_fresh_bucket():
 	"""El atacante controla el prefijo del XFF; no debe comprarle un cubo."""
 	url = reverse("password_reset")
 	client = APIClient()
@@ -77,7 +64,7 @@ def test_a_forged_forwarded_for_does_not_buy_a_fresh_bucket(real_throttles):
 
 @pytest.mark.critical
 @pytest.mark.django_db
-def test_two_clients_behind_the_proxy_get_separate_buckets(real_throttles):
+def test_two_clients_behind_the_proxy_get_separate_buckets():
 	url = reverse("password_reset")
 	client = APIClient()
 
@@ -109,7 +96,7 @@ def test_num_proxies_is_configured():
 
 @pytest.mark.critical
 @pytest.mark.django_db
-def test_an_authenticated_caller_is_throttled_too(real_throttles):
+def test_an_authenticated_caller_is_throttled_too():
 	"""`AnonRateThrottle.get_cache_key` devuelve None si hay sesión, o sea que
 	no cuenta nada. Como el registro es abierto, una cuenta gratis alcanzaba
 	para rociar mails de reset a direcciones de terceros desde nuestro dominio
@@ -140,7 +127,7 @@ def test_an_authenticated_caller_is_throttled_too(real_throttles):
 
 @pytest.mark.critical
 @pytest.mark.django_db
-def test_an_authenticated_caller_is_throttled_on_confirm_too(real_throttles):
+def test_an_authenticated_caller_is_throttled_on_confirm_too():
 	from tests.factories import UserFactory
 
 	user = UserFactory(username="guesser", email="guesser@example.com")
