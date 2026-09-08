@@ -30,8 +30,15 @@ def test_resend_esta_parcheado_en_toda_la_suite():
 
 
 @pytest.mark.django_db
-def test_un_alta_no_sale_a_la_red(emails_enviados):
-	"""El camino por el que se colaba: `RegisterView` manda el mail de bienvenida."""
+def test_un_alta_no_sale_a_la_red(emails_enviados, settings):
+	"""El camino por el que se colaba: `RegisterView` manda el mail de bienvenida.
+
+	La key se fija acá a propósito. Sin ella `_ensure_configured` corta antes de
+	llegar a Resend y `_notify` se come el `EmailSendError`, así que el test
+	pasaría sin probar nada — y pasaría **sólo donde hay key**: en local, por el
+	`.env`, y no en CI. Eso es exactamente lo que rompió el build.
+	"""
+	settings.RESEND_API_KEY = "re_test_key"
 	client = APIClient()
 
 	response = client.post(
