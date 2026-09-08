@@ -30,6 +30,7 @@ from accounts.serializers import (
 )
 from accounts.services.account_deletion import anonymise_user
 from accounts.services.blocking import block_user, is_blocked, unblock_user
+from accounts.services.consent import client_ip, pending_policies, record_consent
 from accounts.services.email import EmailSendError, send_invitation_email
 from accounts.services.friendships import are_friends
 from accounts.services.password_reset import confirm_reset, request_reset
@@ -135,6 +136,29 @@ class DietaryPreferenceListView(generics.ListAPIView):
 	serializer_class = DietaryPreferenceSerializer
 	queryset = DietaryPreference.objects.all()
 	pagination_class = None
+
+
+class ConsentView(generics.GenericAPIView):
+	"""Deja constancia de que esta persona aceptó los documentos legales que le faltaban.
+
+	Existe por las cuentas anteriores al registro de consentimientos: la
+	migración que creó la tabla fue schema-only, así que 16 de los 17 perfiles
+	de producción no tienen ninguna fila y no hay forma de demostrar qué
+	aceptaron. La app las frena con `pendingPolicies` y las manda acá.
+
+	Idempotente: sin nada pendiente responde una lista vacía en vez de fallar,
+	porque el cliente puede reintentar y no tiene por qué saber qué le falta.
+	"""
+
+	serializer_class = None
+
+	def post(self, request):
+		registradas = record_consent(
+			request.user,
+			pending_policies(request.user),
+			ip_address=client_ip(request),
+		)
+		return Response({"accepted": [c.policy for c in registradas]})
 
 
 class ChangePasswordView(generics.GenericAPIView):

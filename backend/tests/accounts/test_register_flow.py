@@ -68,12 +68,15 @@ def test_register_creates_profile_and_consumes_invitation(welcome):
 	assert friendship_acts.filter(actor=b, target_user=a).exists()
 
 	# Active consent: one ConsentRecord per policy, stamped with the current
-	# version. These rows are the legal proof the user accepted GDPR + PDPO.
+	# version. These rows are the legal proof of what the user accepted. TERMS
+	# joined GDPR + PDPO on 2026-09-08: the terms of service used to sit under
+	# the button as plain text, accepted by nobody and recorded nowhere.
 	consents = ConsentRecord.objects.filter(user=b)
-	assert consents.count() == 2
+	assert consents.count() == 3
 	assert {c.policy for c in consents} == {
 		ConsentRecord.Policy.GDPR,
 		ConsentRecord.Policy.PDPO,
+		ConsentRecord.Policy.TERMS,
 	}
 	for c in consents:
 		assert c.policy_version == POLICY_VERSIONS[c.policy]
@@ -129,7 +132,7 @@ def test_register_consent_records_capture_ip(welcome):
 	assert response.status_code == 202, response.content
 	user = User.objects.get(email__iexact="ip@example.com")
 	records = ConsentRecord.objects.filter(user=user)
-	assert records.count() == 2
+	assert records.count() == 3
 	assert all(r.ip_address == "203.0.113.7" for r in records)
 
 

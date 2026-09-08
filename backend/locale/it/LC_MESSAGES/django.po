@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Muse\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-08 08:59-0300\n"
+"POT-Creation-Date: 2026-09-08 20:06-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: Italiano\n"
@@ -15,51 +15,51 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: accounts/serializers.py:170
+#: accounts/serializers.py:210
 msgid "Check your inbox to finish setting up your account."
 msgstr "Controlla la tua email per completare la creazione dell'account."
 
-#: accounts/serializers.py:189
-msgid "You must accept the privacy policy to register."
-msgstr "Devi accettare l'informativa sulla privacy per registrarti."
+#: accounts/serializers.py:233
+msgid "You must accept the privacy policy and the terms to register."
+msgstr "Devi accettare l'informativa sulla privacy e i termini per registrarti."
 
-#: accounts/serializers.py:335 accounts/serializers.py:436
+#: accounts/serializers.py:372 accounts/serializers.py:473
 msgid "Current password is incorrect."
 msgstr "La password attuale non è corretta."
 
-#: accounts/serializers.py:382
+#: accounts/serializers.py:419
 msgid "You cannot send a friend request to yourself."
 msgstr "Non puoi inviare una richiesta di amicizia a te stesso."
 
-#: accounts/serializers.py:384
+#: accounts/serializers.py:421
 msgid "Friend request already sent."
 msgstr "Richiesta di amicizia già inviata."
 
-#: accounts/serializers.py:386
+#: accounts/serializers.py:423
 msgid "This user already sent you a friend request."
 msgstr "Questa persona ti ha già inviato una richiesta di amicizia."
 
-#: accounts/serializers.py:409
+#: accounts/serializers.py:446
 msgid "This person already accepted your invitation."
 msgstr "Questa persona ha già accettato il tuo invito."
 
-#: accounts/views.py:210
+#: accounts/views.py:234
 msgid "Only the recipient can respond to a friend request."
 msgstr "Solo chi riceve la richiesta può rispondere."
 
-#: accounts/views.py:216
+#: accounts/views.py:240
 msgid "status must be 'accepted' or 'declined'."
 msgstr "status deve essere 'accepted' o 'declined'."
 
-#: accounts/views.py:227
+#: accounts/views.py:251
 msgid "This friend request is no longer available."
 msgstr "Questa richiesta di amicizia non è più disponibile."
 
-#: accounts/views.py:337
+#: accounts/views.py:361
 msgid "If an account exists for that email, a code has been sent."
 msgstr "Se esiste un account con quell'email, abbiamo inviato un codice."
 
-#: accounts/views.py:383
+#: accounts/views.py:407
 msgid "Password updated."
 msgstr "Password aggiornata."
 

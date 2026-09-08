@@ -15,7 +15,7 @@ from accounts.models import (
 	Report,
 )
 from accounts.services.blocking import is_blocked
-from accounts.services.consent import client_ip, record_consent
+from accounts.services.consent import client_ip, pending_policies, record_consent
 from accounts.services.email import (
 	EmailSendError,
 	send_account_exists_email,
@@ -38,6 +38,7 @@ class DietaryPreferenceSerializer(serializers.ModelSerializer):
 class ProfileSerializer(serializers.ModelSerializer):
 	email = serializers.EmailField(source="user.email", read_only=True)
 	stats = serializers.SerializerMethodField()
+	pending_policies = serializers.SerializerMethodField()
 	favourite_cuisine_detail = serializers.SerializerMethodField()
 	dietary_preferences = serializers.PrimaryKeyRelatedField(
 		queryset=DietaryPreference.objects.all(),
@@ -74,11 +75,13 @@ class ProfileSerializer(serializers.ModelSerializer):
 			"notify_friend_accepted",
 			"notify_daily_digest",
 			"digest_prompt_seen",
+			"pending_policies",
 			"language",
 			"timezone",
 			"digest_hour",
 			"is_verified_insider",
 			"stats",
+			"pending_policies",
 			"created_at",
 		)
 		# `is_verified_insider` es de sólo lectura o el badge no vale nada: lo
@@ -93,6 +96,15 @@ class ProfileSerializer(serializers.ModelSerializer):
 			"is_verified_insider",
 			"created_at",
 		)
+
+	def get_pending_policies(self, obj):
+		"""Documentos legales que esta persona todavía no aceptó.
+
+		Lista vacía es el caso normal. No vacía significa que la app tiene que
+		pedirle que acepte antes de dejarla seguir: son las cuentas anteriores
+		al registro de consentimientos, que nunca dejaron constancia de nada.
+		"""
+		return pending_policies(obj.user)
 
 	def get_favourite_cuisine_detail(self, obj):
 		if obj.favourite_cuisine:
@@ -164,6 +176,7 @@ _PRIVATE_PROFILE_FIELDS = (
 	"notify_friend_accepted",
 	"notify_daily_digest",
 	"digest_prompt_seen",
+	"pending_policies",
 	"language",
 	"timezone",
 	"digest_hour",
@@ -212,8 +225,13 @@ class RegisterSerializer(serializers.Serializer):
 		return value.lower()
 
 	def validate_accept_privacy(self, value):
+		# El campo se sigue llamando `accept_privacy` a propósito: hay APKs
+		# publicados que mandan `acceptPrivacy` y renombrarlo los rompe. Lo que
+		# cambia es qué cubre, que ahora incluye los términos.
 		if value is not True:
-			raise serializers.ValidationError(_("You must accept the privacy policy to register."))
+			raise serializers.ValidationError(
+				_("You must accept the privacy policy and the terms to register.")
+			)
 		return value
 
 	def _consume_invitations(self, user):
@@ -277,9 +295,17 @@ class RegisterSerializer(serializers.Serializer):
 			user.profile.display_name = validated_data["display_name"]
 			user.profile.save(update_fields=["display_name"])
 
+		# Las tres con un solo checkbox: los dos marcos legales que aplican
+		# según dónde esté la persona, y los términos, que hasta ahora se
+		# mostraban como texto debajo del botón sin que nadie los aceptara ni
+		# quedara constancia de nada.
 		record_consent(
 			user,
-			[ConsentRecord.Policy.GDPR, ConsentRecord.Policy.PDPO],
+			[
+				ConsentRecord.Policy.GDPR,
+				ConsentRecord.Policy.PDPO,
+				ConsentRecord.Policy.TERMS,
+			],
 			ip_address=client_ip(self.context.get("request")),
 		)
 

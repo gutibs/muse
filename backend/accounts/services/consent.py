@@ -28,6 +28,30 @@ POLICY_VERSIONS = {
 }
 
 
+# Los documentos que toda persona tiene que haber aceptado. DIGEST queda
+# afuera a propósito: no es un documento legal sino una finalidad opcional, y
+# no tenerlo aceptado es una elección válida, no una deuda.
+LEGAL_POLICIES = (
+	ConsentRecord.Policy.GDPR,
+	ConsentRecord.Policy.PDPO,
+	ConsentRecord.Policy.TERMS,
+)
+
+
+def pending_policies(user) -> list[str]:
+	"""Qué documentos legales le faltan a `user` en su versión vigente.
+
+	Existe por las cuentas anteriores a que hubiera registro: la migración que
+	creó la tabla fue schema-only y sin backfill, así que 16 de los 17 perfiles
+	de producción no tienen ninguna fila. También cubre el caso futuro de un
+	texto nuevo: al bumpear la versión, la aceptación vieja deja de contar.
+	"""
+	aceptadas = set(
+		user.consents.filter(policy__in=LEGAL_POLICIES).values_list("policy", "policy_version")
+	)
+	return [p for p in LEGAL_POLICIES if (p, POLICY_VERSIONS[p]) not in aceptadas]
+
+
 def client_ip(request) -> str | None:
 	"""La IP del cliente, mirando primero el proxy.
 

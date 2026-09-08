@@ -165,6 +165,16 @@ class AuthStore {
 		this.user = await authService.updateProfile(data);
 	}
 
+	/** Acepta los documentos legales pendientes y refresca el perfil.
+	 *
+	 * El POST devuelve qué se registró, no el perfil, así que hay que volver a
+	 * pedirlo: `pendingPolicies` es lo que decide si la app sigue frenada, y
+	 * sin refrescar el gate quedaría en pantalla para siempre. */
+	async acceptPolicies() {
+		await authService.acceptPolicies();
+		this.user = await authService.getProfile();
+	}
+
 	/**
 	 * Refetch the profile (including server-computed stats). Called from
 	 * pages that need fresh stats — e.g. profile/+page.svelte mount, after

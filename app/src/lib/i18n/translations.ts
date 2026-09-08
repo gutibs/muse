@@ -254,6 +254,7 @@ const translations: Record<Locale, Record<string, string>> = {
 		'register.subtitle': 'Create your account',
 		'register.signInLink': 'Sign in',
 		'register.consentRead': 'I have read and accept the',
+		'register.consentAnd': 'and the',
 
 		// Pin
 		'pin.editPin': 'Edit Pin',
@@ -389,6 +390,21 @@ const translations: Record<Locale, Record<string, string>> = {
 		'settings.notifyDailyDigest': 'A daily round-up of what my friends saved',
 		'settings.digestHour': 'Send the round-up at',
 		'settings.digestHourHelp': 'Your local time. Only sent on days when there is something to tell you.',
+		// El resumen se pide (2026-09-08): es actividad de terceros empujada al
+		// teléfono, no algo que pasó con tu cuenta.
+		'digest.promptTitle': 'Want the daily round-up?',
+		'digest.promptBody': 'One notification a day with what your friends saved. Only on days there is something to tell you, and you can turn it off whenever you want.',
+		'digest.promptYes': 'Yes, send it',
+		'digest.promptNo': 'Not now',
+		'digest.promptError': "That didn't save. Try again.",
+
+		// Las cuentas anteriores al registro de consentimientos.
+		'consent.gateTitle': 'Before you carry on',
+		'consent.gateBody': 'We changed how we record what you agree to, and there is nothing on file for your account. Have a look and accept to keep using Muse.',
+		'consent.gateAccept': 'I accept',
+		'consent.gateError': "That didn't go through. Try again.",
+		'consent.privacyLink': 'Privacy policy',
+		'consent.termsLink': 'Terms of service',
 		'settings.analyticsOptOutHelp': 'We count which venues get opened, saved and tapped through to, so restaurants can be told how much interest they receive. Turn this on and nothing from this account is recorded.',
 		'restaurant.book': 'Book a table',
 		'restaurant.reservationUrl': 'Reservation link',
@@ -793,6 +809,7 @@ const translations: Record<Locale, Record<string, string>> = {
 		'register.subtitle': 'Crea tu cuenta',
 		'register.signInLink': 'Iniciar sesión',
 		'register.consentRead': 'He leído y acepto la',
+		'register.consentAnd': 'y los',
 
 		'pin.editPin': 'Editar Pin',
 		'pin.addPin': 'Agregar Pin',
@@ -926,6 +943,18 @@ const translations: Record<Locale, Record<string, string>> = {
 		'settings.notifyDailyDigest': 'Un resumen diario de lo que guardaron mis amigos',
 		'settings.digestHour': 'Mandar el resumen a las',
 		'settings.digestHourHelp': 'Tu hora local. Sólo se manda los días que haya algo para contarte.',
+		'digest.promptTitle': '¿Quieres el resumen diario?',
+		'digest.promptBody': 'Una notificación por día con lo que guardaron tus amigos. Sólo los días que haya algo para contarte, y puedes apagarlo cuando quieras.',
+		'digest.promptYes': 'Sí, mándamelo',
+		'digest.promptNo': 'Ahora no',
+		'digest.promptError': 'No se pudo guardar. Inténtalo de nuevo.',
+
+		'consent.gateTitle': 'Antes de seguir',
+		'consent.gateBody': 'Cambiamos la forma en que registramos lo que aceptas, y de tu cuenta no tenemos constancia de nada. Échales un vistazo y acéptalos para seguir usando Muse.',
+		'consent.gateAccept': 'Acepto',
+		'consent.gateError': 'No se pudo guardar. Inténtalo de nuevo.',
+		'consent.privacyLink': 'Política de privacidad',
+		'consent.termsLink': 'Términos del servicio',
 		'settings.analyticsOptOutHelp': 'Contamos qué restaurantes se abren, se guardan y reciben clics, para poder decirle a cada uno cuánto interés genera. Si activas esto, no se registra nada de esta cuenta.',
 		'restaurant.book': 'Reservar mesa',
 		'restaurant.reservationUrl': 'Link de reserva',
@@ -1322,6 +1351,7 @@ const translations: Record<Locale, Record<string, string>> = {
 		'register.subtitle': 'Crea il tuo account',
 		'register.signInLink': 'Accedi',
 		'register.consentRead': 'Ho letto e accetto la',
+		'register.consentAnd': 'e i',
 
 		'pin.editPin': 'Modifica Pin',
 		'pin.addPin': 'Aggiungi Pin',
@@ -1455,6 +1485,18 @@ const translations: Record<Locale, Record<string, string>> = {
 		'settings.notifyDailyDigest': 'Un riepilogo giornaliero di ciò che salvano i miei amici',
 		'settings.digestHour': 'Manda il riepilogo alle',
 		'settings.digestHourHelp': 'La tua ora locale. Inviato solo nei giorni in cui c\'è qualcosa da raccontarti.',
+		'digest.promptTitle': 'Vuoi il riepilogo giornaliero?',
+		'digest.promptBody': 'Una notifica al giorno con quello che hanno salvato i tuoi amici. Solo nei giorni in cui c\'è qualcosa da dirti, e puoi disattivarlo quando vuoi.',
+		'digest.promptYes': 'Sì, mandamelo',
+		'digest.promptNo': 'Non ora',
+		'digest.promptError': 'Non è stato possibile salvare. Riprova.',
+
+		'consent.gateTitle': 'Prima di continuare',
+		'consent.gateBody': 'Abbiamo cambiato il modo in cui registriamo ciò che accetti, e del tuo account non abbiamo alcuna traccia. Dai un\'occhiata e accettali per continuare a usare Muse.',
+		'consent.gateAccept': 'Accetto',
+		'consent.gateError': 'Non è stato possibile salvare. Riprova.',
+		'consent.privacyLink': 'Informativa sulla privacy',
+		'consent.termsLink': 'Termini di servizio',
 		'settings.analyticsOptOutHelp': 'Contiamo quali ristoranti vengono aperti, salvati e cliccati, per poter dire a ciascuno quanto interesse riceve. Attivando questa opzione non viene registrato nulla di questo account.',
 		'restaurant.book': 'Prenota un tavolo',
 		'restaurant.reservationUrl': 'Link per prenotare',

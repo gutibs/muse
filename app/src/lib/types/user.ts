@@ -38,6 +38,14 @@ export interface Profile {
 	notifyFriendRequest: boolean;
 	notifyFriendAccepted: boolean;
 	notifyDailyDigest: boolean;
+	/** Si ya se le ofreció encender el resumen diario. El resumen se pide —es
+	 * actividad de terceros, no algo que pasó con tu cuenta— así que nace
+	 * apagado, y esto es lo que evita volver a preguntar. */
+	digestPromptSeen: boolean;
+	/** Documentos legales que esta cuenta todavía no aceptó. Vacío es lo
+	 * normal; con algo adentro la app tiene que pedir la aceptación antes de
+	 * dejar seguir. Sólo viene en el perfil propio. */
+	pendingPolicies: string[];
 	language: string;
 	timezone: string;
 	digestHour: number;

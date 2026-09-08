@@ -25,6 +25,7 @@ export type ProfileUpdatePayload = Partial<
 		| 'notifyFriendRequest'
 		| 'notifyFriendAccepted'
 		| 'notifyDailyDigest'
+		| 'digestPromptSeen'
 		| 'language'
 		| 'timezone'
 		| 'digestHour'
@@ -46,6 +47,13 @@ export const authService = {
 
 	updateProfile(data: ProfileUpdatePayload): Promise<Profile> {
 		return api.patch('/auth/profile/', data);
+	},
+
+	/** Deja constancia de que se aceptaron los documentos legales pendientes.
+	 * El backend decide cuáles son: el cliente no manda la lista para que no
+	 * pueda aceptar algo distinto de lo que se le mostró. */
+	acceptPolicies(): Promise<{ accepted: string[] }> {
+		return api.post('/auth/consent/', {});
 	},
 
 	dietaryPreferences(): Promise<DietaryPreference[]> {

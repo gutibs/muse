@@ -217,6 +217,8 @@
 						<span>
 							{t('register.consentRead')}
 							<a href={legalUrl('privacy')} target="_blank" rel="noopener" class="font-medium text-jade underline">{t('legal.privacy')}</a>
+							{t('register.consentAnd')}
+							<a href={legalUrl('terms')} target="_blank" rel="noopener" class="font-medium text-jade underline">{t('legal.terms')}</a>
 						</span>
 					</label>
 				</div>
@@ -228,13 +230,6 @@
 				>
 					{submitting ? t('auth.creatingAccount') : t('auth.createAccount')}
 				</button>
-
-				<p class="text-center text-xs leading-relaxed text-ink-muted">
-					{t('legal.acceptancePrefix')}
-					<a href={legalUrl('terms')} target="_blank" rel="noopener" class="font-medium text-jade underline">{t('legal.terms')}</a>
-					{t('legal.acceptanceAnd')}
-					<a href={legalUrl('privacy')} target="_blank" rel="noopener" class="font-medium text-jade underline">{t('legal.policies')}</a>{t('legal.acceptanceSuffix')}
-				</p>
 			</form>
 
 			<p class="mt-8 text-center text-sm text-ink-muted">

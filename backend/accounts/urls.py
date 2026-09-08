@@ -12,6 +12,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from accounts.views import (
 	BlockViewSet,
 	ChangePasswordView,
+	ConsentView,
 	DietaryPreferenceListView,
 	EmailInvitationView,
 	FriendshipViewSet,
@@ -83,6 +84,7 @@ urlpatterns = [
 	path("token/refresh/", ThrottledTokenRefreshView.as_view(), name="token_refresh"),
 	path("profile/", ProfileView.as_view(), name="profile"),
 	path("dietary-preferences/", DietaryPreferenceListView.as_view(), name="dietary_preferences"),
+	path("consent/", ConsentView.as_view(), name="consent"),
 	path("change-password/", ChangePasswordView.as_view(), name="change_password"),
 	path("password-reset/", PasswordResetView.as_view(), name="password_reset"),
 	path(
