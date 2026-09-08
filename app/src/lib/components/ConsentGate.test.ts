@@ -12,6 +12,15 @@ vi.mock('$lib/stores/auth.store.svelte', () => ({
  * 16 de 17. Lo que importa es que no haya forma de salir sin aceptar y que un
  * fallo no lo deje pasar igual.
  */
+/** `querySelector` devuelve `Element | null` y `fireEvent` no acepta null, así
+ * que sin esto no compila. De paso, cuando el elemento no está el error dice
+ * cuál falta en vez de "null is not assignable". */
+function pick(container: HTMLElement, id: string): Element {
+	const el = container.querySelector(`[data-testid="${id}"]`);
+	if (!el) throw new Error(`no está en pantalla: ${id}`);
+	return el;
+}
+
 describe('ConsentGate', () => {
 	beforeEach(() => {
 		vi.mocked(authStore.acceptPolicies).mockReset().mockResolvedValue(undefined as never);
@@ -28,7 +37,7 @@ describe('ConsentGate', () => {
 	it('aceptar deja constancia', async () => {
 		const { container } = render(ConsentGate);
 
-		await fireEvent.click(container.querySelector('[data-testid="consent-gate-accept"]'));
+		await fireEvent.click(pick(container, 'consent-gate-accept'));
 
 		await waitFor(() => expect(authStore.acceptPolicies).toHaveBeenCalledOnce());
 	});
@@ -37,9 +46,9 @@ describe('ConsentGate', () => {
 		vi.mocked(authStore.acceptPolicies).mockRejectedValue(new Error('sin red'));
 		const { container } = render(ConsentGate);
 
-		await fireEvent.click(container.querySelector('[data-testid="consent-gate-accept"]'));
+		await fireEvent.click(pick(container, 'consent-gate-accept'));
 
-		await waitFor(() => expect(container.querySelector('[data-testid="consent-gate-error"]')).toBeTruthy());
-		expect(container.querySelector('[data-testid="consent-gate-accept"]')).toBeTruthy();
+		await waitFor(() => expect(pick(container, 'consent-gate-error')).toBeTruthy());
+		expect(pick(container, 'consent-gate-accept')).toBeTruthy();
 	});
 });

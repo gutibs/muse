@@ -19,6 +19,15 @@ vi.mock('$lib/services/push.service', () => ({
  * decisión, la persona nunca vuelve a ver la oferta y queda sin resumen sin
  * haber elegido eso.
  */
+/** `querySelector` devuelve `Element | null` y `fireEvent` no acepta null, así
+ * que sin esto no compila. De paso, cuando el elemento no está el error dice
+ * cuál falta en vez de "null is not assignable". */
+function pick(container: HTMLElement, id: string): Element {
+	const el = container.querySelector(`[data-testid="${id}"]`);
+	if (!el) throw new Error(`no está en pantalla: ${id}`);
+	return el;
+}
+
 describe('DigestPrompt', () => {
 	beforeEach(() => {
 		vi.mocked(authStore.updateProfile).mockReset().mockResolvedValue(undefined as never);
@@ -27,7 +36,7 @@ describe('DigestPrompt', () => {
 	it('decir que sí enciende el resumen y no vuelve a preguntar', async () => {
 		const { container } = render(DigestPrompt);
 
-		await fireEvent.click(container.querySelector('[data-testid="digest-prompt-yes"]'));
+		await fireEvent.click(pick(container, 'digest-prompt-yes'));
 
 		await waitFor(() =>
 			expect(authStore.updateProfile).toHaveBeenCalledWith({
@@ -40,7 +49,7 @@ describe('DigestPrompt', () => {
 	it('decir que no lo deja apagado y tampoco vuelve a preguntar', async () => {
 		const { container } = render(DigestPrompt);
 
-		await fireEvent.click(container.querySelector('[data-testid="digest-prompt-no"]'));
+		await fireEvent.click(pick(container, 'digest-prompt-no'));
 
 		await waitFor(() =>
 			expect(authStore.updateProfile).toHaveBeenCalledWith({
@@ -54,10 +63,10 @@ describe('DigestPrompt', () => {
 		vi.mocked(authStore.updateProfile).mockRejectedValue(new Error('sin red'));
 		const { container } = render(DigestPrompt);
 
-		await fireEvent.click(container.querySelector('[data-testid="digest-prompt-yes"]'));
+		await fireEvent.click(pick(container, 'digest-prompt-yes'));
 
-		await waitFor(() => expect(container.querySelector('[data-testid="digest-prompt-error"]')).toBeTruthy());
+		await waitFor(() => expect(pick(container, 'digest-prompt-error')).toBeTruthy());
 		// Los botones siguen ahí: nada se marcó como visto en el servidor.
-		expect(container.querySelector('[data-testid="digest-prompt-yes"]')).toBeTruthy();
+		expect(pick(container, 'digest-prompt-yes')).toBeTruthy();
 	});
 });
