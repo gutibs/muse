@@ -16,13 +16,14 @@ from accounts.models import ConsentRecord
 # significa que los usuarios existentes tendrían que volver a consentir.
 # Con fecha para que la versión apunte a un texto publicado concreto.
 POLICY_VERSIONS = {
-	ConsentRecord.Policy.GDPR: "2026-05-28",
-	ConsentRecord.Policy.PDPO: "2026-05-28",
-	# DIGEST y TERMS nacen el 2026-09-08, cuando el resumen diario pasó a
-	# pedirse en vez de venir encendido. La fecha es provisoria: el texto
-	# publicado todavía no describe el resumen —ni le asigna base legal al
-	# token push—, así que **cuando se publique la política reescrita hay que
-	# revisar las cuatro versiones de acá**, no sólo las dos nuevas.
+	# Las cuatro en 2026-09-08: ese día los textos publicados pasaron a
+	# describir las notificaciones —el resumen diario con el consentimiento
+	# como base, y las dirigidas a la persona por contrato— y a reconocerle al
+	# usuario de Hong Kong el opt-out de analítica que la app ya le daba.
+	# Bumpear GDPR y PDPO es lo que hace que las cuentas existentes vuelvan a
+	# aceptar: la firma vieja es sobre un texto que ya no es el que rige.
+	ConsentRecord.Policy.GDPR: "2026-09-08",
+	ConsentRecord.Policy.PDPO: "2026-09-08",
 	ConsentRecord.Policy.DIGEST: "2026-09-08",
 	ConsentRecord.Policy.TERMS: "2026-09-08",
 }
