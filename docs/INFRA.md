@@ -68,12 +68,22 @@ próximo deploy lo pisa.
   Las fotos pesan ~180 KB cada una y viven en el volumen `muse_media`, sobre el
   disco del EC2 que ya se llenó una vez.
 - **Domingos 04:45 UTC** — `prune_activity`: 90 días de feed.
+- **Cada 6 horas, minuto 20** — `check_integrations`: chequea que Google Places
+  conteste y le manda un mail a `MODERATION_EMAIL` cuando el estado cambia, uno
+  al caer y uno al volver. Cada 6 horas y no cada hora porque Google regala
+  1.000 llamadas por SKU al mes y un chequeo horario se come 720. **Vigila a
+  Google, no a Muse**: corre adentro de lo que vigila, así que un EC2 caído no
+  lo avisa nadie.
 
-Los dos comandos estaban escritos para correr desde un cron que no existía.
-`prune_activity` no había corrido nunca: al instalarlo el 2026-08-19 borró 202
-filas de una sentada.
+Esa lista no es completa —el cron tiene más entradas, de notificaciones y de
+imports—: la fuente es `deploy/cron/muse-maintenance`, que explica cada horario.
 
-Para ver si corrieron: `journalctl -t muse-prune-places -t muse-prune-activity`.
+Los dos primeros comandos estaban escritos para correr desde un cron que no
+existía. `prune_activity` no había corrido nunca: al instalarlo el 2026-08-19
+borró 202 filas de una sentada.
+
+Para ver si corrieron: `journalctl -t muse-prune-places -t muse-prune-activity
+-t muse-health`.
 
 ## Deploy
 
