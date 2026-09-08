@@ -7,6 +7,10 @@ una elección de performance: los Google Maps Platform Terms permiten cachear
 los Place IDs indefinidamente pero el resto del contenido hasta 30 días, y
 una caché que se vacía sola cada vez que desplegamos nunca aprovecha esa
 ventana — le volvemos a pagar a Google por datos que ya teníamos.
+
+Y el estado de salud de la integración, que no es caché pero vive acá por la
+misma razón: tiene que sobrevivir al `down` + `up -d` del deploy para que un
+corte no se avise dos veces.
 """
 
 from django.db import models
@@ -72,3 +76,39 @@ class PlacePhoto(models.Model):
 
 	def __str__(self):
 		return f"{self.place_id} @{self.width}px"
+
+
+class IntegrationHealth(models.Model):
+	"""Lo que sabemos de un servicio externo, entre una corrida del chequeo y la siguiente.
+
+	Existe por un caso real: el 2026-09-08 la cuenta de billing de Google
+	quedó cerrada, Places dejó de responder por tiempo indeterminado y nadie se
+	enteró — se descubrió de casualidad corriendo la suite antes de un merge.
+	Con 57 restaurantes en el catálogo, agregar restaurantes es el flujo
+	principal de la app, así que el corte se llevó lo que la gente viene a hacer.
+
+	Una fila por servicio. `service` es la clave para que sumar Resend o FCM
+	después sea una fila más y no un modelo nuevo.
+
+	`alerted` está separado de `is_healthy` a propósito: son dos hechos
+	distintos —qué pasa y si ya avisamos— y confundirlos pierde avisos. Si
+	Resend falla justo cuando hay que mandar la alerta, la fila queda en
+	"caído, sin avisar" y la corrida siguiente reintenta; con un solo campo, el
+	cambio de estado ya estaría consumido y el corte se avisaría nunca.
+	"""
+
+	service = models.CharField(max_length=50, unique=True)
+	is_healthy = models.BooleanField(default=True)
+	# Cuándo se corrió el chequeo por última vez, haya cambiado algo o no.
+	checked_at = models.DateTimeField()
+	# Cuándo pasó a ser lo que es hoy. La resta contra `now` es la duración del
+	# corte que va en el mail de recuperación.
+	changed_at = models.DateTimeField()
+	last_error = models.TextField(blank=True)
+	alerted = models.BooleanField(default=False)
+
+	class Meta:
+		verbose_name_plural = "integration health"
+
+	def __str__(self):
+		return f"{self.service}: {'ok' if self.is_healthy else 'down'}"

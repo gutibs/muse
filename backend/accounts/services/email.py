@@ -220,6 +220,69 @@ def send_report_notification_email(*, report) -> dict:
 	return response
 
 
+def _format_downtime(downtime) -> str:
+	"""La duración del corte en algo que se lee de un vistazo."""
+	if downtime is None:
+		return "unknown"
+	total = int(downtime.total_seconds())
+	dias, resto = divmod(total, 86400)
+	horas, resto = divmod(resto, 3600)
+	minutos = resto // 60
+	if dias:
+		return f"{dias}d {horas}h"
+	if horas:
+		return f"{horas}h {minutos}m"
+	return f"{minutos}m"
+
+
+def send_integration_alert_email(
+	*, service: str, healthy: bool, error: str = "", downtime=None
+) -> dict:
+	"""Avisa que un servicio externo se cayó, o que volvió.
+
+	Misma forma que `send_report_notification_email` y por la misma razón: el
+	destinatario es una persona conocida, no un usuario del producto, así que
+	va en inglés y sin template.
+
+	El cuerpo lleva lo que dijo el proveedor, no un "falló" genérico. El corte
+	del 2026-09-08 —la cuenta de billing cerrada— se diagnosticó a mano porque
+	el error registrado no distinguía una key restringida de un proyecto sin
+	pagar; las dos son 403.
+	"""
+	_ensure_configured()
+
+	if healthy:
+		subject = f"[Muse] {service} is back"
+		lines = [
+			f"{service} is answering again.",
+			f"Downtime: {_format_downtime(downtime)}.",
+		]
+	else:
+		subject = f"[Muse] {service} is DOWN"
+		lines = [
+			f"{service} stopped answering. Users cannot search for or add restaurants.",
+			"",
+			f"Last error: {error or 'no detail'}",
+		]
+	body = "\n".join(lines)
+
+	payload = {
+		"from": settings.DEFAULT_FROM_EMAIL,
+		"to": [settings.MODERATION_EMAIL],
+		"subject": subject,
+		"text": body,
+		"html": f"<pre>{escape(body)}</pre>",
+	}
+
+	try:
+		response = resend.Emails.send(payload)
+	except Exception as exc:
+		logger.exception("Resend API call failed for %s health alert", service)
+		raise EmailSendError(f"Failed to send integration alert: {exc}", status_code=502) from exc
+
+	return response
+
+
 def _send_account_email(
 	*, template: str, subjects: dict, to_email: str, name: str, language
 ) -> dict:

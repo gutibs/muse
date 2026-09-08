@@ -65,3 +65,14 @@ PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 # Limpieza de la cola: jobs terminados, marcas de resumen viejas y tokens de
 # dispositivos que no se usan hace 90 días. Semanal, con el resto.
 45 5 * * 0 root cd /home/ubuntu/muse && /usr/bin/docker-compose -f docker-compose.aws.yml exec -T backend python manage.py prune_notification_jobs 2>&1 | logger -t muse-prune-notifications
+
+# --- Salud de las integraciones ---------------------------------------------
+# Chequea que Google Places conteste y avisa por mail a MODERATION_EMAIL cuando
+# cambia de estado: uno al caer y uno al volver, no uno por corrida.
+#
+# Cada 6 horas por plata, no por prudencia: Google regala 1.000 llamadas por SKU
+# al mes y un chequeo horario se come 720 —el 72% del cupo— quitándoselas a la
+# gente que busca restaurantes. Así son 120 y el corte se detecta el mismo día.
+#
+# El minuto 20 está libre; el resto del archivo usa 0, 5, 15, 30 y 45.
+20 */6 * * * root cd /home/ubuntu/muse && /usr/bin/docker-compose -f docker-compose.aws.yml exec -T backend python manage.py check_integrations 2>&1 | logger -t muse-health
