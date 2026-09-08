@@ -1,4 +1,7 @@
+from unittest.mock import Mock
+
 import pytest
+import resend
 from django.conf import settings as django_settings
 from django.core.cache import cache
 from rest_framework.throttling import SimpleRateThrottle
@@ -7,6 +10,33 @@ from rest_framework.throttling import SimpleRateThrottle
 # Importar `rest_framework.throttling` acá además vuelve determinista el momento
 # del import, que es de lo que dependía todo esto.
 RATES_REALES = dict(django_settings.REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"])
+
+
+@pytest.fixture(autouse=True)
+def _sin_emails_reales(monkeypatch):
+	"""Ningún test toca la API de Resend.
+
+	Antes la tocaban todos: cada alta llamaba a Resend por la red, y no llegaba
+	un mail sólo porque la API rechaza `@example.com`. Con un dominio válido en
+	un test, la suite le escribe a una persona de verdad — y de paso pasar los
+	tests dependía de tener red y cupo.
+
+	Se parchea `resend.Emails.send`, que es el único punto por donde
+	`accounts.services.email` sale. Los tests que quieren mirar el payload piden
+	el fixture `emails_enviados`; los que ya traen su propio `@patch` sobre el
+	mismo atributo siguen funcionando, porque se aplica encima de éste.
+
+	`tests/test_no_emails_reales.py` lo vigila.
+	"""
+	enviados = Mock(return_value={"id": "re_test_fake"})
+	monkeypatch.setattr(resend.Emails, "send", enviados)
+	return enviados
+
+
+@pytest.fixture
+def emails_enviados(_sin_emails_reales):
+	"""El mock de Resend, para inspeccionar qué se mandó y a quién."""
+	return _sin_emails_reales
 
 
 @pytest.fixture(autouse=True)
