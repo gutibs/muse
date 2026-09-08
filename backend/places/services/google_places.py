@@ -49,12 +49,18 @@ class GooglePlacesError(Exception):
 	`status_code` is what the view should return: 503 when the integration is
 	not configured at all, 502 when Google itself failed or answered something
 	unusable.
+
+	`detail` carries what Google actually said. It never reaches the user —
+	`message` is what the view surfaces — but the log and the health alert are
+	useless without it: a closed billing account answers PERMISSION_DENIED with
+	the reason in the body, and `raise_for_status` keeps only the code.
 	"""
 
-	def __init__(self, message: str, status_code: int = 502):
+	def __init__(self, message: str, status_code: int = 502, detail: str = ""):
 		super().__init__(message)
 		self.message = message
 		self.status_code = status_code
+		self.detail = detail
 
 
 def is_configured() -> bool:
@@ -66,6 +72,39 @@ def _api_key() -> str:
 	if not key:
 		raise GooglePlacesError("Google Places API is not configured.", status_code=503)
 	return key
+
+
+def _error_detail(exc: Exception) -> str:
+	"""What actually failed, in one line fit for a log or an email.
+
+	A response body is worth more than the status: Google returns 403 both for
+	a key restricted to another IP and for a project without billing, and only
+	the body tells them apart. Truncated because some errors carry a full HTML
+	page.
+	"""
+	response = getattr(exc, "response", None)
+	if response is None:
+		return f"{type(exc).__name__}: {exc}"
+
+	body = _google_error_summary(response) or (response.text or "").strip()
+	return f"HTTP {response.status_code}: {body[:500]}"
+
+
+def _google_error_summary(response) -> str:
+	"""Google's own `status` and `message`, or empty when they are not there.
+
+	Google wraps the reason in {"error": {...}} and the rest of the JSON is
+	noise that gets in the way in an email. An HTML error page or an empty body
+	has no such shape: there the raw text is the best there is, and guessing
+	further would be worse.
+	"""
+	try:
+		error = response.json()["error"]
+	except (ValueError, KeyError, TypeError) as exc:
+		logger.debug("Google error body is not shaped as {error: ...}: %s", exc)
+		return ""
+
+	return f"{error.get('status', '')} {error.get('message', '')}".strip()
 
 
 def normalize_place_id(place_id: str) -> str:
@@ -101,8 +140,9 @@ def autocomplete(body: dict) -> list[dict]:
 		r.raise_for_status()
 		data = r.json()
 	except requests.RequestException as exc:
-		logger.exception("Google Places autocomplete failed: %s", exc)
-		raise GooglePlacesError("Places API error.") from exc
+		detail = _error_detail(exc)
+		logger.exception("Google Places autocomplete failed: %s", detail)
+		raise GooglePlacesError("Places API error.", detail=detail) from exc
 
 	return [s["placePrediction"] for s in data.get("suggestions", []) if s.get("placePrediction")]
 
@@ -120,8 +160,9 @@ def details(place_id: str, field_mask: str) -> dict:
 		r.raise_for_status()
 		return r.json()
 	except requests.RequestException as exc:
-		logger.exception("Google Places details failed for %s", bare_id)
-		raise GooglePlacesError("Could not verify place with Google.") from exc
+		detail = _error_detail(exc)
+		logger.exception("Google Places details failed for %s: %s", bare_id, detail)
+		raise GooglePlacesError("Could not verify place with Google.", detail=detail) from exc
 
 
 def photo_uri(photo_ref: str) -> str:
@@ -146,8 +187,9 @@ def photo_uri(photo_ref: str) -> str:
 		r.raise_for_status()
 		data = r.json()
 	except requests.RequestException as exc:
-		logger.exception("Google Places photo failed for %s", ref)
-		raise GooglePlacesError("Places API error.") from exc
+		detail = _error_detail(exc)
+		logger.exception("Google Places photo failed for %s: %s", ref, detail)
+		raise GooglePlacesError("Places API error.", detail=detail) from exc
 
 	uri = (data.get("photoUri") or "").strip()
 	if not uri.startswith("https://"):
@@ -188,8 +230,9 @@ def download_photo(uri: str, max_bytes: int) -> tuple[bytes, str]:
 				raise GooglePlacesError("Photo is too large.")
 			chunks.append(chunk)
 	except requests.RequestException as exc:
-		logger.exception("Google Places photo download failed for %s", uri)
-		raise GooglePlacesError("Places API error.") from exc
+		detail = _error_detail(exc)
+		logger.exception("Google Places photo download failed for %s: %s", uri, detail)
+		raise GooglePlacesError("Places API error.", detail=detail) from exc
 
 	content_type = (r.headers.get("Content-Type") or "").split(";")[0].strip().lower()
 	return b"".join(chunks), content_type
