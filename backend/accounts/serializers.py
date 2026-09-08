@@ -5,7 +5,6 @@ from django.contrib.auth.password_validation import validate_password
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
-from accounts.consent import POLICY_VERSIONS
 from accounts.models import (
 	Block,
 	ConsentRecord,
@@ -16,6 +15,7 @@ from accounts.models import (
 	Report,
 )
 from accounts.services.blocking import is_blocked
+from accounts.services.consent import client_ip, record_consent
 from accounts.services.email import (
 	EmailSendError,
 	send_account_exists_email,
@@ -73,6 +73,7 @@ class ProfileSerializer(serializers.ModelSerializer):
 			"notify_friend_request",
 			"notify_friend_accepted",
 			"notify_daily_digest",
+			"digest_prompt_seen",
 			"language",
 			"timezone",
 			"digest_hour",
@@ -119,6 +120,31 @@ class ProfileSerializer(serializers.ModelSerializer):
 			),
 		}
 
+	def update(self, instance, validated_data):
+		"""Encender el resumen diario deja constancia; apagarlo no borra nada.
+
+		No es una preferencia más: el consentimiento **es** la base legal con la
+		que se manda, y hay que poder demostrar cuándo se dio. Se registra en la
+		transición y no en cada PATCH que traiga el campo en True, porque la app
+		manda el perfil entero y si no serían filas repetidas sin significado.
+
+		Apagarlo tampoco borra la fila: es evidencia de lo que pasó, y lo que
+		rige hoy lo dice `notify_daily_digest`.
+		"""
+		enciende_el_resumen = (
+			validated_data.get("notify_daily_digest") is True and not instance.notify_daily_digest
+		)
+		profile = super().update(instance, validated_data)
+
+		if enciende_el_resumen:
+			record_consent(
+				profile.user,
+				ConsentRecord.Policy.DIGEST,
+				ip_address=client_ip(self.context.get("request")),
+			)
+
+		return profile
+
 
 # Lo que NO se entrega en el perfil de otra persona.
 #
@@ -137,6 +163,7 @@ _PRIVATE_PROFILE_FIELDS = (
 	"notify_friend_request",
 	"notify_friend_accepted",
 	"notify_daily_digest",
+	"digest_prompt_seen",
 	"language",
 	"timezone",
 	"digest_hour",
@@ -188,15 +215,6 @@ class RegisterSerializer(serializers.Serializer):
 		if value is not True:
 			raise serializers.ValidationError(_("You must accept the privacy policy to register."))
 		return value
-
-	def _client_ip(self):
-		request = self.context.get("request")
-		if request is None:
-			return None
-		forwarded = request.META.get("HTTP_X_FORWARDED_FOR")
-		if forwarded:
-			return forwarded.split(",")[0].strip()
-		return request.META.get("REMOTE_ADDR")
 
 	def _consume_invitations(self, user):
 		"""Convierte en amistad las invitaciones dirigidas al email de `user`.
@@ -259,17 +277,10 @@ class RegisterSerializer(serializers.Serializer):
 			user.profile.display_name = validated_data["display_name"]
 			user.profile.save(update_fields=["display_name"])
 
-		ip = self._client_ip()
-		ConsentRecord.objects.bulk_create(
-			[
-				ConsentRecord(
-					user=user,
-					policy=policy,
-					policy_version=POLICY_VERSIONS[policy],
-					ip_address=ip,
-				)
-				for policy in (ConsentRecord.Policy.GDPR, ConsentRecord.Policy.PDPO)
-			]
+		record_consent(
+			user,
+			[ConsentRecord.Policy.GDPR, ConsentRecord.Policy.PDPO],
+			ip_address=client_ip(self.context.get("request")),
 		)
 
 		self._consume_invitations(user)

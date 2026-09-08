@@ -70,12 +70,25 @@ class Profile(models.Model):
 		default=Visibility.PUBLIC,
 	)
 	# --- Notificaciones (F2.E) ---------------------------------------
-	# Las tres arrancan encendidas. El freno real lo pone Android, que exige
-	# aceptar el permiso del sistema: sin ese sí no llega nada aunque estén
-	# todas en True.
+	# Las dos primeras arrancan encendidas: van dirigidas a la persona y
+	# responden a algo que pasó con su cuenta —le llegó una solicitud, se la
+	# aceptaron—, el mismo criterio con el que la política trata las
+	# invitaciones y el reset de contraseña. El freno real lo pone Android, que
+	# exige aceptar el permiso del sistema.
 	notify_friend_request = models.BooleanField(default=True)
 	notify_friend_accepted = models.BooleanField(default=True)
-	notify_daily_digest = models.BooleanField(default=True)
+	# El resumen diario NO. Es actividad de terceros empujada al teléfono, no
+	# algo que pasó con tu cuenta, así que se pide y se registra el
+	# consentimiento (`ConsentRecord.Policy.DIGEST`). Arrancaba en True y los
+	# 17 perfiles que había en producción lo tenían encendido sin haberlo visto
+	# nunca: en el alta no se pregunta nada de notificaciones.
+	notify_daily_digest = models.BooleanField(default=False)
+	# Si ya se le ofreció encender el resumen. Un solo flag cubre los dos
+	# casos, que parecen distintos y son el mismo: a quien ya tenía cuenta se
+	# le ofrece cuando abre la app, y a quien se registra ahora cuando acepta
+	# su primera amistad. Sin esto harían falta dos implementaciones del mismo
+	# diálogo, y el que ya tiene amigos nunca vería la del primer amigo.
+	digest_prompt_seen = models.BooleanField(default=False)
 	# El idioma tiene que estar acá y no sólo en el request. Los emails lo
 	# reciben en cada llamada (`request.data.get("language")`), pero el push lo
 	# inicia el servidor: cuando hay que avisarle a alguien que un amigo guardó
@@ -126,11 +139,23 @@ class ConsentRecord(models.Model):
 
 	Append-only by intent: re-consenting to a new policy version creates a new
 	row, it does not overwrite the old one. Never edited from the admin.
+
+	The one thing that does remove rows is account deletion
+	(`services/account_deletion.py`), and that is deliberate, not an oversight:
+	keeping the IP and timestamp of someone who exercised erasure would mean
+	holding their personal data with no basis left to hold it, and a row
+	stripped of its identity proves nothing about anyone. The evidence goes
+	when the account goes.
 	"""
 
 	class Policy(models.TextChoices):
 		GDPR = "gdpr", "GDPR"
 		PDPO = "pdpo", "PDPO"
+		# No son documentos legales sino finalidades que se aceptan aparte.
+		# DIGEST es la base del resumen diario: si el consentimiento es la base
+		# legal, hay que poder demostrar cuándo se dio.
+		DIGEST = "digest", "Daily digest"
+		TERMS = "terms", "Terms of service"
 
 	user = models.ForeignKey(
 		settings.AUTH_USER_MODEL,

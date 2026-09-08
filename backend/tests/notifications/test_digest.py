@@ -28,6 +28,17 @@ def _friends(a, b):
 	FriendshipFactory(from_user=a, to_user=b, status=Friendship.Status.ACCEPTED)
 
 
+def _quiere_el_resumen(user):
+	"""Desde el 2026-09-08 el resumen se pide: nace apagado y hay que encenderlo.
+
+	Sin esto, un test que espera que el resumen salga prueba el default y no lo
+	que dice probar.
+	"""
+	user.profile.notify_daily_digest = True
+	user.profile.save(update_fields=["notify_daily_digest"])
+	return user
+
+
 def _pin_with_activity(owner, *, visibility=Visibility.PUBLIC):
 	pin = PinFactory(user=owner, status=Pin.Status.VISITED, rating=5, visibility=visibility)
 	# El signal de pins ya crea la Activity; la buscamos en vez de duplicarla.
@@ -107,6 +118,7 @@ def test_no_se_manda_resumen_vacio():
 	"""Una notificación que dice 'no pasó nada' es la forma de que la apaguen."""
 	me, friend = UserFactory(), UserFactory()
 	_friends(me, friend)
+	_quiere_el_resumen(me)
 
 	with patch("notifications.services.digest.push_to_user") as push:
 		assert digest.send_for(me) is False
@@ -118,6 +130,7 @@ def test_no_se_manda_resumen_vacio():
 def test_no_se_manda_dos_veces_el_mismo_dia():
 	me, friend = UserFactory(), UserFactory()
 	_friends(me, friend)
+	_quiere_el_resumen(me)
 	_pin_with_activity(friend)
 
 	with patch("notifications.services.digest.push_to_user") as push:
@@ -129,12 +142,31 @@ def test_no_se_manda_dos_veces_el_mismo_dia():
 
 
 @pytest.mark.django_db
-def test_respeta_la_preferencia_apagada():
+def test_quien_lo_pidio_y_despues_lo_apago_deja_de_recibirlo():
 	me, friend = UserFactory(), UserFactory()
 	_friends(me, friend)
 	_pin_with_activity(friend)
+	_quiere_el_resumen(me)
 	me.profile.notify_daily_digest = False
-	me.profile.save()
+	me.profile.save(update_fields=["notify_daily_digest"])
+
+	with patch("notifications.services.digest.push_to_user") as push:
+		assert digest.send_for(me) is False
+	push.assert_not_called()
+
+
+@pytest.mark.critical
+@pytest.mark.django_db
+def test_quien_nunca_lo_pidio_no_lo_recibe():
+	"""El invariante que trajo el cambio de régimen del 2026-09-08.
+
+	El resumen es actividad de terceros empujada al teléfono, así que la base
+	legal es el consentimiento. Un perfil recién creado no consintió nada, y
+	con actividad de sobra para mandar tiene que seguir sin recibir nada.
+	"""
+	me, friend = UserFactory(), UserFactory()
+	_friends(me, friend)
+	_pin_with_activity(friend)
 
 	with patch("notifications.services.digest.push_to_user") as push:
 		assert digest.send_for(me) is False

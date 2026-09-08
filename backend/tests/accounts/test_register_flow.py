@@ -6,8 +6,8 @@ from django.db.models import Q
 from django.urls import reverse
 from rest_framework.test import APIClient
 
-from accounts.consent import POLICY_VERSIONS
 from accounts.models import ConsentRecord, EmailInvitation, Friendship, Profile
+from accounts.services.consent import POLICY_VERSIONS
 from feed.models import Activity
 from tests.factories import EmailInvitationFactory, UserFactory
 
