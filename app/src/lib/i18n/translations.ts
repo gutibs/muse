@@ -824,7 +824,7 @@ const translations: Record<Locale, Record<string, string>> = {
 		'pin.price': 'Precio',
 		'pin.vibe': 'Ambiente',
 		'pin.continue': 'Continuar',
-		'pin.googleNotConfigured': 'Google Places no está configurado en el servidor. Contactá al admin.',
+		'pin.googleNotConfigured': 'Google Places no está configurado en el servidor. Contacta al admin.',
 		'pin.googleUnavailable': 'Google Places no está disponible. Reintenta en un momento.',
 		'pin.cantImport': 'No se pudo importar. Prueba agregándolo manualmente abajo.',
 		'pin.alreadyPinned': 'Ya tienes un pin para este restaurante.',

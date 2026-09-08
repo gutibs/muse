@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
+	import GoogleSuggestions from '$lib/components/GoogleSuggestions.svelte';
 	import LevelSelector from '$lib/components/LevelSelector.svelte';
 	import LocationPicker from '$lib/components/LocationPicker.svelte';
 	import TagChips from '$lib/components/TagChips.svelte';
@@ -19,6 +20,7 @@
 	import { suggestOccasion } from '$lib/utils/suggest-occasion';
 	import { ApiError } from '$lib/types';
 	import { extractFirstDrfError } from '$lib/utils/api-error';
+	import { readGoogleSuggestions } from '$lib/utils/google-suggestions';
 	import { logSilent } from '$lib/utils/logger';
 	import { VISIBILITY_OPTIONS, visibilityToSubmit } from '$lib/utils/pin-visibility';
 
@@ -31,6 +33,8 @@
 	let searchQuery = $state('');
 	let searchResults = $state<Restaurant[]>([]);
 	let googleResults = $state<PlaceSuggestion[]>([]);
+	let googleFailed = $state(false);
+	let googleMessageKey = $state<string | null>(null);
 	let searching = $state(false);
 	let importingPlaceId = $state<string | null>(null);
 	let selectedRestaurant = $state<Restaurant | null>(null);
@@ -168,10 +172,15 @@
 					placesService.autocomplete(query),
 				]);
 				searchResults = dbRes.status === 'fulfilled' ? dbRes.value.results : [];
-				googleResults = placesRes.status === 'fulfilled' ? placesRes.value.results : [];
+				const google = readGoogleSuggestions(placesRes, 'pin:new:google');
+				googleResults = google.results;
+				googleFailed = google.failed;
+				googleMessageKey = google.messageKey;
 			} catch (err) {
 				searchResults = [];
 				googleResults = [];
+				googleFailed = false;
+				googleMessageKey = null;
 				logSilent('pin:new:search', err);
 			}
 			searching = false;
@@ -349,37 +358,16 @@
 					</div>
 				{/if}
 
-				{#if googleResults.length > 0}
-					<div>
-						<p class="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-muted">{t('pin.fromGoogle')}</p>
-						<div class="space-y-2">
-							{#each googleResults as place (place.placeId)}
-								<button
-									onclick={() => selectFromGoogle(place)}
-									disabled={importingPlaceId !== null}
-									class="flex w-full items-center gap-3 rounded-card bg-white p-4 text-left shadow-card active:scale-[0.98] disabled:opacity-50"
-								>
-									<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-50 text-amber-700">
-										{#if importingPlaceId === place.placeId}
-											<div class="h-4 w-4 animate-spin rounded-full border-2 border-amber-700 border-t-transparent"></div>
-										{:else}
-											<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-												<path d="M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
-												<path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7Z" />
-											</svg>
-										{/if}
-									</div>
-									<div class="min-w-0 flex-1">
-										<div class="truncate text-sm font-semibold text-ink">{place.name}</div>
-										<div class="truncate text-xs text-ink-muted">{place.address}</div>
-									</div>
-								</button>
-							{/each}
-						</div>
-					</div>
-				{/if}
+				<GoogleSuggestions
+					results={googleResults}
+					failed={googleFailed}
+					messageKey={googleMessageKey}
+					title={t('pin.fromGoogle')}
+					{importingPlaceId}
+					onselect={selectFromGoogle}
+				/>
 
-				{#if searchQuery.length >= 2 && !searching && searchResults.length === 0 && googleResults.length === 0}
+				{#if searchQuery.length >= 2 && !searching && searchResults.length === 0 && googleResults.length === 0 && !googleFailed}
 					<p class="py-4 text-center text-sm text-ink-muted">{t('pin.noResults')}</p>
 				{/if}
 

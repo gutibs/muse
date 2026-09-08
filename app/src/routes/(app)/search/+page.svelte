@@ -3,6 +3,7 @@
 	import CityAutocomplete from '$lib/components/CityAutocomplete.svelte';
 	import InsiderBadge from '$lib/components/InsiderBadge.svelte';
 	import DietaryBadges from '$lib/components/DietaryBadges.svelte';
+	import GoogleSuggestions from '$lib/components/GoogleSuggestions.svelte';
 	import PinsMap, { type MapItem } from '$lib/components/PinsMap.svelte';
 	import { t } from '$lib/i18n/index.svelte';
 	import { googleImportErrorKey, importPlace } from '$lib/services/google-import';
@@ -12,6 +13,7 @@
 	import { ApiError } from '$lib/types';
 	import { extractFirstDrfError } from '$lib/utils/api-error';
 	import { getCurrentPosition, GeoError } from '$lib/utils/geolocate';
+	import { readGoogleSuggestions } from '$lib/utils/google-suggestions';
 
 	function viewRestaurant(r: Restaurant) {
 		goto(`/restaurant/${r.id}`);
@@ -30,6 +32,8 @@
 	let cuisines = $state<Cuisine[]>([]);
 	let results = $state<Restaurant[]>([]);
 	let googleResults = $state<PlaceSuggestion[]>([]);
+	let googleFailed = $state(false);
+	let googleMessageKey = $state<string | null>(null);
 	let importingPlaceId = $state<string | null>(null);
 	let view = $state<'list' | 'map'>('list');
 
@@ -112,6 +116,8 @@
 		searched = true;
 		nearbyMode = false;
 		googleResults = [];
+		googleFailed = false;
+		googleMessageKey = null;
 		try {
 			// Only ask Google for suggestions when the user is actually typing a
 			// restaurant name. Searching Google with just a city returns places
@@ -125,7 +131,10 @@
 				googleQuery ? placesService.autocomplete(googleQuery) : Promise.resolve({ results: [] }),
 			]);
 			results = dbRes.status === 'fulfilled' ? dbRes.value.results : [];
-			googleResults = placesRes.status === 'fulfilled' ? placesRes.value.results : [];
+			const google = readGoogleSuggestions(placesRes, 'search:google');
+			googleResults = google.results;
+			googleFailed = google.failed;
+			googleMessageKey = google.messageKey;
 		} catch (err) {
 			error = t('search.cantLoadResults');
 			results = [];
@@ -322,13 +331,24 @@
 			</div>
 
 		{:else if results.length === 0 && googleResults.length === 0}
-			<div class="flex h-full flex-col items-center justify-center px-8 text-center">
-				<p class="text-sm font-medium text-ink">{t('search.notOnList')}</p>
-				<p class="mt-1 text-xs text-ink-muted">{t('search.notOnListDesc')}</p>
-			</div>
+			{#if googleFailed}
+				<GoogleSuggestions
+					results={[]}
+					failed={true}
+					messageKey={googleMessageKey}
+					title=""
+					centered={true}
+				/>
+			{:else}
+				<div class="flex h-full flex-col items-center justify-center px-8 text-center">
+					<p class="text-sm font-medium text-ink">{t('search.notOnList')}</p>
+					<p class="mt-1 text-xs text-ink-muted">{t('search.notOnListDesc')}</p>
+				</div>
+			{/if}
 
 		{:else if view === 'list'}
-			<ul class="h-full space-y-2 overflow-y-auto px-5 pb-6 pt-3">
+			<div class="h-full space-y-2 overflow-y-auto px-5 pb-6 pt-3">
+			<ul class="space-y-2">
 				{#if nearbyMode}
 					<li class="flex items-center gap-2 rounded-card bg-jade/10 px-3 py-2 text-xs font-medium text-jade">
 						<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -377,37 +397,17 @@
 					</li>
 				{/each}
 
-				{#if googleResults.length > 0}
-					<li class="pt-2">
-						<p class="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-muted">{t('search.fromGoogleNotOnMuse')}</p>
-					</li>
-					{#each googleResults as place (place.placeId)}
-						<li>
-							<button
-								type="button"
-								onclick={() => importFromGoogle(place)}
-								disabled={importingPlaceId !== null}
-								class="flex w-full items-center gap-3 rounded-card bg-white p-4 text-left shadow-card active:scale-[0.98] disabled:opacity-50"
-							>
-								<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-50 text-amber-700">
-									{#if importingPlaceId === place.placeId}
-										<div class="h-4 w-4 animate-spin rounded-full border-2 border-amber-700 border-t-transparent"></div>
-									{:else}
-										<svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-											<path d="M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
-											<path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7Z" />
-										</svg>
-									{/if}
-								</div>
-								<div class="min-w-0 flex-1">
-									<div class="truncate text-sm font-semibold text-ink">{place.name}</div>
-									<div class="truncate text-xs text-ink-muted">{place.address}</div>
-								</div>
-							</button>
-						</li>
-					{/each}
-				{/if}
 			</ul>
+
+			<GoogleSuggestions
+				results={googleResults}
+				failed={googleFailed}
+				messageKey={googleMessageKey}
+				title={t('search.fromGoogleNotOnMuse')}
+				{importingPlaceId}
+				onselect={importFromGoogle}
+			/>
+			</div>
 
 		{:else}
 			<PinsMap items={mapItems} accent="visited" link={false} showDietary={true} />
