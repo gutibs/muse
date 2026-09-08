@@ -83,6 +83,14 @@ export const pinsService = {
 		return api.post('/shared-lists/', data);
 	},
 
+	/**
+	 * Cambia una lista existente. Hoy sólo el interruptor de votación, que es
+	 * lo único que se toca después de crearla.
+	 */
+	updateSharedList(id: number, data: { votingEnabled?: boolean }): Promise<SharedList> {
+		return api.patch(`/shared-lists/${id}/`, data);
+	},
+
 	deleteSharedList(id: number): Promise<void> {
 		return api.delete(`/shared-lists/${id}/`);
 	},

@@ -56,6 +56,8 @@ export interface SharedList {
 	isActive: boolean;
 	/** ISO, o null si el link no vence. */
 	expiresAt: string | null;
+	/** Sólo en curadas: el dueño ofreció votar. Apagado por defecto. */
+	votingEnabled: boolean;
 	items: SharedListItem[];
 	url: string;
 	createdAt: string;
@@ -83,6 +85,14 @@ export interface PublicPin {
 	restaurantDetail: PublicRestaurant;
 	/** Sólo en listas curadas: lo que el dueño escribió sobre ese lugar. */
 	note?: string;
+	/**
+	 * Sólo en listas curadas. Es el único identificador que viaja: el payload
+	 * público no expone el id del pin, y éste no sirve fuera de esta lista
+	 * porque la vista de votos valida la pertenencia.
+	 */
+	itemId?: number;
+	voteCount?: number;
+	hasVoted?: boolean;
 	tagsDetail: Omit<Tag, 'id'>[];
 	status: PinStatus;
 	rating: number | null;
@@ -103,5 +113,9 @@ export interface SharedListPublic {
 		isVerifiedInsider: boolean;
 	};
 	pins: PublicPin[];
+	/** El dueño ofreció votar en esta lista. Apagado por defecto. */
+	votingEnabled: boolean;
+	/** Cuánta gente votó, no cuántos votos hay. */
+	voterCount: number;
 	createdAt: string;
 }

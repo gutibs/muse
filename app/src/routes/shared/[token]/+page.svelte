@@ -5,11 +5,13 @@
 	import InsiderBadge from '$lib/components/InsiderBadge.svelte';
 	import PinsMap, { type MapItem } from '$lib/components/PinsMap.svelte';
 	import { t } from '$lib/i18n/index.svelte';
-	import type { SharedListPublic } from '$lib/types';
+	import type { PublicPin, SharedListPublic } from '$lib/types';
 	import { logSilent } from '$lib/utils/logger';
 	import RatingHearts from '$lib/components/RatingHearts.svelte';
 	import PinCard from '$lib/components/PinCard.svelte';
 	import PinStatusBadge from '$lib/components/PinStatusBadge.svelte';
+	import VoteList, { type VoteItem } from '$lib/components/VoteList.svelte';
+	import { castVote, removeVote, voterHeaders } from '$lib/services/votes.service';
 
 	let token = $derived(page.params.token);
 
@@ -23,7 +25,12 @@
 		error = '';
 		try {
 			const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api/v1';
-			const res = await fetch(`${API_BASE}/shared/${token}/`);
+			// Con la clave del votante el servidor devuelve `hasVoted` por item:
+			// sin ella, recargar la página borraba los ticks propios aunque el
+			// backend los tuviera guardados.
+			const res = await fetch(`${API_BASE}/shared/${token}/`, {
+				headers: voterHeaders(token ?? ''),
+			});
 			if (!res.ok) {
 				if (res.status === 404) error = t('shared.notExist');
 				else error = t('shared.cantLoad');
@@ -45,6 +52,35 @@
 	const mapItems = $derived<MapItem[]>(
 		(data?.pins ?? []).map((pin) => ({ kind: 'pin' as const, pin }))
 	);
+
+	// Sólo las listas curadas traen `itemId`; el filtro deja afuera las
+	// `auto`, donde no hay item sobre el que votar.
+	const votables = $derived((data?.pins ?? []).filter((p) => p.itemId != null));
+
+	const voteItems = $derived<VoteItem[]>(
+		votables.map((p) => ({
+			itemId: p.itemId!,
+			name: p.restaurantDetail.name,
+			voteCount: p.voteCount ?? 0,
+			hasVoted: p.hasVoted ?? false,
+		}))
+	);
+
+	const porItem = $derived(new Map(votables.map((p) => [p.itemId!, p])));
+
+	const votantes = $derived(
+		(data?.voterCount ?? 0) === 1 ? t('vote.voters') : t('vote.votersPlural')
+	);
+
+	async function enviarVoto(itemId: number, votar: boolean) {
+		// `page.params` es opcional para el tipo aunque la ruta garantice el
+		// token. Cortar acá es más honesto que un `!`.
+		if (!token) return;
+		await (votar ? castVote(token, itemId) : removeVote(token, itemId));
+		// El total de votantes y los conteos de los demás salen del servidor.
+		// El propio ya se movió solo, así que esto no bloquea nada visible.
+		load();
+	}
 
 	function pinAccent(item: MapItem): 'visited' | 'toVisit' {
 		if (item.kind !== 'pin') return 'visited';
@@ -112,51 +148,28 @@
 						<p class="text-sm text-ink-muted">{t('shared.empty')}</p>
 					</div>
 				{:else}
-					<ul class="h-full space-y-2 overflow-y-auto px-5 pb-6">
-						<!-- Keyed by restaurant, not pin: the public payload withholds the
-						     pin id, and (user, restaurant) is unique so it is just as stable. -->
-						{#each data.pins as pin (pin.restaurantDetail.id)}
-							<li>
-								<PinCard
-									imageUrl={pin.restaurantDetail.imageUrl}
-									imageAlt={pin.restaurantDetail.name}
-									imageClass="h-32 w-24"
-								>
-									<div class="flex items-start justify-between gap-2">
-										<p class="truncate text-sm font-semibold text-ink">{pin.restaurantDetail.name}</p>
-										<PinStatusBadge
-											status={pin.status}
-											label={pin.status === 'visited' ? t('users.rated') : t('users.onTheList')}
-										/>
-									</div>
-									{#if pin.restaurantDetail.city}
-										<p class="text-xs text-ink-muted">{pin.restaurantDetail.city}</p>
-									{/if}
-									{#if pin.rating}
-										<RatingHearts value={(pin.rating ?? 0)} />
-									{/if}
-									{#if pin.note}
-										<!-- Nota escrita para esta lista en particular. Va antes del
-										     comentario del pin porque es lo que el dueño quiso decir
-										     de este lugar a quien recibe el link. -->
-										<p class="text-xs font-medium text-jade-dark">{pin.note}</p>
-									{/if}
-									{#if pin.comment}
-										<p class="line-clamp-2 text-xs italic text-ink-light">"{pin.comment}"</p>
-									{/if}
-									{#if pin.tagsDetail?.length}
-										<div class="flex flex-wrap gap-1">
-											{#each pin.tagsDetail as tag}
-												<span class="rounded-full bg-cream-dark px-2 py-0.5 text-xs text-ink-muted">
-													{tagLabel(tag)}
-												</span>
-											{/each}
-										</div>
-									{/if}
-								</PinCard>
-							</li>
-						{/each}
-					</ul>
+					{#if data.votingEnabled}
+						<div class="h-full overflow-y-auto px-5 pb-6">
+							<div class="mb-3">
+								<p class="text-sm font-semibold text-ink">{t('vote.title')}</p>
+								<p class="text-xs text-ink-muted">
+									{data.voterCount === 0
+										? t('vote.nobody')
+										: votantes.replace('{count}', String(data.voterCount))}
+									· {t('vote.anonymous')}
+								</p>
+							</div>
+							<VoteList items={voteItems} onVote={enviarVoto} row={filaVotable} />
+						</div>
+					{:else}
+						<ul class="h-full space-y-2 overflow-y-auto px-5 pb-6">
+							<!-- Keyed by restaurant, not pin: the public payload withholds the
+							     pin id, and (user, restaurant) is unique so it is just as stable. -->
+							{#each data.pins as pin (pin.restaurantDetail.id)}
+								<li>{@render tarjeta(pin)}</li>
+							{/each}
+						</ul>
+					{/if}
 				{/if}
 			{:else}
 				<PinsMap
@@ -179,3 +192,48 @@
 		</div>
 	{/if}
 </div>
+
+{#snippet filaVotable(item: VoteItem)}
+	{@const pin = porItem.get(item.itemId)}
+	{#if pin}{@render tarjeta(pin)}{/if}
+{/snippet}
+
+{#snippet tarjeta(pin: PublicPin)}
+								<PinCard
+			imageUrl={pin.restaurantDetail.imageUrl}
+			imageAlt={pin.restaurantDetail.name}
+			imageClass="h-32 w-24"
+		>
+			<div class="flex items-start justify-between gap-2">
+				<p class="truncate text-sm font-semibold text-ink">{pin.restaurantDetail.name}</p>
+				<PinStatusBadge
+					status={pin.status}
+					label={pin.status === 'visited' ? t('users.rated') : t('users.onTheList')}
+				/>
+			</div>
+			{#if pin.restaurantDetail.city}
+				<p class="text-xs text-ink-muted">{pin.restaurantDetail.city}</p>
+			{/if}
+			{#if pin.rating}
+				<RatingHearts value={(pin.rating ?? 0)} />
+			{/if}
+			{#if pin.note}
+				<!-- Nota escrita para esta lista en particular. Va antes del
+				     comentario del pin porque es lo que el dueño quiso decir
+				     de este lugar a quien recibe el link. -->
+				<p class="text-xs font-medium text-jade-dark">{pin.note}</p>
+			{/if}
+			{#if pin.comment}
+				<p class="line-clamp-2 text-xs italic text-ink-light">"{pin.comment}"</p>
+			{/if}
+			{#if pin.tagsDetail?.length}
+				<div class="flex flex-wrap gap-1">
+					{#each pin.tagsDetail as tag}
+						<span class="rounded-full bg-cream-dark px-2 py-0.5 text-xs text-ink-muted">
+							{tagLabel(tag)}
+						</span>
+					{/each}
+				</div>
+			{/if}
+		</PinCard>
+{/snippet}

@@ -2,6 +2,7 @@
 	import Avatar from '$lib/components/Avatar.svelte';
 	import InsiderBadge from '$lib/components/InsiderBadge.svelte';
 	import CityAutocomplete from '$lib/components/CityAutocomplete.svelte';
+	import SharedListRow from '$lib/components/SharedListRow.svelte';
 	import { authService } from '$lib/services/auth.service';
 	import { pinsService } from '$lib/services/pins.service';
 	import { restaurantsService } from '$lib/services/restaurants.service';
@@ -167,6 +168,13 @@
 		} finally {
 			creatingShortlist = false;
 		}
+	}
+
+	async function toggleVoting(id: number, enabled: boolean) {
+		// Sin `catch`: la fila revierte su propio interruptor si esto rechaza,
+		// y tragarse el error acá la dejaría mostrando algo que no pasó.
+		const actualizada = await pinsService.updateSharedList(id, { votingEnabled: enabled });
+		sharedLists = sharedLists.map((l) => (l.id === id ? actualizada : l));
 	}
 
 	async function deleteSharedList(id: number) {
@@ -503,18 +511,12 @@
 				{#if sharedLists.length > 0}
 					<ul class="space-y-2">
 						{#each sharedLists as list (list.id)}
-							<li class="flex items-center gap-3 rounded-card bg-white p-4 shadow-card">
-								<div class="min-w-0 flex-1">
-									<p class="truncate text-sm font-medium text-ink">{list.title || t('profile.myList')}</p>
-									<p class="truncate text-xs text-ink-muted">{list.url}</p>
-								</div>
-								<button onclick={() => copyLink(list.url)} class="flex min-h-9 items-center rounded-button bg-jade/10 px-3 text-xs font-semibold text-jade active:scale-[0.98]">
-									{t('profile.copy')}
-								</button>
-								<button onclick={() => deleteSharedList(list.id)} class="flex min-h-9 items-center rounded-button border border-cream-dark px-3 text-xs font-medium text-ink-muted active:scale-[0.98]">
-									{t('profile.remove')}
-								</button>
-							</li>
+							<SharedListRow
+								{list}
+								onCopy={copyLink}
+								onRemove={deleteSharedList}
+								onToggleVoting={toggleVoting}
+							/>
 						{/each}
 					</ul>
 				{/if}
