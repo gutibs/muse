@@ -29,6 +29,13 @@ repos:
         pass_filenames: false
         files: ^(backend/accounts/services/consent\.py|nginx/landing/(gdpr|pdpo|terms)\.html)$
 
+      - id: check-no-voseo
+        name: el espanol de Muse no vosea
+        entry: python3 backend/scripts/check_no_voseo.py
+        language: system
+        pass_filenames: false
+        files: ^(app/src/lib/i18n/translations\.ts|backend/locale/es/LC_MESSAGES/django\.po|nginx/landing/.*\.html)$
+
       - id: check-no-console-log-in-source
         name: check no console.log in app/src
         entry: bash backend/scripts/check_no_console_log.sh

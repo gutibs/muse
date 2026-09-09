@@ -142,7 +142,7 @@ msgstr "Nueva solicitud de amistad"
 #: notifications/services/dispatch.py:168
 #, python-format
 msgid "%(name)s wants to connect on Muse."
-msgstr "%(name)s quiere conectarse con vos en Muse."
+msgstr "%(name)s quiere conectarse contigo en Muse."
 
 #: notifications/services/dispatch.py:172
 msgid "You are now friends"
