@@ -1,16 +1,20 @@
 """Buscar gente, el grafo de amistades y las invitaciones por email."""
 
 import logging
+import uuid
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db import IntegrityError
 from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
-from rest_framework import generics, status, viewsets
+from rest_framework import generics, status, views, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
 
-from accounts.models import EmailInvitation, Friendship
+from accounts.models import EmailInvitation, Friendship, Profile
 from accounts.serializers import (
 	EmailInvitationSerializer,
 	FriendshipSerializer,
@@ -20,7 +24,7 @@ from accounts.services.blocking import is_blocked
 from accounts.services.email import EmailSendError, send_invitation_email
 from accounts.services.friendships import are_friends
 from accounts.services.visibility import blocked_user_ids
-from accounts.views.throttles import InviteThrottle, UserSearchThrottle
+from accounts.views.throttles import FriendCodeThrottle, InviteThrottle, UserSearchThrottle
 
 logger = logging.getLogger(__name__)
 
@@ -169,3 +173,87 @@ class EmailInvitationView(generics.ListCreateAPIView):
 				invitation.email,
 				exc.message,
 			)
+
+
+def _perfil_por_codigo(code):
+	"""El perfil dueño del código, o None.
+
+	Un código ilegible tiene que salir por acá y no reventar la query: el
+	campo es `uuid` en Postgres, así que cualquier string arbitrario levanta
+	`ValueError` dentro del ORM y sale como 500. Mismo cuidado que
+	`voter_key_from` en las votaciones públicas.
+	"""
+	try:
+		return Profile.objects.select_related("user").get(friend_code=code)
+	except (Profile.DoesNotExist, ValueError, DjangoValidationError, TypeError):
+		return None
+
+
+class FriendCodeRedeemView(views.APIView):
+	"""Canjear el código que viaja en el QR de otra persona.
+
+	Sale siempre con cuerpo, también en los caminos idempotentes: la app
+	necesita saber a quién le mandó la solicitud para poder decirlo en
+	pantalla, y un 201 vacío ya rompió `api.service` una vez (F2.D).
+	"""
+
+	throttle_classes = (FriendCodeThrottle,)
+
+	def post(self, request):
+		perfil = _perfil_por_codigo(request.data.get("code"))
+		if perfil is None:
+			raise NotFound(_("That code does not exist."))
+		if perfil.user_id == request.user.id:
+			raise ValidationError({"code": _("That is your own code.")})
+		# Mismo 404 que un código inexistente, a propósito: el bloqueo es
+		# silencioso (RF2) y un 403 le confirmaría al bloqueado que la cuenta
+		# está ahí. Va antes de cualquier escritura.
+		if is_blocked(request.user, perfil.user):
+			raise NotFound(_("That code does not exist."))
+
+		# En las dos direcciones: si el otro ya te mandó solicitud —o ya son
+		# amigos— la fila existe con `from_user` invertido, y el
+		# `unique_together` de Friendship es direccional, así que un `create`
+		# ciego crearía una segunda relación entre las mismas dos personas.
+		existente = Friendship.objects.filter(
+			Q(from_user=request.user, to_user=perfil.user)
+			| Q(from_user=perfil.user, to_user=request.user)
+		).first()
+		if existente is not None:
+			return self._respuesta(perfil.user, existente.status, status.HTTP_200_OK)
+
+		try:
+			amistad = Friendship.objects.create(
+				from_user=request.user,
+				to_user=perfil.user,
+				status=Friendship.Status.PENDING,
+			)
+		except IntegrityError:
+			# Dos escaneos del mismo QR a la vez. La fila que ganó es tan
+			# buena como la nuestra: el cliente ve lo mismo que si hubiera
+			# llegado segundo por milisegundos.
+			return self._respuesta(perfil.user, Friendship.Status.PENDING, status.HTTP_200_OK)
+		return self._respuesta(perfil.user, amistad.status, status.HTTP_201_CREATED)
+
+	def _respuesta(self, usuario, estado, code):
+		return Response(
+			{"user": UserAnonymousSafeSerializer(usuario).data, "status": estado},
+			status=code,
+		)
+
+
+class FriendCodeRotateView(views.APIView):
+	"""Cambiar el propio código, invalidando el que ya circula.
+
+	`SharedList.token` no tiene equivalente y es una carencia conocida: acá
+	hace más falta, porque un QR se muestra en una pantalla y termina en el
+	screenshot de cualquiera.
+	"""
+
+	throttle_classes = (FriendCodeThrottle,)
+
+	def post(self, request):
+		perfil = request.user.profile
+		perfil.friend_code = uuid.uuid4()
+		perfil.save(update_fields=["friend_code"])
+		return Response({"friend_code": perfil.friend_code}, status=status.HTTP_200_OK)

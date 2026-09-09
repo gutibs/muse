@@ -49,4 +49,12 @@
          cuando la persona enciende una notificación en Ajustes o manda su
          primera solicitud de amistad. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- F2.F. Sólo para leer el QR de amistad de otra persona: la cámara se
+         abre desde el botón de escanear y se cierra al leer un código. No se
+         guarda ninguna imagen ni se pide en el arranque. `required=false`
+         porque sin cámara la app sigue andando entera: el escaneo es un
+         camino más para agregar a alguien, no el único. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
 </manifest>

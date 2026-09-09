@@ -114,6 +114,12 @@ class Profile(models.Model):
 	# Indexado porque se filtra por él en el feed y en el listado de
 	# restaurantes, no sólo para mostrarlo.
 	is_verified_insider = models.BooleanField(default=False, db_index=True)
+	# F2.F — el código que viaja en el QR de perfil. Mismo patrón que
+	# `SharedList.token` y `EmailInvitation.token`: UUID4 opaco, nunca el id
+	# numérico, que habilitaría enumerar la base entera. A diferencia de
+	# aquéllos éste se puede rotar (`friend-code-rotate`), porque un QR se
+	# muestra en una pantalla y termina en el screenshot de cualquiera.
+	friend_code = models.UUIDField(default=uuid.uuid4, unique=True, db_index=True)
 	# Set when the user exercises their right to erasure. The row stays so the
 	# person's reviews keep hanging off a valid FK (see D-009), but everything
 	# identifying is wiped. Anything rendering an author must treat a non-null

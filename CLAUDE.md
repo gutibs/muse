@@ -196,8 +196,14 @@ el producto, conviene un test visual o un eslint-plugin custom.
   patch sobre el alias del `__init__` no toca lo que el código usa y el test
   pasa sin probar nada.
 - Throttles por scope en `settings.py`: `login`, `register`, `user_search`,
-  `places`, `invite`. Si agregás un endpoint sensible, agregá scope acá y
-  marcalo en la view.
+  `places`, `invite`, `friend_code`. Si agregás un endpoint sensible, agregá
+  scope acá y marcalo en la view. (La lista de arriba no es exhaustiva —los
+  scopes reales son quince; `settings.py` manda.)
+- **Todo campo nuevo del perfil aparece solo en el perfil ajeno.**
+  `ForeignProfileSerializer` hereda de `ProfileSerializer`, así que lo privado
+  se excluye a mano en `_PRIVATE_PROFILE_FIELDS`. Ya pasó con `email`, `phone`,
+  los seis de F2.E y `friend_code`: es una clase de bug que crece por omisión,
+  no por descuido puntual.
 
 ## Logging
 - Backend: `logger = logging.getLogger(__name__)` por archivo. Para errores

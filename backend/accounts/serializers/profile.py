@@ -75,6 +75,7 @@ class ProfileSerializer(serializers.ModelSerializer):
 			"timezone",
 			"digest_hour",
 			"is_verified_insider",
+			"friend_code",
 			"stats",
 			"created_at",
 		)
@@ -88,6 +89,9 @@ class ProfileSerializer(serializers.ModelSerializer):
 			"favourite_cuisine_detail",
 			"dietary_preferences_detail",
 			"is_verified_insider",
+			# Se rota por su endpoint, nunca se elige: un código escribible
+			# deja que alguien se ponga uno adivinable a mano.
+			"friend_code",
 			"created_at",
 		)
 
@@ -174,6 +178,10 @@ _PRIVATE_PROFILE_FIELDS = (
 	"language",
 	"timezone",
 	"digest_hour",
+	# F2.F. Es la llave con la que cualquiera te manda una solicitud: servirlo
+	# en el perfil ajeno lo saca del QR, que es el único lugar donde su dueño
+	# decide mostrarlo, y lo vuelve reenviable por terceros.
+	"friend_code",
 )
 
 

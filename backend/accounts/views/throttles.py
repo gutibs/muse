@@ -35,6 +35,10 @@ class InviteThrottle(UserRateThrottle):
 	scope = "invite"
 
 
+class FriendCodeThrottle(UserRateThrottle):
+	scope = "friend_code"
+
+
 class ClientIPRateThrottle(SimpleRateThrottle):
 	"""Cuenta por IP de cliente SIEMPRE, tenga sesión o no.
 

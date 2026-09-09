@@ -1,5 +1,9 @@
 <script lang="ts">
 	import UserIdentity from '$lib/components/UserIdentity.svelte';
+	import BottomSheet from '$lib/components/BottomSheet.svelte';
+	import FriendQr from '$lib/components/FriendQr.svelte';
+	import { parseFriendCode, redeemFriendCode } from '$lib/services/friend-code.service';
+	import { scanOnce } from '$lib/services/qr-scanner.service';
 	import { friendsService, type EmailInvitation } from '$lib/services/friends.service';
 	import { t, i18n } from '$lib/i18n/index.svelte';
 	import type { AnonymousUser, Friendship } from '$lib/types';
@@ -188,6 +192,53 @@
 	});
 
 	import { authStore } from '$lib/stores/auth.store.svelte';
+
+	// F2.F — el QR propio y el escaneo del ajeno.
+	let showQr = $state(false);
+	let scanning = $state(false);
+	let scanMessage = $state('');
+	let scanError = $state('');
+
+	async function scanFriendQr() {
+		if (scanning) return;
+		scanning = true;
+		scanMessage = '';
+		scanError = '';
+		try {
+			const leido = await scanOnce();
+			if (!leido.ok) {
+				// Cancelar es el camino más común y no merece un cartel rojo.
+				if (leido.reason === 'cancelled') return;
+				scanError =
+					leido.reason === 'no-permission'
+						? t('friendCode.noCamera')
+						: leido.reason === 'unsupported'
+							? t('friendCode.onlyOnPhone')
+							: t('friendCode.failed');
+				return;
+			}
+
+			const code = parseFriendCode(leido.value);
+			if (!code) {
+				scanError = t('friendCode.notMuse');
+				return;
+			}
+
+			const res = await redeemFriendCode(code);
+			const nombre = res.user.displayName || '';
+			scanMessage = (res.status === 'accepted' ? t('friendCode.already') : t('friendCode.sent'))
+				.replace('{name}', nombre);
+			// La solicitud sale como PENDING: lo que cambia es la lista de
+			// enviadas, no la de amigos. Recargar amigos igual cubre el caso
+			// idempotente en que ya lo eran.
+			await loadFriends();
+		} catch (err) {
+			logSilent('friends.scanFriendQr', err);
+			scanError = extractFirstDrfError(err) || t('friendCode.failed');
+		} finally {
+			scanning = false;
+		}
+	}
 	let myId = $derived(authStore.user?.id ?? 0);
 </script>
 
@@ -339,6 +390,37 @@
 		{#if tab === 'add'}
 			<div class="space-y-6 pt-2">
 
+				<!-- F2.F — el QR es el único camino de alta que no obliga a dar
+				     el email ni el teléfono, que es lo que pide el buscador de
+				     abajo. Por eso va primero. -->
+				<div class="grid grid-cols-2 gap-2">
+					<button
+						onclick={() => (showQr = true)}
+						class="flex min-h-11 items-center justify-center gap-2 rounded-button bg-white px-4 py-3 text-sm font-semibold text-ink shadow-card active:scale-[0.98]"
+					>
+						<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><path d="M14 14h3v3h-3zM20 14h1M14 20h3M20 20h1" />
+						</svg>
+						{t('friendCode.title')}
+					</button>
+					<button
+						onclick={scanFriendQr}
+						disabled={scanning}
+						class="flex min-h-11 items-center justify-center gap-2 rounded-button bg-jade px-4 py-3 text-sm font-semibold text-white active:scale-[0.98] disabled:opacity-50"
+					>
+						<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M3 12h18" />
+						</svg>
+						{scanning ? t('friendCode.scanning') : t('friendCode.scan')}
+					</button>
+				</div>
+				{#if scanMessage}
+					<p class="text-sm text-jade">{scanMessage}</p>
+				{/if}
+				{#if scanError}
+					<p class="text-sm text-blush">{scanError}</p>
+				{/if}
+
 				<!-- Search existing users -->
 				<div>
 					<p class="mb-2 text-sm font-medium text-ink">{t('friends.searchByName')}</p>
@@ -439,3 +521,18 @@
 
 	</main>
 </div>
+
+{#if showQr && authStore.user}
+	<BottomSheet onclose={() => (showQr = false)}>
+		<div class="p-6 pb-2">
+			<h2 class="mb-4 text-center text-lg font-semibold text-ink">{t('friendCode.title')}</h2>
+			<FriendQr code={authStore.user.friendCode} />
+			<button
+				onclick={() => (showQr = false)}
+				class="mt-4 min-h-11 w-full rounded-button bg-cream-dark py-3 text-sm font-semibold text-ink active:scale-[0.98]"
+			>
+				{t('friendCode.cancel')}
+			</button>
+		</div>
+	</BottomSheet>
+{/if}

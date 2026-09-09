@@ -53,6 +53,11 @@ export interface Profile {
 	defaultPinVisibility: PinVisibility;
 	/** Sólo lectura: lo otorga Muse desde el admin, no se manda nunca. */
 	isVerifiedInsider: boolean;
+	/** F2.F. El código que va adentro del QR de perfil. Sólo lectura: se
+	 * cambia por `/auth/friend-code/rotate/`, nunca con un PATCH. **No está en
+	 * `ForeignProfile` a propósito** — es la llave con la que cualquiera te
+	 * manda una solicitud, y su dueño decide dónde mostrarla. */
+	friendCode: string;
 	stats: UserStats;
 	createdAt: string;
 }

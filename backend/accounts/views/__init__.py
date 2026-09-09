@@ -25,12 +25,15 @@ from accounts.views.profile import (
 )
 from accounts.views.social import (
 	EmailInvitationView,
+	FriendCodeRedeemView,
+	FriendCodeRotateView,
 	FriendshipViewSet,
 	UserSearchView,
 	_are_friends,
 )
 from accounts.views.throttles import (
 	ClientIPRateThrottle,
+	FriendCodeThrottle,
 	InviteThrottle,
 	LoginAnonThrottle,
 	LoginUserThrottle,
@@ -42,6 +45,9 @@ from accounts.views.throttles import (
 )
 
 __all__ = [
+	"FriendCodeRedeemView",
+	"FriendCodeThrottle",
+	"FriendCodeRotateView",
 	"PASSWORD_RESET_ACCEPTED",
 	"_are_friends",
 	"BlockViewSet",

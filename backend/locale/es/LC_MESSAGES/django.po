@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Muse\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-08 20:06-0300\n"
+"POT-Creation-Date: 2026-09-09 16:20-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: Español\n"
@@ -16,74 +16,83 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? "
 "1 : 2;\n"
 
-#: accounts/serializers.py:210
+#: accounts/serializers/auth.py:36
 msgid "Check your inbox to finish setting up your account."
 msgstr "Revisa tu correo para terminar de crear tu cuenta."
 
-#: accounts/serializers.py:233
+#: accounts/serializers/auth.py:59
 msgid "You must accept the privacy policy and the terms to register."
-msgstr "Debes aceptar la política de privacidad y los términos para registrarte."
+msgstr ""
+"Debes aceptar la política de privacidad y los términos para registrarte."
 
-#: accounts/serializers.py:372 accounts/serializers.py:473
+#: accounts/serializers/auth.py:154 accounts/serializers/auth.py:188
 msgid "Current password is incorrect."
 msgstr "La contraseña actual no es correcta."
 
-#: accounts/serializers.py:419
+#: accounts/serializers/social.py:108
 msgid "You cannot send a friend request to yourself."
 msgstr "No puedes enviarte una solicitud de amistad a ti mismo."
 
-#: accounts/serializers.py:421
+#: accounts/serializers/social.py:110
 msgid "Friend request already sent."
 msgstr "Ya enviaste la solicitud de amistad."
 
-#: accounts/serializers.py:423
+#: accounts/serializers/social.py:112
 msgid "This user already sent you a friend request."
 msgstr "Esta persona ya te envió una solicitud de amistad."
 
-#: accounts/serializers.py:446
+#: accounts/serializers/social.py:135
 msgid "This person already accepted your invitation."
 msgstr "Esta persona ya aceptó tu invitación."
 
-#: accounts/views.py:234
-msgid "Only the recipient can respond to a friend request."
-msgstr "Sólo quien recibe la solicitud puede responderla."
-
-#: accounts/views.py:240
-msgid "status must be 'accepted' or 'declined'."
-msgstr "status tiene que ser 'accepted' o 'declined'."
-
-#: accounts/views.py:251
-msgid "This friend request is no longer available."
-msgstr "Esta solicitud de amistad ya no está disponible."
-
-#: accounts/views.py:361
+#: accounts/views/auth.py:39
 msgid "If an account exists for that email, a code has been sent."
 msgstr "Si existe una cuenta con ese email, le enviamos un código."
 
-#: accounts/views.py:407
+#: accounts/views/auth.py:155
 msgid "Password updated."
 msgstr "Contraseña actualizada."
+
+#: accounts/views/social.py:87
+msgid "Only the recipient can respond to a friend request."
+msgstr "Sólo quien recibe la solicitud puede responderla."
+
+#: accounts/views/social.py:93
+msgid "status must be 'accepted' or 'declined'."
+msgstr "status tiene que ser 'accepted' o 'declined'."
+
+#: accounts/views/social.py:104
+msgid "This friend request is no longer available."
+msgstr "Esta solicitud de amistad ya no está disponible."
+
+#: accounts/views/social.py:205 accounts/views/social.py:212
+msgid "That code does not exist."
+msgstr "Ese código no existe."
+
+#: accounts/views/social.py:207
+msgid "That is your own code."
+msgstr "Ese es tu propio código."
 
 #: imports/models.py:32
 msgid "Original file name"
 msgstr "Nombre original del archivo"
 
-#: imports/services/parse.py:52
+#: imports/services/parse.py:58
 msgid "Only .csv and .xlsx files can be imported."
 msgstr "Sólo se pueden importar archivos .csv y .xlsx."
 
-#: imports/services/parse.py:56
+#: imports/services/parse.py:62
 msgid "The file has no rows."
 msgstr "El archivo no tiene filas."
 
-#: imports/services/parse.py:62
+#: imports/services/parse.py:70
 msgid ""
 "The file needs a column with the restaurant name (name, nombre, restaurant…)."
 msgstr ""
 "El archivo necesita una columna con el nombre del restaurante (name, nombre, "
 "restaurant…)."
 
-#: imports/services/parse.py:114
+#: imports/services/parse.py:130
 msgid "That .xlsx file could not be read."
 msgstr "No se pudo leer ese archivo .xlsx."
 

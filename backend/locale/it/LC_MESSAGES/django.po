@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Muse\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-08 20:06-0300\n"
+"POT-Creation-Date: 2026-09-09 16:20-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: Italiano\n"
@@ -15,74 +15,83 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: accounts/serializers.py:210
+#: accounts/serializers/auth.py:36
 msgid "Check your inbox to finish setting up your account."
 msgstr "Controlla la tua email per completare la creazione dell'account."
 
-#: accounts/serializers.py:233
+#: accounts/serializers/auth.py:59
 msgid "You must accept the privacy policy and the terms to register."
-msgstr "Devi accettare l'informativa sulla privacy e i termini per registrarti."
+msgstr ""
+"Devi accettare l'informativa sulla privacy e i termini per registrarti."
 
-#: accounts/serializers.py:372 accounts/serializers.py:473
+#: accounts/serializers/auth.py:154 accounts/serializers/auth.py:188
 msgid "Current password is incorrect."
 msgstr "La password attuale non è corretta."
 
-#: accounts/serializers.py:419
+#: accounts/serializers/social.py:108
 msgid "You cannot send a friend request to yourself."
 msgstr "Non puoi inviare una richiesta di amicizia a te stesso."
 
-#: accounts/serializers.py:421
+#: accounts/serializers/social.py:110
 msgid "Friend request already sent."
 msgstr "Richiesta di amicizia già inviata."
 
-#: accounts/serializers.py:423
+#: accounts/serializers/social.py:112
 msgid "This user already sent you a friend request."
 msgstr "Questa persona ti ha già inviato una richiesta di amicizia."
 
-#: accounts/serializers.py:446
+#: accounts/serializers/social.py:135
 msgid "This person already accepted your invitation."
 msgstr "Questa persona ha già accettato il tuo invito."
 
-#: accounts/views.py:234
-msgid "Only the recipient can respond to a friend request."
-msgstr "Solo chi riceve la richiesta può rispondere."
-
-#: accounts/views.py:240
-msgid "status must be 'accepted' or 'declined'."
-msgstr "status deve essere 'accepted' o 'declined'."
-
-#: accounts/views.py:251
-msgid "This friend request is no longer available."
-msgstr "Questa richiesta di amicizia non è più disponibile."
-
-#: accounts/views.py:361
+#: accounts/views/auth.py:39
 msgid "If an account exists for that email, a code has been sent."
 msgstr "Se esiste un account con quell'email, abbiamo inviato un codice."
 
-#: accounts/views.py:407
+#: accounts/views/auth.py:155
 msgid "Password updated."
 msgstr "Password aggiornata."
+
+#: accounts/views/social.py:87
+msgid "Only the recipient can respond to a friend request."
+msgstr "Solo chi riceve la richiesta può rispondere."
+
+#: accounts/views/social.py:93
+msgid "status must be 'accepted' or 'declined'."
+msgstr "status deve essere 'accepted' o 'declined'."
+
+#: accounts/views/social.py:104
+msgid "This friend request is no longer available."
+msgstr "Questa richiesta di amicizia non è più disponibile."
+
+#: accounts/views/social.py:205 accounts/views/social.py:212
+msgid "That code does not exist."
+msgstr "Questo codice non esiste."
+
+#: accounts/views/social.py:207
+msgid "That is your own code."
+msgstr "Questo è il tuo codice."
 
 #: imports/models.py:32
 msgid "Original file name"
 msgstr "Nome originale del file"
 
-#: imports/services/parse.py:52
+#: imports/services/parse.py:58
 msgid "Only .csv and .xlsx files can be imported."
 msgstr "Si possono importare solo file .csv e .xlsx."
 
-#: imports/services/parse.py:56
+#: imports/services/parse.py:62
 msgid "The file has no rows."
 msgstr "Il file non ha righe."
 
-#: imports/services/parse.py:62
+#: imports/services/parse.py:70
 msgid ""
 "The file needs a column with the restaurant name (name, nombre, restaurant…)."
 msgstr ""
 "Il file ha bisogno di una colonna con il nome del ristorante (name, nombre, "
 "restaurant…)."
 
-#: imports/services/parse.py:114
+#: imports/services/parse.py:130
 msgid "That .xlsx file could not be read."
 msgstr "Non è stato possibile leggere quel file .xlsx."
 

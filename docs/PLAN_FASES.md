@@ -457,17 +457,37 @@ aplica el plugin condicionalmente si aparece el JSON.
   edición con diff. Convertido en push, un usuario que corrige una reseña tres veces
   manda tres notificaciones a todos sus amigos.
 
-### F2.F — QR de perfil
+### F2.F — QR de perfil ✅ HECHO (2026-09-09)
 
-El QR es la parte fácil (`qrcode` + Pillow, que ya está). Lo caro es la superficie
-pública de perfil, que hoy no existe.
+**Salió sin superficie pública de perfil, que era lo caro.** El discovery encontró
+que el valor real del QR en este producto es otro: `UserSearchView` no busca por
+nombre a propósito (`accounts/views/social.py:41-45`), así que hoy para agregar a
+alguien hay que saber su email o su teléfono. El QR es el único camino de alta que
+no obliga a revelar un dato de contacto.
 
-- `Profile.public_slug` como token opaco. **Nunca el user_id numérico**: habilita
-  enumeración trivial de toda la base de usuarios.
-- Endpoint anónimo devolviendo el mínimo: display_name, avatar, city, badge.
-- Choca con F2.A: hay que definir qué muestra el QR de un perfil privado.
-- Escáner in-app = plugin de cámara nuevo = permiso nuevo en la review de la store.
-  Evaluar si alcanza con abrir el link desde la cámara del sistema.
+Cómo quedó, contra lo que este plan suponía:
+
+- **El QR no lleva a un perfil, manda una solicitud.** Se canjea autenticado
+  (`POST /api/v1/auth/friend-code/`), así que no hay endpoint anónimo, no hay
+  `location` nuevo en nginx y **no choca con F2.A**: nadie ve pins de nadie hasta
+  ser amigo.
+- **Solicitud pendiente, no amistad automática.** D-005 vale para la invitación por
+  email —ahí elegís el destinatario— pero un QR se muestra en una pantalla y
+  termina en el screenshot de cualquiera. Con solicitud, lo peor que hace una
+  filtración es traerte solicitudes que podés rechazar.
+- `Profile.friend_code`, UUID4 opaco, mismo patrón que `SharedList.token`. **Con
+  rotación**, que aquél no tiene: `POST /auth/friend-code/rotate/`.
+- Todo lo que no es un canje válido contesta **el mismo 404** —código inexistente,
+  ilegible, o de alguien con quien hay bloqueo en cualquier dirección—. El único
+  400 es tu propio código, porque ahí no hay nada que filtrar.
+- **El escáner sí trajo el permiso de cámara**: `@capacitor-mlkit/barcode-scanning`
+  y `android.permission.CAMERA` en el manifest, con `uses-feature required=false`.
+  Entra en la review inicial de la store, no en una actualización.
+- El payload es `muse://friend/<uuid>`, **no una URL de lovemuse.app**: esa ruta no
+  existe en nginx, así que la cámara del sistema llevaría a un 404.
+
+Lo que no se puede cubrir con tests: el escáner no tiene implementación web, así
+que en el navegador contesta `unsupported` y hay que verificarlo en el teléfono.
 
 ### F2.G — Importador
 

@@ -239,6 +239,12 @@ REST_FRAMEWORK = {
 		"user_search": "60/hour",
 		"places": "120/hour",
 		"invite": "20/hour",
+		# F2.F. Escanear un QR es un acto presencial y ocasional: 30 por hora
+		# es holgado para una persona y corta el goteo de quien pruebe códigos
+		# a mano. Contra fuerza bruta real no es la defensa —eso lo hace el
+		# espacio de un UUID4—, pero sin scope propio el canje heredaría los
+		# 1000/hora de cualquier request autenticada.
+		"friend_code": "30/hour",
 		# La app lo llama una vez por arranque, y es anónimo: varias personas
 		# detrás del mismo NAT —una oficina, el wifi de un evento— comparten
 		# cuota. Generoso a propósito; un 429 acá no bloquea a nadie porque la
