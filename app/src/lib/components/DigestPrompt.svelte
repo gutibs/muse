@@ -14,6 +14,7 @@
 	 * Las dos respuestas marcan `digestPromptSeen`. Si el guardado falla no se
 	 * marca nada, así que vuelve a preguntar en vez de comerse la decisión.
 	 */
+	import BottomSheet from '$lib/components/BottomSheet.svelte';
 	import { t } from '$lib/i18n/index.svelte';
 	import * as push from '$lib/services/push.service';
 	import { authStore } from '$lib/stores/auth.store.svelte';
@@ -53,45 +54,39 @@
 	}
 </script>
 
-<!-- Safe areas propias: como `UpdateGate`, esto se dibuja por encima de
-	AppShell, así que no hereda las suyas. Sin esto los botones caen dentro de
-	la franja del indicador de inicio y no se pueden tocar. -->
-<div
-	class="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center"
-	style="padding-bottom: var(--sab); padding-left: var(--sal); padding-right: var(--sar);"
->
-	<div class="w-full max-w-sm rounded-t-card bg-white p-6 shadow-elevated sm:rounded-card">
-		<h2 class="font-serif text-xl font-semibold text-ink">{t('digest.promptTitle')}</h2>
-		<p class="mt-3 text-sm text-ink-light">{t('digest.promptBody')}</p>
+<!-- Sin `onclose`: las dos respuestas son decisiones, y tocar al costado no es
+	ninguna de las dos. -->
+<BottomSheet>
+	<h2 class="font-serif text-xl font-semibold text-ink">{t('digest.promptTitle')}</h2>
+	<p class="mt-3 text-sm text-ink-light">{t('digest.promptBody')}</p>
 
-		{#if error}
-			<div
-				data-testid="digest-prompt-error"
-				class="mt-3 rounded-button bg-blush-light/20 px-4 py-3 text-sm text-blush"
-			>
-				{error}
-			</div>
-		{/if}
-
-		<div class="mt-6 flex flex-col gap-2">
-			<button
-				type="button"
-				data-testid="digest-prompt-yes"
-				disabled={saving}
-				onclick={() => responder(true)}
-				class="min-h-11 rounded-button bg-jade px-4 text-base font-medium text-white active:scale-95 disabled:opacity-60"
-			>
-				{t('digest.promptYes')}
-			</button>
-			<button
-				type="button"
-				data-testid="digest-prompt-no"
-				disabled={saving}
-				onclick={() => responder(false)}
-				class="min-h-11 rounded-button px-4 text-base text-ink-light active:opacity-70 disabled:opacity-60"
-			>
-				{t('digest.promptNo')}
-			</button>
+	{#if error}
+		<div
+			data-testid="digest-prompt-error"
+			class="mt-3 rounded-button bg-blush-light/20 px-4 py-3 text-sm text-blush"
+		>
+			{error}
 		</div>
+	{/if}
+
+	<div class="mt-6 flex flex-col gap-2">
+		<button
+			type="button"
+			data-testid="digest-prompt-yes"
+			disabled={saving}
+			onclick={() => responder(true)}
+			class="min-h-11 rounded-button bg-jade px-4 text-base font-medium text-white active:scale-95 disabled:opacity-60"
+		>
+			{t('digest.promptYes')}
+		</button>
+		<button
+			type="button"
+			data-testid="digest-prompt-no"
+			disabled={saving}
+			onclick={() => responder(false)}
+			class="min-h-11 rounded-button px-4 text-base text-ink-light active:opacity-70 disabled:opacity-60"
+		>
+			{t('digest.promptNo')}
+		</button>
 	</div>
-</div>
+</BottomSheet>

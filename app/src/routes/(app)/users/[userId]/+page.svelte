@@ -12,6 +12,7 @@
 	import PinStatusBadge from '$lib/components/PinStatusBadge.svelte';
 	import { trackVenueCardView } from '$lib/services/analytics.service';
 	import { goto } from '$app/navigation';
+	import BottomSheet from '$lib/components/BottomSheet.svelte';
 	import ReportModal from '$lib/components/ReportModal.svelte';
 	import { moderationService } from '$lib/services/moderation.service';
 	import { logSilent } from '$lib/utils/logger';
@@ -117,57 +118,51 @@
 	</header>
 
 	{#if showActions}
-		<!-- svelte-ignore a11y_click_events_have_key_events -->
-		<!-- svelte-ignore a11y_no_static_element_interactions -->
-		<div class="fixed inset-0 z-40 flex items-end bg-black/40" onclick={() => (showActions = false)}>
-			<!-- svelte-ignore a11y_click_events_have_key_events -->
-			<!-- svelte-ignore a11y_no_static_element_interactions -->
-			<div class="w-full rounded-t-card bg-white p-4 pb-8 shadow-elevated" onclick={(e) => e.stopPropagation()}>
-				<button
-					onclick={() => { showActions = false; showReport = true; }}
-					class="flex min-h-12 w-full items-center rounded-button px-4 text-sm font-medium text-ink active:bg-cream"
-				>
-					{t('moderation.report')}
-				</button>
-				<button
-					onclick={() => { showActions = false; confirmingBlock = true; }}
-					class="flex min-h-12 w-full items-center rounded-button px-4 text-sm font-medium text-blush active:bg-cream"
-				>
-					{t('moderation.block')}
-				</button>
-			</div>
-		</div>
+		<!-- Tenía `z-40` mientras el resto de los diálogos usa `z-50`, y `pb-8`
+			fijo en lugar de la safe area real. Las dos cosas las resuelve el
+			componente. -->
+		<BottomSheet onclose={() => (showActions = false)}>
+			<button
+				onclick={() => { showActions = false; showReport = true; }}
+				class="flex min-h-12 w-full items-center rounded-button px-4 text-sm font-medium text-ink active:bg-cream"
+			>
+				{t('moderation.report')}
+			</button>
+			<button
+				onclick={() => { showActions = false; confirmingBlock = true; }}
+				class="flex min-h-12 w-full items-center rounded-button px-4 text-sm font-medium text-blush active:bg-cream"
+			>
+				{t('moderation.block')}
+			</button>
+		</BottomSheet>
 	{/if}
 
 	{#if confirmingBlock && profile}
-		<!-- svelte-ignore a11y_click_events_have_key_events -->
-		<!-- svelte-ignore a11y_no_static_element_interactions -->
-		<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-6" onclick={() => { confirmingBlock = false; blockError = ''; }}>
-			<!-- svelte-ignore a11y_click_events_have_key_events -->
-			<!-- svelte-ignore a11y_no_static_element_interactions -->
-			<div class="w-full max-w-sm rounded-card bg-white p-6 shadow-elevated" onclick={(e) => e.stopPropagation()}>
-				<h2 class="font-serif text-xl font-semibold text-ink">
-					{t('moderation.blockTitle').replace('{name}', profile.displayName || t('restaurant.anonymous'))}
-				</h2>
-				<p class="mt-2 text-sm text-ink-light">{t('moderation.blockBody')}</p>
-				{#if blockError}
-					<div class="mt-3 rounded-button bg-blush-light/20 px-4 py-3 text-sm text-blush">{blockError}</div>
-				{/if}
-				<button
-					onclick={confirmBlock}
-					disabled={blocking}
-					class="mt-5 flex min-h-11 w-full items-center justify-center rounded-button bg-blush text-sm font-semibold text-white active:scale-[0.98] disabled:opacity-50"
-				>
-					{t('moderation.block')}
-				</button>
-				<button
-					onclick={() => { confirmingBlock = false; blockError = ''; }}
-					class="mt-3 flex min-h-11 w-full items-center justify-center rounded-button text-sm font-medium text-ink-light active:opacity-70"
-				>
-					{t('common.cancel')}
-				</button>
-			</div>
-		</div>
+		<BottomSheet
+			align="center"
+			onclose={() => { confirmingBlock = false; blockError = ''; }}
+		>
+			<h2 class="font-serif text-xl font-semibold text-ink">
+			{t('moderation.blockTitle').replace('{name}', profile.displayName || t('restaurant.anonymous'))}
+		</h2>
+		<p class="mt-2 text-sm text-ink-light">{t('moderation.blockBody')}</p>
+		{#if blockError}
+			<div class="mt-3 rounded-button bg-blush-light/20 px-4 py-3 text-sm text-blush">{blockError}</div>
+		{/if}
+		<button
+			onclick={confirmBlock}
+			disabled={blocking}
+			class="mt-5 flex min-h-11 w-full items-center justify-center rounded-button bg-blush text-sm font-semibold text-white active:scale-[0.98] disabled:opacity-50"
+		>
+			{t('moderation.block')}
+		</button>
+		<button
+			onclick={() => { confirmingBlock = false; blockError = ''; }}
+			class="mt-3 flex min-h-11 w-full items-center justify-center rounded-button text-sm font-medium text-ink-light active:opacity-70"
+		>
+			{t('common.cancel')}
+		</button>
+		</BottomSheet>
 	{/if}
 
 	{#if showReport && profile}
