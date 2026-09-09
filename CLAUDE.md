@@ -42,8 +42,8 @@ muse/
   base local y **anonimiza los usuarios en el mismo paso** (emails a
   `@local.test`, contraseña `local-dev-1234` para todas las cuentas). Te deja
   los ~550 restaurantes y sus pins reales sin datos personales encima.
-- **No apuntar el entorno local a RDS.** `pytest --create-db` crea y borra
-  bases, un `migrate` distraído modifica producción, y los seeds de demo
+- **No apuntar el entorno local a RDS.** `pytest` crea y borra bases en cada
+  corrida, un `migrate` distraído modifica producción, y los seeds de demo
   insertarían 500 restaurantes falsos en el catálogo real. El script y
   `anonymise_local_data` abortan si `DB_HOST` no es local.
 - Tests que hablan con Google de verdad: `pytest -m integration`. Se saltean
@@ -124,10 +124,14 @@ podés romper sin romper el producto:
     falla si tocás un `.po` y te olvidás de recompilar
 - **Cualquier cambio en `accounts/`, `pins/`, `restaurants/from_google` debe correr la suite.**
   Si rompiste alguno, el bug está en tu cambio.
-- **Corré con `--create-db`.** `pytest.ini` trae `--reuse-db`: al agregar una
-  migración, la base reusada queda con el schema al día pero sin los datos que
-  siembran las data migrations, y te da 5 rojos que no tienen nada que ver con
-  tu cambio.
+- **`pytest.ini` ya no trae `--reuse-db`**, y eso está explicado ahí mismo: los
+  dos tests que corren con `django_db(transaction=True)` hacen que Django
+  trunque todas las tablas al terminar, incluidas las filas que siembran las
+  data migrations (`restaurants_tag` pasaba de 27 a 0). Con la base reusada, la
+  corrida siguiente daba 23 rojos de tags, dietary y district sin relación con
+  el cambio que los disparaba. Ahora la base se crea siempre: cuesta 10-20
+  segundos sobre 100 y a cambio un rojo significa algo. **No repongas el flag
+  para ganar esos segundos.**
 
 ---
 
