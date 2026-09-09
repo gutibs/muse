@@ -1,6 +1,7 @@
 import { fireEvent, render, waitFor } from '@testing-library/svelte';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import DigestPrompt from './DigestPrompt.svelte';
+import * as push from '$lib/services/push.service';
 import { authStore } from '$lib/stores/auth.store.svelte';
 
 vi.mock('$lib/stores/auth.store.svelte', () => ({
@@ -8,7 +9,7 @@ vi.mock('$lib/stores/auth.store.svelte', () => ({
 }));
 
 vi.mock('$lib/services/push.service', () => ({
-	permissionState: vi.fn().mockResolvedValue('granted'),
+	permissionState: vi.fn(),
 	enable: vi.fn()
 }));
 
@@ -31,6 +32,8 @@ function pick(container: HTMLElement, id: string): Element {
 describe('DigestPrompt', () => {
 	beforeEach(() => {
 		vi.mocked(authStore.updateProfile).mockReset().mockResolvedValue(undefined as never);
+		vi.mocked(push.permissionState).mockReset().mockResolvedValue('granted');
+		vi.mocked(push.enable).mockReset().mockResolvedValue(true);
 	});
 
 	it('decir que sí enciende el resumen y no vuelve a preguntar', async () => {
@@ -68,5 +71,30 @@ describe('DigestPrompt', () => {
 		await waitFor(() => expect(pick(container, 'digest-prompt-error')).toBeTruthy());
 		// Los botones siguen ahí: nada se marcó como visto en el servidor.
 		expect(pick(container, 'digest-prompt-yes')).toBeTruthy();
+	});
+
+	it('si el teléfono bloquea las notificaciones, no se enciende nada', async () => {
+		// `push.enable()` no lanza: devuelve false. Con el PATCH primero, el
+		// perfil quedaba con el resumen encendido sobre un teléfono que nunca
+		// iba a recibirlo, y el componente ya se había desmontado — así que no
+		// había forma de avisar.
+		vi.mocked(push.permissionState).mockResolvedValue('denied');
+		vi.mocked(push.enable).mockResolvedValue(false);
+		const { container } = render(DigestPrompt);
+
+		await fireEvent.click(pick(container, 'digest-prompt-yes'));
+
+		await waitFor(() => expect(pick(container, 'digest-prompt-error')).toBeTruthy());
+		expect(authStore.updateProfile).not.toHaveBeenCalled();
+	});
+
+	it('decir que no nunca pide permiso de notificaciones', async () => {
+		vi.mocked(push.permissionState).mockResolvedValue('denied');
+		const { container } = render(DigestPrompt);
+
+		await fireEvent.click(pick(container, 'digest-prompt-no'));
+
+		await waitFor(() => expect(authStore.updateProfile).toHaveBeenCalled());
+		expect(push.enable).not.toHaveBeenCalled();
 	});
 });

@@ -104,6 +104,14 @@ def _google_error_summary(response) -> str:
 		logger.debug("Google error body is not shaped as {error: ...}: %s", exc)
 		return ""
 
+	# Several GCP frontends answer in the OAuth shape, where `error` is a bare
+	# string rather than an object. Calling .get() on that raises AttributeError
+	# *inside* the caller's `except requests.RequestException` block, which turns
+	# an intended 502 into a 500 — and aborts the health check before it can
+	# record the outage it exists to report.
+	if not isinstance(error, dict):
+		return str(error)
+
 	return f"{error.get('status', '')} {error.get('message', '')}".strip()
 
 

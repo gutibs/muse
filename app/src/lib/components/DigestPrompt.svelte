@@ -26,12 +26,24 @@
 		saving = true;
 		error = '';
 		try {
-			await authStore.updateProfile({ notifyDailyDigest: quiere, digestPromptSeen: true });
-			// Decir que sí sin el permiso del sistema no sirve de nada, y este
-			// es el momento en que la persona acaba de decir que lo quiere.
+			// El permiso se pide ANTES de guardar, y el orden importa por dos
+			// razones. Sin permiso del sistema no llega nada, así que guardar
+			// `notifyDailyDigest: true` dejaría el toggle encendido para siempre
+			// sobre un teléfono que nunca va a recibir un resumen, sin que nadie
+			// se entere. Y `push.enable()` no lanza: devuelve false, así que un
+			// `await` suelto se traga la negativa en silencio.
+			//
+			// Además, al resolver `updateProfile` el store cambia y este
+			// componente se desmonta: cualquier error posterior al PATCH no
+			// llega a dibujarse nunca.
 			if (quiere && (await push.permissionState()) !== 'granted') {
-				await push.enable();
+				const otorgado = await push.enable();
+				if (!otorgado) {
+					error = t('digest.promptNoPermission');
+					return;
+				}
 			}
+			await authStore.updateProfile({ notifyDailyDigest: quiere, digestPromptSeen: true });
 		} catch (err) {
 			logSilent('digestPrompt:save', err);
 			error = t('digest.promptError');
@@ -41,7 +53,13 @@
 	}
 </script>
 
-<div class="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center">
+<!-- Safe areas propias: como `UpdateGate`, esto se dibuja por encima de
+	AppShell, así que no hereda las suyas. Sin esto los botones caen dentro de
+	la franja del indicador de inicio y no se pueden tocar. -->
+<div
+	class="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center"
+	style="padding-bottom: var(--sab); padding-left: var(--sal); padding-right: var(--sar);"
+>
 	<div class="w-full max-w-sm rounded-t-card bg-white p-6 shadow-elevated sm:rounded-card">
 		<h2 class="font-serif text-xl font-semibold text-ink">{t('digest.promptTitle')}</h2>
 		<p class="mt-3 text-sm text-ink-light">{t('digest.promptBody')}</p>

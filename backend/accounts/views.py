@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.utils.translation import gettext_lazy as _
-from rest_framework import generics, permissions, status, viewsets
+from rest_framework import generics, permissions, status, views, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle, SimpleRateThrottle, UserRateThrottle
@@ -138,7 +138,7 @@ class DietaryPreferenceListView(generics.ListAPIView):
 	pagination_class = None
 
 
-class ConsentView(generics.GenericAPIView):
+class ConsentView(views.APIView):
 	"""Deja constancia de que esta persona aceptó los documentos legales que le faltaban.
 
 	Existe por las cuentas anteriores al registro de consentimientos: la
@@ -148,9 +148,16 @@ class ConsentView(generics.GenericAPIView):
 
 	Idempotente: sin nada pendiente responde una lista vacía en vez de fallar,
 	porque el cliente puede reintentar y no tiene por qué saber qué le falta.
-	"""
 
-	serializer_class = None
+	**El bloqueo vive en la app y no acá, a propósito.** Ninguna permission
+	class rechaza a una cuenta con políticas pendientes, así que un APK viejo o
+	un cliente propio siguen operando sin haber aceptado. Enforzarlo del lado
+	del servidor dejaría a quien tiene una versión anterior con todas las
+	llamadas en 403 y sin ninguna pantalla que le explique por qué —su APK no
+	trae el gate—, que es la pantalla sin salida que F2.H se ocupó de evitar
+	fallando abierto. El afectado por no enforzarlo es el responsable del
+	tratamiento, no otro usuario.
+	"""
 
 	def post(self, request):
 		registradas = record_consent(

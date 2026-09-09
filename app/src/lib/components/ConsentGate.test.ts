@@ -4,7 +4,7 @@ import ConsentGate from './ConsentGate.svelte';
 import { authStore } from '$lib/stores/auth.store.svelte';
 
 vi.mock('$lib/stores/auth.store.svelte', () => ({
-	authStore: { acceptPolicies: vi.fn() }
+	authStore: { acceptPolicies: vi.fn(), logout: vi.fn() }
 }));
 
 /**
@@ -50,5 +50,16 @@ describe('ConsentGate', () => {
 
 		await waitFor(() => expect(pick(container, 'consent-gate-error')).toBeTruthy());
 		expect(pick(container, 'consent-gate-accept')).toBeTruthy();
+	});
+
+	it('siempre hay una salida que no es aceptar', async () => {
+		// Sin esto, si el POST falla siempre la cuenta queda encerrada con un
+		// botón que no funciona. Y es la respuesta honesta a quien no quiere
+		// aceptar: no usar el servicio.
+		const { container } = render(ConsentGate);
+
+		await fireEvent.click(pick(container, 'consent-gate-logout'));
+
+		expect(authStore.logout).toHaveBeenCalledOnce();
 	});
 });

@@ -67,3 +67,18 @@ def test_sin_respuesta_queda_el_tipo_de_fallo():
 
 	assert "ConnectTimeout" in detail
 	assert "timed out" in detail
+
+
+def test_un_error_que_es_texto_y_no_objeto_no_revienta():
+	"""Varios frontends de GCP contestan con la forma OAuth: `error` es un string.
+
+	Llamar `.get()` sobre eso lanza `AttributeError` **dentro** del `except
+	requests.RequestException` de quien llama, así que no lo atrapa nadie: la
+	view devuelve 500 en vez de 502, y el chequeo de salud aborta antes de
+	registrar el corte que existe para avisar.
+	"""
+	exc = _http_error(status=403, json_body={"error": "PERMISSION_DENIED"})
+
+	detail = _error_detail(exc)
+
+	assert detail == "HTTP 403: PERMISSION_DENIED"

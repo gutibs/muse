@@ -307,6 +307,15 @@ SIMPLE_JWT = {
 
 # CORS
 CORS_ALLOWED_ORIGINS = os.environ.get("CORS_ALLOWED_ORIGINS", "http://localhost:5174").split(",")
+# Orígenes por patrón, para desarrollo. Vite toma el primer puerto libre, así
+# que con otros proyectos levantados se va al 5175, al 5179 o donde sea, y
+# enumerar puertos a mano tapa el síntoma hasta el siguiente.
+#
+# **Vacío salvo que alguien la setee**: sin la variable el comportamiento es
+# idéntico al de antes, y producción no la define. Una regex acá es una puerta
+# de CORS: `docker-compose.aws.yml` no la usa y no debería.
+_cors_regexes = os.environ.get("CORS_ALLOWED_ORIGIN_REGEXES", "").strip()
+CORS_ALLOWED_ORIGIN_REGEXES = [r for r in _cors_regexes.split(",") if r.strip()]
 # Un header propio obliga al navegador a pedir permiso con un preflight antes
 # del POST. Sin esta línea el preflight se rechaza y la request nunca sale:
 # el cliente ve un `Failed to fetch` idéntico al de estar sin red. Aplica a

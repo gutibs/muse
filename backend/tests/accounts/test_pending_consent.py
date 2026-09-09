@@ -103,3 +103,72 @@ def test_el_perfil_dice_lo_que_falta():
 @pytest.mark.django_db
 def test_el_endpoint_exige_sesion():
 	assert APIClient().post(reverse("consent"), {}, format="json").status_code == 401
+
+
+@pytest.mark.critical
+@pytest.mark.django_db
+def test_la_ip_registrada_no_es_la_que_manda_el_cliente(rates_de_produccion):
+	"""La IP del consentimiento es evidencia, así que no puede ser falsificable.
+
+	Nginx sirve el API con `$proxy_add_x_forwarded_for`, que **agrega** la IP
+	real al final de lo que mandó el cliente en vez de pisarlo. Leer la primera
+	entrada de la cadena es leer lo que escribió quien hace el request: un
+	`X-Forwarded-For: 1.2.3.4` quedaba guardado como si fuera su origen.
+
+	`rates_de_produccion` está acá por `NUM_PROXIES`, que es lo que hace que DRF
+	cuente desde el final; sin él resuelve otra cosa y el test no mide nada.
+	"""
+	rates_de_produccion()
+	user = UserFactory(password=PASSWORD)
+	client = _auth_client(user)
+
+	client.post(
+		reverse("consent"),
+		{},
+		format="json",
+		# La cadena tal como la deja nginx: lo que mandó el cliente, y detrás
+		# la IP real que agregó el proxy. Mandar sólo "1.2.3.4" no probaría
+		# nada — sin proxy que appendee, esa sería legítimamente la última.
+		HTTP_X_FORWARDED_FOR="1.2.3.4, 10.0.0.9",
+		REMOTE_ADDR="10.0.0.9",
+	)
+
+	ips = {c.ip_address for c in ConsentRecord.objects.filter(user=user)}
+	assert ips == {"10.0.0.9"}, f"se guardó la IP que mandó el cliente: {ips}"
+
+
+@pytest.mark.django_db
+def test_una_ip_ilegible_no_tumba_el_endpoint(rates_de_produccion):
+	"""`ip_address` es `inet` en Postgres y `record_consent` usa `bulk_create`.
+
+	`bulk_create` no valida, así que un valor que no parsea no se guarda como
+	basura: revienta el INSERT con un 500. Perder la evidencia de la IP no
+	justifica dejar a alguien sin poder aceptar las políticas.
+	"""
+	rates_de_produccion()
+	user = UserFactory(password=PASSWORD)
+	client = _auth_client(user)
+
+	response = client.post(
+		reverse("consent"),
+		{},
+		format="json",
+		HTTP_X_FORWARDED_FOR="1.2.3.4, no-soy-una-ip",
+		REMOTE_ADDR="10.0.0.9",
+	)
+
+	assert response.status_code == 200, response.content
+	assert {c.ip_address for c in ConsentRecord.objects.filter(user=user)} == {None}
+
+
+@pytest.mark.django_db
+def test_options_no_revienta():
+	"""`GenericAPIView` sin `serializer_class` hace que DRF explote al describir
+	la vista: `SimpleMetadata` llama a `get_serializer()` por cada método
+	permitido. Es una `APIView`, que es lo que corresponde a una vista que no
+	usa nada de las genéricas."""
+	user = UserFactory(password=PASSWORD)
+
+	response = _auth_client(user).options(reverse("consent"))
+
+	assert response.status_code == 200, response.content

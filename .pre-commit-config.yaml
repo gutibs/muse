@@ -22,6 +22,13 @@ repos:
         types: [python]
         files: ^backend/
 
+      - id: check-policy-versions
+        name: check policy versions match the published texts
+        entry: python3 backend/scripts/check_policy_versions.py
+        language: system
+        pass_filenames: false
+        files: ^(backend/accounts/services/consent\.py|nginx/landing/(gdpr|pdpo|terms)\.html)$
+
       - id: check-no-console-log-in-source
         name: check no console.log in app/src
         entry: bash backend/scripts/check_no_console_log.sh

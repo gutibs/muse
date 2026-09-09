@@ -81,7 +81,6 @@ class ProfileSerializer(serializers.ModelSerializer):
 			"digest_hour",
 			"is_verified_insider",
 			"stats",
-			"pending_policies",
 			"created_at",
 		)
 		# `is_verified_insider` es de sólo lectura o el badge no vale nada: lo

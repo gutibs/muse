@@ -223,3 +223,45 @@ def test_si_el_mail_falla_el_aviso_queda_pendiente(mock_autocomplete, mock_send,
 
 	mock_send.assert_called()
 	assert IntegrationHealth.objects.get(service=health.GOOGLE_PLACES).alerted
+
+
+@patch("places.services.google_places.autocomplete")
+def test_una_excepcion_inesperada_tambien_es_un_corte(mock_autocomplete):
+	"""Un monitor que se cae con lo que no esperaba deja de ser un monitor.
+
+	Si la excepción sube, `update_state` no corre y no queda registro de nada:
+	el corte pasa tan desapercibido como antes de que esto existiera.
+	"""
+	mock_autocomplete.side_effect = AttributeError("'str' object has no attribute 'get'")
+
+	result = health.probe_places(pause=0)
+
+	assert not result.healthy
+	assert "AttributeError" in result.error
+
+
+@pytest.mark.django_db
+def test_el_aviso_de_recuperacion_reintentado_no_pierde_la_duracion():
+	"""El caso que se destapa cuando Resend falla justo en la recuperación.
+
+	La duración se calcula al detectar la recuperación, pero el mail puede salir
+	seis horas después. Para entonces `changed_at` ya es el momento de la
+	recuperación: sin persistirla, el aviso sale diciendo "Downtime: unknown",
+	que es el único dato que ese mail lleva.
+	"""
+	caida = health.update_state(
+		health.GOOGLE_PLACES, health.CheckResult(healthy=False, error="403")
+	)
+	health.mark_alerted(caida.state)
+	IntegrationHealth.objects.filter(service=health.GOOGLE_PLACES).update(
+		changed_at=timezone.now() - timedelta(hours=5)
+	)
+
+	primero = health.update_state(health.GOOGLE_PLACES, health.CheckResult(healthy=True))
+	assert primero.downtime is not None
+	# El mail falla, así que nadie llama a mark_alerted y el aviso queda pendiente.
+
+	reintento = health.update_state(health.GOOGLE_PLACES, health.CheckResult(healthy=True))
+
+	assert reintento.should_alert
+	assert reintento.downtime == primero.downtime

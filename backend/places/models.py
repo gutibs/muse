@@ -106,6 +106,12 @@ class IntegrationHealth(models.Model):
 	changed_at = models.DateTimeField()
 	last_error = models.TextField(blank=True)
 	alerted = models.BooleanField(default=False)
+	# Cuánto duró el último corte, calculado al detectar la recuperación y
+	# guardado acá. No se deriva al mandar el mail: para entonces `changed_at`
+	# ya es el momento de la recuperación y la duración se perdió. Sin esto, un
+	# aviso de recuperación reintentado —porque el primero falló— sale diciendo
+	# "Downtime: unknown", que es justo el único dato que ese mail lleva.
+	last_downtime = models.DurationField(null=True, blank=True)
 
 	class Meta:
 		verbose_name_plural = "integration health"

@@ -58,10 +58,29 @@ export interface Profile {
 }
 
 /** El perfil de otra persona, tal como lo devuelve `ForeignProfileSerializer`.
- * Es el `Profile` sin los datos de contacto: el permiso del endpoint decide a
- * quién podés mirar, no qué campos suyos ves. Un perfil ajeno no trae email ni
- * teléfono ni aunque sean amigos. */
-export type ForeignProfile = Omit<Profile, 'email' | 'phone'>;
+ * El permiso del endpoint decide a quién podés mirar, no qué campos suyos ves:
+ * un perfil ajeno no trae datos de contacto ni configuración privada ni aunque
+ * sean amigos.
+ *
+ * **Esta lista es el espejo de `_PRIVATE_PROFILE_FIELDS`
+ * (backend/accounts/serializers.py) y se mueven juntas.** Cuando decía sólo
+ * `email | phone` estaba desactualizada por ocho campos, así que
+ * `foreignProfile.pendingPolicies.length` compilaba limpio y explotaba en
+ * runtime. El backend tiene un test que recorre su lista entera; de este lado
+ * el único freno es TypeScript. */
+export type ForeignProfile = Omit<
+	Profile,
+	| 'email'
+	| 'phone'
+	| 'notifyFriendRequest'
+	| 'notifyFriendAccepted'
+	| 'notifyDailyDigest'
+	| 'digestPromptSeen'
+	| 'pendingPolicies'
+	| 'language'
+	| 'timezone'
+	| 'digestHour'
+>;
 
 /** La forma que devuelve `UserAnonymousSafeSerializer`: sin email, para donde
  * el que mira no necesariamente tiene relación con la persona (reseñas

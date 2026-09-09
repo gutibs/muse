@@ -77,6 +77,16 @@ def probe_places(*, retries: int = 1, pause: float = 5.0) -> CheckResult:
 			)
 			if intento < retries and pause:
 				time.sleep(pause)
+		except Exception as exc:
+			# Un monitor que se cae con la excepción que no esperaba no es un
+			# monitor: si esto sube, `update_state` no corre, no queda registro
+			# de nada y el corte pasa igual de desapercibido que antes. Cualquier
+			# fallo cuenta como caída, con el tipo en el mensaje para poder
+			# distinguir "Google no atiende" de "nuestro parser explotó".
+			error = f"{type(exc).__name__}: {exc}"
+			logger.exception("Places health probe crashed (intento %s)", intento + 1)
+			if intento < retries and pause:
+				time.sleep(pause)
 
 	return CheckResult(healthy=False, error=error)
 
@@ -107,21 +117,34 @@ def update_state(service: str, result: CheckResult) -> Outcome:
 		return Outcome(state=state, should_alert=not result.healthy, recovered=False)
 
 	cambio = state.is_healthy != result.healthy
-	downtime = now - state.changed_at if (cambio and result.healthy) else None
 
 	state.checked_at = now
 	state.last_error = result.error
 	if cambio:
+		if result.healthy:
+			# Se calcula acá y se persiste porque un renglón más abajo
+			# `changed_at` deja de ser el momento de la caída. Un aviso que hay
+			# que reintentar seis horas después necesita este número.
+			state.last_downtime = now - state.changed_at
 		state.is_healthy = result.healthy
 		state.changed_at = now
 		state.alerted = False
-	state.save(update_fields=["checked_at", "last_error", "is_healthy", "changed_at", "alerted"])
+	state.save(
+		update_fields=[
+			"checked_at",
+			"last_error",
+			"is_healthy",
+			"changed_at",
+			"alerted",
+			"last_downtime",
+		]
+	)
 
 	return Outcome(
 		state=state,
 		should_alert=not state.alerted,
 		recovered=state.is_healthy,
-		downtime=downtime,
+		downtime=state.last_downtime if state.is_healthy else None,
 	)
 
 
