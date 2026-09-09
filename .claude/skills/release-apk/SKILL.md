@@ -7,10 +7,10 @@ allowed-tools: Read Grep Glob Bash(npm run:*) Bash(npx cap:*) Bash(cat:*) Bash(l
 
 # Release del APK de Muse
 
-Verificado contra el código el 2026-09-07: `versionCode 21`, `versionName "V1.4.0"`,
-`app/package.json` en `"1.4.0"`. **No asumas que sigue siendo ése** — leelo antes de nada.
+Verificado contra el código el 2026-09-09: `versionCode 27`, `versionName "V1.6.0"`,
+`app/package.json` en `"1.6.0"`. **No asumas que sigue siendo ése** — leelo antes de nada.
 
-## Dos reglas que rompen producción si se ignoran
+## Tres reglas que rompen producción si se ignoran
 
 **1 · Para distribución siempre `npm run build:apk-prod`. Nunca `build:apk`.**
 
@@ -26,6 +26,39 @@ hasta que alguien lo instala. Por eso la verificación de abajo es dentro del AP
 calcula el semver, incrementa el `versionCode` y escribe **los dos archivos
 sincronizados** (`build.gradle` con la `V`, `package.json` sin ella, porque npm exige
 semver estricto). El 2026-08-21 se editaron a mano y quedó consistente de casualidad.
+
+**3 · Para la store se compila `bundleRelease` (.aab). El APK es para probar a mano.**
+
+Play Store **no acepta APK** para apps nuevas: exige Android App Bundle. Todo lo de
+abajo produce un `.apk`, que sirve para instalar en tu teléfono con `adb` y para
+mandárselo a alguien, **no para publicar**. Cuando las cuentas estén aprobadas:
+
+```bash
+cd app/android
+JAVA_HOME=/opt/homebrew/opt/openjdk@21 ./gradlew bundleRelease
+# sale en app/build/outputs/bundle/release/app-release.aab
+```
+
+Verificado el 2026-09-09 con la V1.6.0: el comando corre, usa el mismo keystore que
+`assembleRelease` —el bundle sale firmado, `META-INF/MUSE.RSA` adentro— y pesa
+**16,6 MB contra los 28,3 MB del APK**, antes de que Play descarte las ABIs que
+sobran. El nombre del archivo **no** lleva la versión, a diferencia del APK: si vas
+a guardar varios, renombralo vos.
+
+**Esto no es un detalle de formato, cambia el tamaño.** Desde la V1.6.0 el APK lleva
+`libbarhopper_v3.so` —el motor nativo de ML Kit, que usa el escáner de QR de F2.F— en
+**cuatro** arquitecturas, y el APK pasó de 7 MB a 28,3 MB. De esos, **11,6 MB son x86
+y x86_64, que sólo corren en emuladores**: ningún teléfono los ejecuta.
+
+- Con `.aab` el problema desaparece solo: Play le entrega a cada teléfono su
+  arquitectura y nada más.
+- Mientras la distribución sea a mano, para no mandar 11,6 MB de relleno, en
+  `app/android/app/build.gradle`, dentro de `defaultConfig`:
+  ```gradle
+  ndk { abiFilters 'arm64-v8a', 'armeabi-v7a' }
+  ```
+  **Verificalo recompilando y mirando el APK**, no asumas el ahorro:
+  `unzip -l $APK | grep libbarhopper`.
 
 ## Elegir el número: `V<major>.<minor>.<patch>`
 
@@ -102,6 +135,12 @@ con `build.gradle`, algo del pipeline no corrió.
 
 Después: copiar el APK a `~/Desktop/` e instalar con
 `adb install -r`, que conserva sesión e idioma.
+
+**Lo que ninguna de estas verificaciones cubre**: que la cámara abra y que el escáner
+de F2.F lea un QR de verdad. `@capacitor-mlkit/barcode-scanning` no tiene
+implementación web, así que en el navegador la pantalla contesta `unsupported` y en
+los tests el plugin está mockeado. Es el mismo hueco que tuvieron los canales de
+notificación en la V1.4.0: sólo se ve con el APK instalado.
 
 ## El número que muestra Ajustes
 
