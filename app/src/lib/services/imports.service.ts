@@ -27,6 +27,11 @@ export interface ImportRow {
 	outcome: RowOutcome;
 	restaurantId?: number | null;
 	detail?: string;
+	/** Las que se aplicaron al restaurante. */
+	tags?: string[];
+	/** Las que el archivo pedía y no entraron: el lugar ya estaba descrito, o
+	 * la etiqueta no existe en el catálogo. */
+	tagsSkipped?: string[];
 }
 
 export interface ImportJob {

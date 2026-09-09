@@ -18,11 +18,19 @@ from django.utils import timezone
 
 from imports.models import ImportJob
 from imports.services.match import MatchOutcome, match_row
+from restaurants.models import Tag
+from restaurants.services.tagging import apply_tags
 
 logger = logging.getLogger(__name__)
 
 # Lo que cuenta como "encontrado" para la persona: ya estaba, o lo trajimos.
 EXITOSOS = {MatchOutcome.CATALOGUE, MatchOutcome.IMPORTED}
+
+# Los dos ejes que sólo puede llenar una persona: Google no da ninguno de los
+# dos por ningún camino. Que un lugar los tenga es la señal de que alguien ya
+# lo describió; las de `scene` las infiere `google_import` de los atributos del
+# payload —si hay terraza, si acepta perros— y no son el criterio de nadie.
+EJES_CURADOS = (Tag.Kind.VIBE, Tag.Kind.OCCASION)
 
 
 def run_pending(batch_size: int = 5) -> dict:
@@ -85,6 +93,7 @@ def _resolver(job: ImportJob) -> None:
 			continue
 
 		resultado = match_row(fila, job.user)
+		aplicadas, sin_aplicar = _etiquetar(resultado, fila)
 		entrada = {
 			"row": fila.get("row"),
 			"name": fila.get("name", ""),
@@ -92,6 +101,8 @@ def _resolver(job: ImportJob) -> None:
 			"outcome": str(resultado.outcome),
 			"restaurant_id": resultado.restaurant.pk if resultado.restaurant else None,
 			"detail": resultado.detail,
+			"tags": aplicadas,
+			"tags_skipped": sin_aplicar,
 		}
 		if resultado.outcome in EXITOSOS:
 			matched += 1
@@ -106,6 +117,30 @@ def _resolver(job: ImportJob) -> None:
 	job.state = ImportJob.State.READY
 	job.locked_at = None
 	job.save()
+
+
+def _etiquetar(resultado, fila: dict) -> tuple[list[str], list[str]]:
+	"""Aplica las etiquetas del archivo. Devuelve `(aplicadas, sin aplicar)`.
+
+	**Describir un lugar es dato compartido, no un pin propio.** Por eso sólo
+	puede hacerlo el import que lo trajo al catálogo, o el primero que llega a
+	un lugar que nadie describió todavía. `restaurants/views.py` ya impide
+	editar un restaurante ajeno por la API (`_check_owner_or_staff`): el import
+	no puede ser la puerta de atrás de esa regla.
+
+	"Descrito" se mide sobre `EJES_CURADOS` y no sobre cualquier etiqueta: si
+	contara la que Google infiere, correr `backfill_from_google --attributes`
+	bloquearía el catálogo entero sin que nadie relacione una cosa con la otra.
+	"""
+	pedidas = list(fila.get("tags") or [])
+	if not pedidas or resultado.restaurant is None:
+		return [], pedidas
+
+	ya_descrito = resultado.restaurant.tags.filter(kind__in=EJES_CURADOS).exists()
+	if not resultado.created and ya_descrito:
+		return [], pedidas
+
+	return apply_tags(resultado.restaurant, pedidas)
 
 
 @transaction.atomic

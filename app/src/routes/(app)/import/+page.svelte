@@ -197,7 +197,23 @@
 								checked={elegidos.has(fila.restaurantId as number)}
 								onchange={() => alternar(fila.restaurantId as number)}
 							/>
-							<span class="flex-1 text-sm text-ink">{fila.name}</span>
+							<span class="flex-1 text-sm text-ink">
+								{fila.name}
+								{#if fila.tags?.length}
+									<span class="mt-1 flex flex-wrap gap-1" data-testid="import-row-tags">
+										{#each fila.tags as etiqueta (etiqueta)}
+											<span class="rounded-full bg-jade/10 px-2 py-0.5 text-xs text-jade">
+												{etiqueta}
+											</span>
+										{/each}
+									</span>
+								{/if}
+								{#if fila.tagsSkipped?.length}
+									<span class="mt-1 block text-xs text-ink-muted">
+										{t('import.tagsSkipped', { tags: fila.tagsSkipped.join(', ') })}
+									</span>
+								{/if}
+							</span>
 							{#if fila.city}
 								<span class="text-xs text-ink-muted">{fila.city}</span>
 							{/if}

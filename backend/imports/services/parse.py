@@ -34,6 +34,12 @@ COLUMNAS_NOMBRE = {
 	"lugar",
 }
 COLUMNAS_CIUDAD = {"city", "ciudad", "town", "location", "ubicacion", "ubicación"}
+# Las etiquetas con las que se describe un lugar. Los slugs son únicos en toda
+# la tabla `Tag`, así que no hace falta saber de qué eje viene cada uno.
+# El barrio. En Hong Kong es como la gente ubica un lugar, y es lo único que
+# distingue dos sucursales del mismo nombre cuando se le pregunta a Google.
+COLUMNAS_BARRIO = {"district", "neighbourhood", "neighborhood", "barrio", "area", "zona"}
+COLUMNAS_TAGS = {"tags", "tag", "etiquetas", "vibe", "occasion", "scene", "dietary"}
 
 EXTENSIONES = {".csv", ".xlsx"}
 MAX_FILAS = 500
@@ -56,7 +62,9 @@ def parse_file(archivo) -> tuple[list[dict], list[dict]]:
 		raise ParseError(_("The file has no rows."))
 
 	cabecera, *cuerpo = crudas
-	indice_nombre, indice_ciudad = _ubicar_columnas(cabecera)
+	columnas = _ubicar_columnas(cabecera)
+	indice_nombre = columnas["name"]
+	indice_ciudad = columnas["city"]
 	if indice_nombre is None:
 		raise ParseError(
 			_("The file needs a column with the restaurant name (name, nombre, restaurant…).")
@@ -78,7 +86,15 @@ def parse_file(archivo) -> tuple[list[dict], list[dict]]:
 			errores.append({"row": numero, "reason": "missing_name"})
 			continue
 
-		filas.append({"name": nombre_lugar, "city": ciudad, "row": numero})
+		filas.append(
+			{
+				"name": nombre_lugar,
+				"city": ciudad,
+				"district": _celda(cruda, columnas["district"]),
+				"tags": _etiquetas(cruda, columnas["tags"]),
+				"row": numero,
+			}
+		)
 
 	return filas[:MAX_FILAS], errores
 
@@ -117,15 +133,38 @@ def _leer_xlsx(archivo) -> list[list[str]]:
 	return [["" if celda is None else str(celda) for celda in fila] for fila in hoja.values]
 
 
-def _ubicar_columnas(cabecera: list[str]) -> tuple[int | None, int | None]:
-	indice_nombre = indice_ciudad = None
+def _ubicar_columnas(cabecera: list[str]) -> dict[str, int | None]:
+	columnas: dict = {"name": None, "city": None, "district": None, "tags": []}
 	for i, celda in enumerate(cabecera):
 		clave = (celda or "").strip().lower()
-		if indice_nombre is None and clave in COLUMNAS_NOMBRE:
-			indice_nombre = i
-		elif indice_ciudad is None and clave in COLUMNAS_CIUDAD:
-			indice_ciudad = i
-	return indice_nombre, indice_ciudad
+		if columnas["name"] is None and clave in COLUMNAS_NOMBRE:
+			columnas["name"] = i
+		elif columnas["city"] is None and clave in COLUMNAS_CIUDAD:
+			columnas["city"] = i
+		elif columnas["district"] is None and clave in COLUMNAS_BARRIO:
+			columnas["district"] = i
+		elif clave in COLUMNAS_TAGS:
+			columnas["tags"].append(i)
+	return columnas
+
+
+def _etiquetas(fila: list[str], indices: list[int]) -> list[str]:
+	"""Separadas por coma, normalizadas a slug. Sin resolver contra la base:
+	esto no sabe qué etiquetas existen, sólo qué escribió la persona.
+
+	Puede venir una sola columna `tags` o una por eje (`vibe`, `occasion`…):
+	todas se juntan en la misma lista porque los slugs son únicos en toda la
+	tabla y no hay forma de que dos ejes se pisen.
+	"""
+	etiquetas = []
+	for indice in indices:
+		crudo = _celda(fila, indice)
+		etiquetas += [_slug(parte) for parte in crudo.split(",") if parte.strip()]
+	return etiquetas
+
+
+def _slug(texto: str) -> str:
+	return "-".join(texto.strip().lower().split())
 
 
 def _celda(fila: list[str], indice: int) -> str:

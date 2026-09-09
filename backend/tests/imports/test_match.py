@@ -151,3 +151,60 @@ def test_un_lugar_cerrado_no_se_ofrece(alguien):
 
 	assert resultado.outcome != MatchOutcome.CATALOGUE
 	assert resultado.restaurant is None
+
+
+def test_dice_si_el_lugar_lo_dio_de_alta_este_import(alguien):
+	# La distinción es la que decide quién puede describir el lugar: sólo el
+	# import que lo trajo al catálogo, nunca el que se lo encontró ya hecho.
+	def ya_existia(place_id, user):
+		return _restaurante("Viejo", "Hong Kong"), False
+
+	with patch("imports.services.match.google_places") as google:
+		google.autocomplete.return_value = [{"placeId": "ChIJ_viejo"}]
+		with patch("imports.services.match.import_from_google_place_id", side_effect=ya_existia):
+			resultado = match_row({"name": "Otro nombre", "city": "Hong Kong", "row": 2}, alguien)
+
+	assert resultado.outcome == MatchOutcome.IMPORTED
+	assert resultado.created is False
+
+
+def test_el_barrio_entra_en_la_busqueda_para_no_traer_otra_sucursal(alguien):
+	# Hong Kong tiene el mismo local en Wan Chai y en Kowloon. Sin el barrio,
+	# Google elige por popularidad y le mete a alguien la sucursal equivocada.
+	def trae_de_google(place_id, user):
+		return _restaurante("Samsen", "Hong Kong"), True
+
+	with patch("imports.services.match.google_places") as google:
+		google.autocomplete.return_value = [{"placeId": "ChIJ_samsen"}]
+		with patch(
+			"imports.services.match.import_from_google_place_id", side_effect=trae_de_google
+		):
+			match_row(
+				{"name": "Samsen", "city": "Hong Kong", "district": "Wan Chai", "row": 2}, alguien
+			)
+
+	enviado = google.autocomplete.call_args.args[0]["input"]
+	assert enviado == "Samsen Wan Chai Hong Kong"
+
+
+def test_la_ciudad_matchea_aunque_el_catalogo_la_escriba_mas_larga(alguien):
+	# Los 9 de Hong Kong que ya están cargados dicen "Hong Kong Island". Una
+	# lista que dice "Hong Kong" —lo natural— los mandaría a Google a pagar dos
+	# llamadas por cada uno para que vuelva el mismo lugar que ya teníamos.
+	_restaurante("Duddell's", "Hong Kong Island")
+
+	with patch("imports.services.match.google_places") as google:
+		resultado = match_row({"name": "Duddell's", "city": "Hong Kong", "row": 2}, alguien)
+
+	assert resultado.outcome == MatchOutcome.CATALOGUE
+	google.autocomplete.assert_not_called()
+
+
+def test_dos_ciudades_que_no_tienen_nada_que_ver_siguen_sin_matchear(alguien):
+	_restaurante("Yardbird", "Tokyo")
+
+	with patch("imports.services.match.google_places") as google:
+		google.autocomplete.return_value = []
+		resultado = match_row({"name": "Yardbird", "city": "Hong Kong", "row": 2}, alguien)
+
+	assert resultado.outcome != MatchOutcome.CATALOGUE

@@ -52,27 +52,35 @@ class MatchResult:
 	outcome: MatchOutcome
 	restaurant: Restaurant | None = None
 	detail: str = ""
+	created: bool = False
+	"""Este import lo dio de alta en el catálogo.
+
+	No es lo mismo que `IMPORTED`: un lugar que ya estaba con ese `place_id`
+	pero cuyo nombre no matcheó también sale por Google, y ése no lo creó
+	nadie acá. La diferencia decide quién puede describirlo.
+	"""
 
 
 def match_row(fila: dict, user) -> MatchResult:
 	"""Resuelve una fila `{name, city}`. Nunca lanza."""
 	nombre = (fila.get("name") or "").strip()
 	ciudad = (fila.get("city") or "").strip()
+	barrio = (fila.get("district") or "").strip()
 
 	local = _buscar_en_catalogo(nombre, ciudad)
 	if local is not None:
 		return local
 
-	return _buscar_en_google(nombre, ciudad, user)
+	return _buscar_en_google(nombre, ciudad, barrio, user)
 
 
 def _buscar_en_catalogo(nombre: str, ciudad: str) -> MatchResult | None:
 	"""`None` significa "seguí buscando", no "no existe"."""
-	candidatos = Restaurant.objects.filter(name__iexact=nombre, is_closed=False)
+	candidatos = list(Restaurant.objects.filter(name__iexact=nombre, is_closed=False)[:5])
 	if ciudad:
-		candidatos = candidatos.filter(city__iexact=ciudad)
+		candidatos = [r for r in candidatos if _misma_ciudad(r.city, ciudad)]
 
-	encontrados = list(candidatos[:2])
+	encontrados = candidatos[:2]
 	if len(encontrados) == 1:
 		return MatchResult(MatchOutcome.CATALOGUE, encontrados[0])
 
@@ -88,8 +96,26 @@ def _buscar_en_catalogo(nombre: str, ciudad: str) -> MatchResult | None:
 	return None
 
 
-def _buscar_en_google(nombre: str, ciudad: str, user) -> MatchResult:
-	consulta = f"{nombre} {ciudad}".strip()
+def _misma_ciudad(en_catalogo: str, en_archivo: str) -> bool:
+	"""Contención en cualquier dirección, no igualdad.
+
+	El catálogo tiene la misma ciudad escrita de tres formas —"Hong Kong",
+	"Hong Kong Island", "Kowloon"— porque `city` sale del payload de Google y
+	es texto libre. Exigir igualdad manda a Google filas que ya teníamos, a dos
+	llamadas cada una. La contención sigue separando "Hong Kong" de "Tokyo",
+	que es lo único que este filtro tiene que garantizar.
+	"""
+	a = (en_catalogo or "").strip().lower()
+	b = (en_archivo or "").strip().lower()
+	if not a or not b:
+		return False
+	return a in b or b in a
+
+
+def _buscar_en_google(nombre: str, ciudad: str, barrio: str, user) -> MatchResult:
+	# El barrio va entre el nombre y la ciudad: es lo que separa dos sucursales
+	# del mismo local, que en Hong Kong es la norma y no la excepción.
+	consulta = " ".join(parte for parte in (nombre, barrio, ciudad) if parte)
 	cuerpo = {"input": consulta, "includedPrimaryTypes": ["restaurant"]}
 
 	try:
@@ -105,7 +131,7 @@ def _buscar_en_google(nombre: str, ciudad: str, user) -> MatchResult:
 		return MatchResult(MatchOutcome.NOT_FOUND)
 
 	try:
-		restaurant, _creado = import_from_google_place_id(place_id, user)
+		restaurant, creado = import_from_google_place_id(place_id, user)
 	except GoogleImportError as exc:
 		logger.warning("import: falló el alta de %s: %s", place_id, exc.message)
 		return MatchResult(MatchOutcome.ERROR, detail=exc.message[:200])
@@ -115,7 +141,7 @@ def _buscar_en_google(nombre: str, ciudad: str, user) -> MatchResult:
 		# un lugar que no existe más en la lista de alguien.
 		return MatchResult(MatchOutcome.NOT_FOUND, detail="el lugar cerró")
 
-	return MatchResult(MatchOutcome.IMPORTED, restaurant)
+	return MatchResult(MatchOutcome.IMPORTED, restaurant, created=creado)
 
 
 def _primer_place_id(predicciones: list[dict]) -> str:

@@ -6,6 +6,7 @@ se parsee al subir —para que la persona sepa al instante si sirve—, y sobre 
 """
 
 import io
+from unittest.mock import patch
 
 import pytest
 from django.contrib.gis.geos import Point
@@ -13,6 +14,7 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 
 from imports.models import ImportJob
+from imports.services.run import run_pending
 from restaurants.models import Restaurant
 
 pytestmark = pytest.mark.django_db
@@ -136,3 +138,33 @@ def test_confirmar_crea_los_pins_y_lo_dice(client, alguien):
 def test_hay_que_estar_logueado():
 	anonimo = APIClient()
 	assert anonimo.get(reverse("import-list")).status_code == 401
+
+
+@pytest.mark.critical
+def test_las_etiquetas_del_archivo_llegan_hasta_el_catalogo(client, alguien):
+	# El viaje completo, que es por donde va a entrar la lista curada: archivo
+	# con etiquetas -> job -> despachador -> restaurante descrito en la base.
+	Restaurant.objects.create(
+		name="Duddell's",
+		city="Hong Kong Island",
+		location=Point(114.15, 22.28, srid=4326),
+		approval_status=Restaurant.ApprovalStatus.APPROVED,
+	)
+	archivo = _archivo(
+		'name,city,district,tags\nDuddell\'s,Hong Kong,Central,"fine-dining, special-occasion"\n'
+	)
+
+	res = client.post(reverse("import-list"), {"file": archivo}, format="multipart")
+	assert res.status_code == 201
+
+	with patch("imports.services.match.google_places") as google:
+		run_pending()
+
+	google.autocomplete.assert_not_called()
+	duddells = Restaurant.objects.get(name="Duddell's")
+	assert set(duddells.tags.values_list("slug", flat=True)) == {"fine-dining", "special-occasion"}
+
+	detalle = client.get(reverse("import-detail", args=[res.data["id"]]))
+	fila = detalle.data["report"][0]
+	assert fila["outcome"] == "catalogue"
+	assert fila["tags"] == ["fine-dining", "special-occasion"]

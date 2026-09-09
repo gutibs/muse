@@ -13,7 +13,7 @@ from django.contrib.gis.geos import Point
 
 from imports.models import ImportJob
 from imports.services.run import confirm_job, run_pending
-from restaurants.models import Restaurant
+from restaurants.models import Restaurant, Tag
 
 pytestmark = pytest.mark.django_db
 
@@ -235,3 +235,60 @@ def test_las_filas_ilegibles_cuentan_en_el_total(alguien):
 
 	job.refresh_from_db()
 	assert job.matched + job.failed == len(job.report)
+
+
+@pytest.mark.critical
+def test_el_import_describe_el_lugar_que_dio_de_alta(alguien):
+	def trae_de_google(place_id, user):
+		return _restaurante("Nuevo", "Hong Kong"), True
+
+	job = _job(
+		alguien,
+		[{"row": 2, "name": "Nuevo", "city": "Hong Kong", "tags": ["romantic", "date-night"]}],
+	)
+
+	with patch("imports.services.match.google_places") as google:
+		google.autocomplete.return_value = [{"placeId": "ChIJ_nuevo"}]
+		with patch(
+			"imports.services.match.import_from_google_place_id", side_effect=trae_de_google
+		):
+			run_pending()
+
+	job.refresh_from_db()
+	restaurante = Restaurant.objects.get(pk=job.report[0]["restaurant_id"])
+	assert set(restaurante.tags.values_list("slug", flat=True)) == {"romantic", "date-night"}
+	assert job.report[0]["tags"] == ["romantic", "date-night"]
+
+
+@pytest.mark.critical
+def test_un_import_no_pisa_las_etiquetas_que_puso_otro(alguien):
+	# La regla de autoridad del catálogo: `_check_owner_or_staff` impide editar
+	# un restaurante ajeno por la API, y el import no puede ser la puerta de
+	# atrás de eso. Describir un lugar es dato compartido, no un pin propio.
+	yardbird = _restaurante("Yardbird", "Hong Kong")
+	yardbird.tags.add(Tag.objects.get(slug="trendy"))
+	job = _job(alguien, [{"row": 2, "name": "Yardbird", "city": "Hong Kong", "tags": ["quiet"]}])
+
+	with patch("imports.services.match.google_places"):
+		run_pending()
+
+	job.refresh_from_db()
+	assert list(yardbird.tags.values_list("slug", flat=True)) == ["trendy"]
+	assert job.report[0]["tags"] == []
+	assert job.report[0]["tags_skipped"] == ["quiet"]
+
+
+@pytest.mark.critical
+def test_lo_que_google_infirio_no_cuenta_como_descrito(alguien):
+	# `outdoor-terrace` la pone `google_import` sola cuando el payload dice que
+	# hay terraza. Es un hecho del local, no el criterio de nadie: si contara
+	# como "ya descrito", el backfill de atributos dejaría medio catálogo
+	# bloqueado para siempre y sin que se note.
+	limewood = _restaurante("Limewood", "Hong Kong")
+	limewood.tags.add(Tag.objects.get(slug="outdoor-terrace"))
+	_job(alguien, [{"row": 2, "name": "Limewood", "city": "Hong Kong", "tags": ["casual"]}])
+
+	with patch("imports.services.match.google_places"):
+		run_pending()
+
+	assert set(limewood.tags.values_list("slug", flat=True)) == {"outdoor-terrace", "casual"}

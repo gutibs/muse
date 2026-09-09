@@ -67,7 +67,13 @@ def test_una_fila_sin_nombre_es_un_error_de_esa_fila_y_nada_mas():
 
 def test_limpia_los_espacios_de_los_bordes():
 	filas, _ = parse_file(_csv("name,city\n  Yardbird  ,  Hong Kong  \n"))
-	assert filas[0] == {"name": "Yardbird", "city": "Hong Kong", "row": 2}
+	assert filas[0] == {
+		"name": "Yardbird",
+		"city": "Hong Kong",
+		"district": "",
+		"tags": [],
+		"row": 2,
+	}
 
 
 def test_soporta_el_bom_que_mete_excel():
@@ -114,3 +120,18 @@ def test_un_xlsx_se_lee_igual_que_un_csv():
 def test_una_extension_que_no_conocemos_avisa():
 	with pytest.raises(ParseError):
 		parse_file(_csv("lo que sea", nombre="lista.pdf"))
+
+
+def test_lee_las_etiquetas_de_la_columna_tags():
+	filas, _ = parse_file(_csv('name,tags\nYardbird,"trendy, drinks-bar"\n'))
+	assert filas[0]["tags"] == ["trendy", "drinks-bar"]
+
+
+def test_las_columnas_de_cada_eje_se_juntan_en_una_sola_lista():
+	filas, _ = parse_file(_csv("name,vibe,occasion\nYardbird,trendy,date-night\n"))
+	assert filas[0]["tags"] == ["trendy", "date-night"]
+
+
+def test_lee_el_barrio_que_es_lo_que_distingue_dos_sucursales():
+	filas, _ = parse_file(_csv("name,city,district\nSamsen,Hong Kong,Wan Chai\n"))
+	assert filas[0]["district"] == "Wan Chai"
