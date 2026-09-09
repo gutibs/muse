@@ -16,7 +16,7 @@ User = get_user_model()
 
 @pytest.mark.critical
 @pytest.mark.django_db
-@patch("accounts.serializers.send_welcome_email")
+@patch("accounts.serializers.auth.send_welcome_email")
 def test_register_creates_profile_and_consumes_invitation(welcome):
 	a = UserFactory()
 	EmailInvitationFactory(from_user=a, email="b@example.com", accepted=False)
@@ -112,7 +112,7 @@ def test_register_requires_active_consent(consent):
 
 
 @pytest.mark.django_db
-@patch("accounts.serializers.send_welcome_email")
+@patch("accounts.serializers.auth.send_welcome_email")
 def test_register_consent_records_capture_ip(welcome):
 	"""The consenting client IP is persisted on each ConsentRecord (proof of
 	the context in which consent was given)."""

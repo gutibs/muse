@@ -19,7 +19,7 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 
 from accounts.models import ConsentRecord, Friendship, Profile
-from accounts.serializers import _PRIVATE_PROFILE_FIELDS
+from accounts.serializers.profile import _PRIVATE_PROFILE_FIELDS
 from accounts.services.consent import POLICY_VERSIONS
 from tests.factories import FriendshipFactory, UserFactory
 

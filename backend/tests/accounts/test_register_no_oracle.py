@@ -34,8 +34,8 @@ def _register(**overrides):
 
 @pytest.mark.critical
 @pytest.mark.django_db
-@patch("accounts.serializers.send_account_exists_email")
-@patch("accounts.serializers.send_welcome_email")
+@patch("accounts.serializers.auth.send_account_exists_email")
+@patch("accounts.serializers.auth.send_welcome_email")
 def test_a_taken_email_answers_exactly_like_a_fresh_one(welcome, exists):
 	UserFactory(username="taken", email="taken@example.com")
 
@@ -50,8 +50,8 @@ def test_a_taken_email_answers_exactly_like_a_fresh_one(welcome, exists):
 
 @pytest.mark.critical
 @pytest.mark.django_db
-@patch("accounts.serializers.send_account_exists_email")
-@patch("accounts.serializers.send_welcome_email")
+@patch("accounts.serializers.auth.send_account_exists_email")
+@patch("accounts.serializers.auth.send_welcome_email")
 def test_registering_with_a_taken_email_creates_nothing(welcome, exists):
 	existing = UserFactory(username="taken", email="taken@example.com")
 	before = User.objects.count()
@@ -65,8 +65,8 @@ def test_registering_with_a_taken_email_creates_nothing(welcome, exists):
 
 @pytest.mark.critical
 @pytest.mark.django_db
-@patch("accounts.serializers.send_account_exists_email")
-@patch("accounts.serializers.send_welcome_email")
+@patch("accounts.serializers.auth.send_account_exists_email")
+@patch("accounts.serializers.auth.send_welcome_email")
 def test_the_owner_of_a_taken_email_is_warned(welcome, exists):
 	UserFactory(username="taken", email="taken@example.com")
 
@@ -78,8 +78,8 @@ def test_the_owner_of_a_taken_email_is_warned(welcome, exists):
 
 @pytest.mark.critical
 @pytest.mark.django_db
-@patch("accounts.serializers.send_account_exists_email")
-@patch("accounts.serializers.send_welcome_email")
+@patch("accounts.serializers.auth.send_account_exists_email")
+@patch("accounts.serializers.auth.send_welcome_email")
 def test_a_real_signup_creates_the_account_and_welcomes_it(welcome, exists):
 	resp = _register()
 
@@ -92,8 +92,8 @@ def test_a_real_signup_creates_the_account_and_welcomes_it(welcome, exists):
 
 @pytest.mark.critical
 @pytest.mark.django_db
-@patch("accounts.serializers.send_account_exists_email")
-@patch("accounts.serializers.send_welcome_email")
+@patch("accounts.serializers.auth.send_account_exists_email")
+@patch("accounts.serializers.auth.send_welcome_email")
 def test_registering_never_returns_a_session(welcome, exists):
 	"""Es la razón de que el alta cambie: con tokens en la respuesta, el caso
 	del email tomado no puede ser idéntico sin entregar esa cuenta."""
@@ -105,8 +105,8 @@ def test_registering_never_returns_a_session(welcome, exists):
 
 @pytest.mark.critical
 @pytest.mark.django_db
-@patch("accounts.serializers.send_account_exists_email")
-@patch("accounts.serializers.send_welcome_email")
+@patch("accounts.serializers.auth.send_account_exists_email")
+@patch("accounts.serializers.auth.send_welcome_email")
 def test_the_new_account_can_log_in_right_away(welcome, exists):
 	"""No hay verificación de email: la cuenta queda usable, el mail sólo
 	confirma. Que el alta no loguee no puede convertirse en no poder entrar."""
@@ -124,8 +124,8 @@ def test_the_new_account_can_log_in_right_away(welcome, exists):
 
 @pytest.mark.critical
 @pytest.mark.django_db
-@patch("accounts.serializers.send_account_exists_email")
-@patch("accounts.serializers.send_welcome_email")
+@patch("accounts.serializers.auth.send_account_exists_email")
+@patch("accounts.serializers.auth.send_welcome_email")
 def test_a_failed_email_does_not_lose_the_account(welcome, exists, caplog):
 	"""Si Resend está caído, la cuenta igual se crea: perder el alta por eso
 	es peor que no mandar el mail."""

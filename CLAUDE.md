@@ -184,8 +184,17 @@ el producto, conviene un test visual o un eslint-plugin custom.
   (`AllowAny` + throttle por scope).
 - Filtrar siempre por `user=request.user` en `get_queryset` cuando el dato es
   per-user (`PinViewSet`, `SharedListViewSet`, `FriendshipViewSet` ya lo hacen).
-- Friendship lookups: usar `_are_friends(a, b)` de `accounts/views.py`. Es
-  simétrico y filtra `ACCEPTED`.
+- Friendship lookups: usar `are_friends(a, b)` de
+  `accounts/services/friendships.py`. Es simétrico y filtra `ACCEPTED`.
+  (`accounts.views._are_friends` sigue existiendo como alias para los tests que
+  lo importan de ahí, pero el service es el lugar.)
+- **`accounts/serializers/` y `accounts/views/` son paquetes**, partidos por
+  dominio: `auth`, `profile`, `social`, `moderation` y —en views— `throttles`.
+  Los dos `__init__` reexportan, así que `from accounts.serializers import X`
+  sigue andando. **Al mockear en un test, apuntá al módulo donde vive quien
+  llama** (`accounts.serializers.auth.send_welcome_email`), no al paquete: un
+  patch sobre el alias del `__init__` no toca lo que el código usa y el test
+  pasa sin probar nada.
 - Throttles por scope en `settings.py`: `login`, `register`, `user_search`,
   `places`, `invite`. Si agregás un endpoint sensible, agregá scope acá y
   marcalo en la view.
